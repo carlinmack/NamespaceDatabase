@@ -1,6 +1,8 @@
-# Format of wikidump XML files
+# Format of Wiki-dump XML files
 
 All XML dump files of the format `enwiki-20200101-pages-meta-history1.xml-pXXXpXXX` have the following structure, with lines that are `...` being repetitive or omitted content.
+
+You can view the edit history for the first listed page in this example [here](https://en.wikipedia.org/w/index.php?title=AccessibleComputing&offset=&limit=500&action=history) and the second page [here (15:00, February 25, 2002)](https://en.wikipedia.org/w/index.php?title=Anarchism&dir=prev&limit=20&action=history)
 
 ```XML
 <mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
