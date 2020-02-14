@@ -32,8 +32,8 @@ early stage of development
 #### Software 
 
 You need Python 3.x and the ability to run bash scripts. I highly
-recommend installing (WSL on
-Windows)[https://docs.microsoft.com/en-us/windows/wsl/install-win10].
+recommend installing [WSL on
+Windows](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
 #### Hardware
 

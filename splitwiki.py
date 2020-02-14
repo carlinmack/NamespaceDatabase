@@ -1,15 +1,18 @@
-import click
 import glob
+import os
 import subprocess
+import time
+
+import click
+
 from tqdm import trange
 
-import time
 
 @click.command()
 @click.option(
     '-n',
     '--number',
-    default=10,
+    default=50,
 )
 @click.option(
     '-o',
@@ -23,16 +26,35 @@ import time
 )
 
 def main(number, outputfolder, deletefile):
-    files = glob.glob('*.xml*')
+    files = glob.glob('dumps/*.xml*')
 
     for file in files:
+        filename = file[6:]
+        print(filename)
         lines = countLines(file)
 
-        for index in trange(number, desc=file):
-            time.sleep(index / 10)
-            # skip to first <page>
-            # write (lines / number) - 5% to outputfolder
-            # write until </page>
+        chunksize = lines / number * 0.8
+
+        with open(file) as infile:
+            iter = 0
+            inpage = False
+
+            for index in trange(number, desc=file):
+                outfile = os.path.join("partitions", filename + "." + str(index))
+
+                with open(outfile, "w+") as outfile:
+                    for line in infile:
+                        iter = iter + 1 
+                        if line == "  <page>\n":
+                            print('========= ==== ==== === = == ===')
+                            inpage = True
+                        if inpage:
+                            outfile.write(line)
+                        if iter > chunksize:
+                            if line == "  </page>\n":
+                                print('!!!!!!!!! !!!! !!!! !!! ! !! !!!')
+                                iter = 0
+                                break
         
         if deletefile:
             pass
@@ -41,8 +63,8 @@ def main(number, outputfolder, deletefile):
 
 def countLines(f):
     print("counting lines: ", f)
-    lines = subprocess.check_output(['wc', '-l', f])
-
+    lines = int(subprocess.check_output(['./wcle.sh', f]))
+    
     return lines
 
 if __name__ == '__main__':

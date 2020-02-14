@@ -1,5 +1,8 @@
 # !/usr/bin/python
-import requests, re, time
+import re
+import time
+
+import requests
 
 # find a list of mirrors
 url = 'https://dumps.wikimedia.org/mirrors.html'

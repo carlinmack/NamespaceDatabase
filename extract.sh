@@ -1,10 +1,11 @@
 #!/bin/bash
+cd archives
 
 start=`date +%s`
 
 for i in *.7z; do
     tick=`date +%s`;
-    7z e "$i"; 
+    7z e "$i" -o../dumps; 
     tock=`date +%s`;
 
     runtime=$((end-start));
@@ -16,18 +17,18 @@ runtime=$((end-start))
 echo $runtime
 
 
-start=`date +%s`
+# start=`date +%s`
 
-for i in *.bz2; do
-    tick=`date +%s`;
-    7z e "$i"; 
-    tock=`date +%s`;
+# for i in *.bz2; do
+#     tick=`date +%s`;
+#     7z e "$i" -o../dumps; 
+#     tock=`date +%s`;
 
-    runtime=$((end-start));
-    echo "$i $runtime";
-done
+#     runtime=$((end-start));
+#     echo "$i $runtime";
+# done
 
-end=`date +%s`
+# end=`date +%s`
 
-runtime=$((end-start))
-echo $runtime
+# runtime=$((end-start))
+# echo $runtime
