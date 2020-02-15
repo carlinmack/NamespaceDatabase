@@ -24,8 +24,7 @@ possible before importing to the database.
 
 #### Current Status
 
-Currently this project only downloads the dumps and extracts them. Very
-early stage of development
+This project currently downloads, extracts, splits dumps and parses them. Examples of usage will be added once the capability to build a  database is added.
 
 ## Requirements and installation
 
