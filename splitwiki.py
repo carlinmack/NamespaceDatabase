@@ -10,23 +10,16 @@ from tqdm import trange
 
 @click.command()
 @click.option(
-    '-n',
-    '--number',
-    default=50,
+    "-n", "--number", default=50,
 )
 @click.option(
-    '-o',
-    '--outputfolder',
+    "-o", "--outputfolder",
 )
 @click.option(
-    '-d',
-    '--deletefile',
-    default=False,
-    is_flag=True,
+    "-d", "--deletefile", default=False, is_flag=True,
 )
-
 def main(number, outputfolder, deletefile):
-    files = glob.glob('dumps/*.xml*')
+    files = glob.glob("dumps/*.xml*")
 
     for file in files:
         filename = file[6:]
@@ -44,18 +37,18 @@ def main(number, outputfolder, deletefile):
 
                 with open(outfile, "w+") as outfile:
                     for line in infile:
-                        iter = iter + 1 
+                        iter = iter + 1
                         if line == "  <page>\n":
-                            print('========= ==== ==== === = == ===')
+                            print("========= ==== ==== === = == ===")
                             inpage = True
                         if inpage:
                             outfile.write(line)
                         if iter > chunksize:
                             if line == "  </page>\n":
-                                print('!!!!!!!!! !!!! !!!! !!! ! !! !!!')
+                                print("!!!!!!!!! !!!! !!!! !!! ! !! !!!")
                                 iter = 0
                                 break
-        
+
         if deletefile:
             pass
             # delete file
@@ -63,9 +56,10 @@ def main(number, outputfolder, deletefile):
 
 def countLines(f):
     print("counting lines: ", f)
-    lines = int(subprocess.check_output(['./wcle.sh', f]))
-    
+    lines = int(subprocess.check_output(["./wcle.sh", f]))
+
     return lines
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
