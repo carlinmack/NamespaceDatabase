@@ -1,5 +1,6 @@
 import re
 import subprocess
+#from splitwiki import SplitWiki
 
 wiki = "enwiki/"
 dump = "20200101/"
@@ -32,22 +33,27 @@ while countLines("dumps.txt") > 0:
     # extract = subprocess.run(["7z", "e", "archives/" + fileName, "-odumps"])
     # extract.wait()
 
-    ## Split into 40 partitions
+    ## Split into 40 partitions 
+    # split = SplitWiki()
+    # split.split(40, "partitions")
     split = subprocess.run(["python3", "splitwiki.py", "-n", "40", "-o", "partitions"])
     split.wait()
     break
 
     ## write jobs to DB ids
-    ##     id | file name | status | error | start time | end time
-
-    ## fire off 40 concurrenmt jobs - sbatch? hadoop?
-    ##   - read job data from database
-    ##   - read XML
-    ##   - write data to database
-    ##   - write status to database - job done (0) or error
-    ## while (jobs are running)
-    ##   - query jobs
-    ##       - restart dumps with errors, mark as restarted
-    ##       - remove completed dumps with no error, mark as cleaned
-    ##   - if (jobs < max and more-files-to-read and more-space)
-    ##       -break loop
+    ##     id | file name | status | error | start time | end time -- status is in ("done", "error", "failed again", "restarted", "running", "todo", "cleaned")
+    ## while (there are jobs in DB labeled (todo or error) and )
+    ##    - query jobs
+    ##       - remove completed dumps status done (no error), mark as cleaned
+    ##    - fire off (40-currently running) concurrent jobs - sbatch? hadoop? (jobs that haven't been run or only restarted once)
+    ##       but only fire off jobs labeled "todo" (mark as "running") or "error" (mark as "restarted")
+    #       One python script that all "thread" would use
+    ##      Individual Job Script
+    ##          - read job data from database (job status, filename)
+    ##          - read XML
+    ##          - write data to database
+    ##          - write status to database - job done (0) or error or "failed again"
+    ##    while (jobs are running)
+    ##       - if (jobs < max and more-files-to-read and more-space)
+    ##          - break loop
+    ##       - sleep for 10 minutes
