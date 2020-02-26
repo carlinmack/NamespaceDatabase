@@ -10,7 +10,7 @@ from tqdm import trange
 
 @click.command()
 @click.option(
-    "-n", "--number", default=50,
+    "-n", "--number", default=40,
 )
 @click.option(
     "-o", "--outputfolder",
@@ -39,13 +39,13 @@ def main(number, outputfolder, deletefile):
                     for line in infile:
                         iter = iter + 1
                         if line == "  <page>\n":
-                            print("========= ==== ==== === = == ===")
+                            # print("========= ==== ==== === = == ===")
                             inpage = True
                         if inpage:
                             outfile.write(line)
                         if iter > chunksize:
                             if line == "  </page>\n":
-                                print("!!!!!!!!! !!!! !!!! !!! ! !! !!!")
+                                # print("!!!!!!!!! !!!! !!!! !!! ! !! !!!")
                                 iter = 0
                                 break
 

@@ -15,5 +15,7 @@ grep -oP '(?<=href=").*pages-meta-history.*7z(?=")' index.html > dumps.txt
 #         wget "$mirror$line"; 
 #     done <dumps.txt
 
-read -r line<dumps.txt
-wget -P archives/ "$mirror$line"
+# read -r line<dumps.txt
+# wget -P archives/ "$mirror$line"
+
+# change to write file names to database

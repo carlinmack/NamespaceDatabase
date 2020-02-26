@@ -8,8 +8,10 @@ dump="20200101/"
 echo $fastestMirror
 ./download.sh $fastestMirror $wiki $dump
 
-./extract.sh 
+# ./extract.sh 
 # python3 parse.py
 # python3 removeWikitext.py
 # python3 selectFeatures.py
 # python3 mysql.py
+
+python3 talkpages.py
