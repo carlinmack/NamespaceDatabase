@@ -10,6 +10,7 @@
   * [Software](#Software)
   * [Hardware](#Hardware)
 * [Usage](#Usage)
+* [Contributions](#Contributions)
    
 ## Introduction
 
@@ -47,3 +48,8 @@ Wikipedia could be created without the need for excessive computing power.
 ./talkpage.sh
 ```
 Currently won't finish, as it will  try to download and extract all of Wikipedia's edit history.
+
+
+## Contributions
+
+I gladly accept contributions via GitHub pull requests, however please include documentation of the use case with your PR.
