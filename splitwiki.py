@@ -33,7 +33,11 @@ def main(number, outputfolder, deletefile):
             inpage = False
 
             for index in trange(number, desc=file):
-                outfile = os.path.join("partitions", filename + "." + str(index))
+                partitionname = filename + "." + str(index)
+                outfile = os.path.join("partitions", partitionname)
+
+                with open("partitions.txt", "a+") as partitions:
+                    partitions.write(partitionname + "\n")
 
                 with open(outfile, "w+") as outfile:
                     for line in infile:

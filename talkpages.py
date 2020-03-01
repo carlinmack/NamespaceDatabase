@@ -1,6 +1,9 @@
 import re
 import subprocess
 
+import mysql.connector as sql
+from mysql.connector import errorcode
+
 wiki = "enwiki/"
 dump = "20200101/"
 
@@ -21,10 +24,10 @@ def countLines(f):
 while countLines("dumps.txt") > 0:
     print("start")
     ## Download one file
-    with open("dumps.txt") as f:
-        firstLine = f.readline().strip()
-        fileName = re.findall("\/([^\/]*)$", firstLine)[0]
-        print(fileName)
+    # with open("dumps.txt") as f:
+    #     firstLine = f.readline().strip()
+    #     fileName = re.findall("\/([^\/]*)$", firstLine)[0]
+    #     print(fileName)
 
     # subprocess.run(["wget", "-P", "archives/", fastestMirror + firstLine])
 
@@ -33,12 +36,41 @@ while countLines("dumps.txt") > 0:
     # extract.wait()
 
     ## Split into 40 partitions
-    split = subprocess.run(["python3", "splitwiki.py", "-n", "40", "-o", "partitions"])
-    split.wait()
-    break
+    # split = subprocess.run(["python3", "splitwiki.py", "-n", "40", "-o", "partitions"])
+    # split.wait()
 
     ## write jobs to DB ids
-    ##     id | file name | status | error | start time | end time
+    try:
+        database = sql.connect(
+            host="wikiactors.cs.virginia.edu",
+            database="wikiactors",
+            username="wikiactors",
+            option_files="private.cnf",
+            option_groups="wikiactors",
+        )
+
+        cursor = database.cursor()
+
+    except sql.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+    else:
+        with open("partitions.txt") as f:
+            for line in f:
+                query = "INSERT INTO partition (file_name) VALUES (%s)"
+                cursor.execute(query, (line,))
+
+        database.commit()
+
+        cursor.close()
+        database.close()
+
+        # clear partitions.txt
+        open("partitions.txt", "w").close()
 
     ## fire off 40 concurrenmt jobs - sbatch? hadoop?
     ##   - read job data from database
