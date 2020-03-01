@@ -19,13 +19,13 @@ a namespace of Wikipedia. This is useful for analysis of language on
 Wikipedia. 
 
 This is challenging as Wikipedia serves its dumps in ~200MB archives
-which extract to ~30GB XML files. For this reason the aim is for the
-scripts to parallelise and to remove as much unecessary information as
+which extract to ~40GB XML files. For this reason, the aim is for the
+scripts to parallelise and to remove as much unnecessary information as
 possible before importing to the database.
 
 #### Current Status
 
-This project currently downloads, extracts, splits dumps and parses them. Examples of usage will be added once the capability to build a  database is added.
+This project currently downloads, parses dumps and adds them to a database.
 
 ## Requirements and installation
 
@@ -33,21 +33,24 @@ This project currently downloads, extracts, splits dumps and parses them. Exampl
 
 You need Python 3.x and the ability to run bash scripts. I highly
 recommend installing [WSL on
-Windows](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+Windows](https://docs.microsoft.com/en-us/windows/wsl/install-win10). 
+
+Additionally you need to have a mysql database, which you can hopefully have set up for you by an administrator. If not start from [here](https://dev.mysql.com/doc/refman/8.0/en/installing.html). 
 
 #### Hardware
 
-As the resulting database is very large development is being performed on
+As the resulting database is very large, development is being performed on
 hardware provided by the University of Virginia. I aim to provide
 functionality for normal computing hardware such that a subset of
 Wikipedia could be created without the need for excessive computing power. 
 
 ## Usage
 
+To create a list of dumps, download the first, partition it and add them to a database run.
+
 ```
-./talkpage.sh
+python talkpages.py
 ```
-Currently won't finish, as it will  try to download and extract all of Wikipedia's edit history.
 
 
 ## Contributions
