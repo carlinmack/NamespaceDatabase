@@ -210,7 +210,7 @@ else:
             cursor.execute(query, editTuple)
             database.commit()
 
-            oldrevision = revision
+            # oldrevision = revision
 
     cursor.close()
     database.close()

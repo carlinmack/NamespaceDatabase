@@ -1,78 +1,87 @@
 -- Manually created, but 90% there
 -- See annotated version at https://docs.google.com/spreadsheets/d/16aVV2Wh7ezjwaGnoYtqU9bVHTXNBPwHwhX3oVctmTUM/edit#gid=1860359731
-
 CREATE TABLE edit (
-	id INT unsigned NOT NULL AUTO_INCREMENT,
-	namespace SMALLINT NOT NULL,
-	edit_id INT,
-	edit_date DATETIME NOT NULL,
-	page_id INT,
-	user_id INT,
-    ip_address VARBINARY(16),
-	added TEXT,
-	deleted TEXT,
-    blanking BOOLEAN,
-    comment_copyedit BOOLEAN,
-    comment_length BOOLEAN,
-    comment_personal_life BOOLEAN,
-    comment_spam NUMERIC(4,4),
-    comment_special_chars NUMERIC(4,4),
-    del_bias MEDIUMINT,
-    del_words MEDIUMINT,
-    ins_bias NUMERIC(4,4),
-    ins_capitalization NUMERIC(4,4),
-    ins_compressibility NUMERIC(4,4),
-    ins_digits NUMERIC(4,4),
-    ins_external_link SMALLINT,
-    ins_internal_link SMALLINT,
-    ins_longest_character_sequence SMALLINT,
-    ins_longest_inserted_word SMALLINT,
-    ins_pronouns NUMERIC(4,4),
-    ins_sex NUMERIC(4,4),
-    ins_special_chars NUMERIC(4,4),
-    ins_special_words NUMERIC(4,4),
-    ins_vulgarism NUMERIC(4,4),
-    ins_whitespace NUMERIC(4,4),
-    ins_wp NUMERIC(4,4),
-    kldnew2old NUMERIC(5,5),
-	PRIMARY KEY (id)
+    id int unsigned NOT NULL AUTO_INCREMENT,
+    namespace smallint NOT NULL,
+    edit_id int DEFAULT NULL,
+    edit_date datetime NOT NULL,
+    page_id int DEFAULT NULL,
+    user_id int DEFAULT NULL,
+    ip_address varbinary(16) DEFAULT NULL,
+    added text,
+    deleted text,
+    blanking tinyint(1) DEFAULT NULL,
+    comment_copyedit tinyint(1) DEFAULT NULL,
+    comment_length tinyint(1) DEFAULT NULL,
+    comment_personal_life tinyint(1) DEFAULT NULL,
+    comment_spam decimal(4, 4) DEFAULT NULL,
+    comment_special_chars decimal(4, 4) DEFAULT NULL,
+    del_bias mediumint DEFAULT NULL,
+    del_words mediumint DEFAULT NULL,
+    ins_bias decimal(4, 4) DEFAULT NULL,
+    ins_capitalization decimal(4, 4) DEFAULT NULL,
+    ins_compressibility decimal(4, 4) DEFAULT NULL,
+    ins_digits decimal(4, 4) DEFAULT NULL,
+    ins_external_link smallint DEFAULT NULL,
+    ins_internal_link smallint DEFAULT NULL,
+    ins_longest_character_sequence smallint DEFAULT NULL,
+    ins_longest_inserted_word smallint DEFAULT NULL,
+    ins_pronouns decimal(4, 4) DEFAULT NULL,
+    ins_sex decimal(4, 4) DEFAULT NULL,
+    ins_special_chars decimal(4, 4) DEFAULT NULL,
+    ins_special_words decimal(4, 4) DEFAULT NULL,
+    ins_vulgarism decimal(4, 4) DEFAULT NULL,
+    ins_whitespace decimal(4, 4) DEFAULT NULL,
+    ins_wp decimal(4, 4) DEFAULT NULL,
+    kldnew2old decimal(5, 5) DEFAULT NULL,
+    user_table_id int unsigned NOT NULL,
+    PRIMARY KEY (id),
+    KEY user_idx (user_table_id),
+    KEY page_idx (page_id),
+    CONSTRAINT page FOREIGN KEY (page_id) REFERENCES page (page_id),
+    CONSTRAINT user FOREIGN KEY (user_table_id) REFERENCES user (id)
 );
-
-
-CREATE TABLE page (
-	id INT unsigned NOT NULL AUTO_INCREMENT,
-	page_id INT,
-    title TEXT,
-	PRIMARY KEY (id)
-);
-
-
-CREATE TABLE partition (
-	id INT unsigned NOT NULL AUTO_INCREMENT,
-	file_name VARCHAR(85) NOT NULL,
-	status ENUM('todo', 'running', 'failed', 'restarted', 'failed again', 'done', 'cleaned') NOT NULL DEFAULT 'todo',
-	error TEXT,
-	start_time_1 TIMESTAMP DEFAULT 0,
-	end_time_1 TIMESTAMP DEFAULT 0,
-	start_time_2 TIMESTAMP DEFAULT 0,
-	end_time_2 TIMESTAMP DEFAULT 0,
-	PRIMARY KEY (id)
-);
-
 
 CREATE TABLE user (
-	id INT unsigned NOT NULL AUTO_INCREMENT,
-	user_id INT,
-    username VARCHAR(85),
-    ip_address VARBINARY(16),
-    confirmed BOOLEAN,
-    user_special BOOLEAN,
-    bot BOOLEAN,
-    blocked BOOLEAN,
-    paid BOOLEAN,
-    user_page BOOLEAN,
-    user_talkpage BOOLEAN,
-    number_of_edits INT unsigned,
-    reverted_edits INT unsigned,
-	PRIMARY KEY (id)
+    id int unsigned NOT NULL AUTO_INCREMENT,
+    user_id int DEFAULT NULL,
+    username varchar(85) DEFAULT NULL,
+    ip_address varbinary(16) DEFAULT NULL,
+    confirmed tinyint(1) DEFAULT NULL,
+    user_special tinyint(1) DEFAULT NULL,
+    bot tinyint(1) DEFAULT NULL,
+    blocked tinyint(1) DEFAULT NULL,
+    paid tinyint(1) DEFAULT NULL,
+    user_page tinyint(1) DEFAULT NULL,
+    user_talkpage tinyint(1) DEFAULT NULL,
+    number_of_edits int unsigned DEFAULT NULL,
+    reverted_edits int unsigned DEFAULT NULL,
+    PRIMARY KEY (id)
+);
+
+/* check and trigger ? */
+CREATE TABLE page (
+    page_id INT NOT NULL,
+    title TEXT,
+    PRIMARY KEY (page_id)
+);
+
+CREATE TABLE partition (
+    id int unsigned NOT NULL AUTO_INCREMENT,
+    file_name varchar(85) NOT NULL,
+    status enum(
+        'todo',
+        'running',
+        'failed',
+        'restarted',
+        'failed again',
+        'done',
+        'cleaned'
+    ) NOT NULL DEFAULT 'todo',
+    error text,
+    start_time_1 timestamp NULL DEFAULT '0000-00-00 00:00:00',
+    end_time_1 timestamp NULL DEFAULT '0000-00-00 00:00:00',
+    start_time_2 timestamp NULL DEFAULT '0000-00-00 00:00:00',
+    end_time_2 timestamp NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (id)
 );

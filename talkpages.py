@@ -59,46 +59,46 @@ while countLines("dumps.txt") > 0:
 
         # delete dump
 
-        ## write jobs to DB ids
-        try:
-            database = sql.connect(
-                host="wikiactors.cs.virginia.edu",
-                database="wikiactors",
-                username="wikiactors",
-                option_files="private.cnf",
-                option_groups="wikiactors",
-            )
+    ## write jobs to DB ids
+    try:
+        database = sql.connect(
+            host="wikiactors.cs.virginia.edu",
+            database="wikiactors",
+            username="wikiactors",
+            option_files="private.cnf",
+            option_groups="wikiactors",
+        )
 
-            cursor = database.cursor()
-        except sql.Error as err:
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print("Database does not exist")
-            else:
-                print(err)
+        cursor = database.cursor()
+    except sql.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
         else:
-            with open("partitions.txt") as f:
-                for line in f:
-                    query = "INSERT INTO partition (file_name) VALUES (%s)"
-                    cursor.execute(query, (line,))
+            print(err)
+    else:
+        with open("partitions.txt") as f:
+            for line in f:
+                query = "INSERT INTO partition (file_name) VALUES (%s)"
+                cursor.execute(query, (line.strip(),))
 
-            database.commit()
+        database.commit()
 
-            cursor.close()
-            database.close()
+        cursor.close()
+        database.close()
 
-            # clear partitions.txt
-            open("partitions.txt", "w").close()
+        # clear partitions.txt
+        open("partitions.txt", "w").close()
 
-        ## fire off 40 concurrenmt jobs - sbatch? hadoop?
-        ##   - read job data from database
-        ##   - read XML
-        ##   - write data to database
-        ##   - write status to database - job done (0) or error
-        ## while (jobs are running)
-        ##   - query jobs
-        ##       - restart dumps with errors, mark as restarted
-        ##       - remove completed dumps with no error, mark as cleaned
-        ##   - if (jobs < max and more-files-to-read and more-space)
-        ##       -break loop
+    ## fire off 40 concurrenmt jobs - sbatch? hadoop?
+    ##   - read job data from database
+    ##   - read XML
+    ##   - write data to database
+    ##   - write status to database - job done (0) or error
+    ## while (jobs are running)
+    ##   - query jobs
+    ##       - restart dumps with errors, mark as restarted
+    ##       - remove completed dumps with no error, mark as cleaned
+    ##   - if (jobs < max and more-files-to-read and more-space)
+    ##       -break loop
