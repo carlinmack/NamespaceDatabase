@@ -4,13 +4,8 @@ import re
 import mwxml
 import mysql.connector as sql
 from mysql.connector import errorcode
+import tqdm
 
-##	IMPORT FILE
-# test_dump = "enwiki-20200101-pages-meta-history1.xml-p10p1036"
-# dump = mwxml.Dump.from_file(open(test_dump))
-
-test_dump = "test.xml"
-dump = mwxml.Dump.from_page_xml(open(test_dump))
 
 ##  FUNCTIONS TO EXTRACT FEATURES
 def cleanString(string):
@@ -100,39 +95,36 @@ except sql.Error as err:
     else:
         print(err)
 else:
+    ## Read dump from database
+    query = "SELECT file_name FROM partition WHERE status = 'todo' LIMIT 1"
+    cursor.execute(query)
+    filename = cursor.fetchone()[0]
+    path = "partitions/" + filename
+    dump = mwxml.Dump.from_page_xml(open(path))
+
+    ## Change status of dump
+
+    ## Parse
     for page in dump:
         query = "INSERT IGNORE INTO page (page_id, title) VALUES (%s, %s)"
         cursor.execute(query, (page.id, page.title))
 
         database.commit()
-        for revision in page:
-
+        for revision in tqdm.tqdm(page):
             ## Page Features
-            diff = revision.text
-            query = """
-            INSERT INTO edit (
-                namespace, user_id, ip_address, edit_date, edit_id, page_id,
-                ins_internal_link, ins_external_link, ins_longest_inserted_word, 
-                ins_longest_character_sequence, ins_capitalization, ins_digits, 
-                ins_special_chars, comment_personal_life, comment_copyedit, 
-                comment_length, comment_special_chars
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s,
-                %s, %s, %s,
-                %s, %s, %s, 
-                %s, %s, %s, 
-                %s, %s
-            );
-            """
-
             namespace = revision.page.namespace
 
-            if revision.user.id:
-                user_id = revision.user.id
-                ip_address = "NULL"
+            if revision.user:
+                if revision.user.id:
+                    user_id = revision.user.id
+                    ip_address = "NULL"
+                else:
+                    user_id = "NULL"
+                    ip_address = revision.user.text
             else:
+                print(revision)
                 user_id = "NULL"
-                ip_address = revision.user.text
+                ip_address = "NULL"
 
             edit_date = datetime.datetime.strptime(
                 str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
@@ -141,15 +133,29 @@ else:
             edit_id = revision.id
             page_id = revision.page.id
 
-            ins_internal_link = len(re.findall("\[\[.*?\]\]", diff))
-            ins_external_link = len(re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", diff))
+            if revision.text:
+                blanking = False
+                diff = revision.text
 
-            ins_longest_inserted_word = longestWord(diff)
-            ins_longest_character_sequence = longestCharSequence(diff)
+                ins_internal_link = len(re.findall("\[\[.*?\]\]", diff))
+                ins_external_link = len(re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", diff))
 
-            ins_capitalization = ratioCapitals(diff)
-            ins_digits = ratioDigits(diff)
-            ins_special_chars = ratioSpecial(diff)
+                ins_longest_inserted_word = longestWord(diff)
+                ins_longest_character_sequence = longestCharSequence(diff)
+
+                ins_capitalization = ratioCapitals(diff)
+                ins_digits = ratioDigits(diff)
+                ins_special_chars = ratioSpecial(diff)
+            else:
+                blanking = True
+
+                ins_internal_link = "NULL"
+                ins_external_link = "NULL"
+                ins_longest_inserted_word = "NULL"
+                ins_longest_character_sequence = "NULL"
+                ins_capitalization = "NULL"
+                ins_digits = "NULL"
+                ins_special_chars = "NULL"
 
             if revision.comment:
                 comment = revision.comment.lower()
@@ -158,10 +164,26 @@ else:
                 comment_length = len(comment)
                 comment_special_chars = ratioSpecial(comment)
             else:
-                comment_copyedit = False
-                comment_personal_life = False
-                comment_length = -1
-                comment_special_chars = -1
+                comment_copyedit = "NULL"
+                comment_personal_life = "NULL"
+                comment_length = "NULL"
+                comment_special_chars = "NULL"
+
+            query = """
+            INSERT INTO edit (
+                namespace, user_id, ip_address, edit_date, edit_id, page_id,
+                ins_internal_link, ins_external_link, ins_longest_inserted_word, 
+                ins_longest_character_sequence, ins_capitalization, ins_digits, 
+                ins_special_chars, comment_personal_life, comment_copyedit, 
+                comment_length, comment_special_chars, blanking
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s,
+                %s, %s, %s,
+                %s, %s, %s, 
+                %s, %s, %s, 
+                %s, %s, %s
+            );
+            """
 
             editTuple = (
                 namespace,
@@ -181,11 +203,14 @@ else:
                 comment_copyedit,
                 comment_length,
                 comment_special_chars,
+                blanking,
             )
 
             ## Insert page features into database
             cursor.execute(query, editTuple)
             database.commit()
+
+            oldrevision = revision
 
     cursor.close()
     database.close()

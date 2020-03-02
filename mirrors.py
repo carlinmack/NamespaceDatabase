@@ -50,7 +50,7 @@ for index, mirror in enumerate(mirrors):
 # return fastest mirror
 val, index = min((val, index) for (index, val) in enumerate(mirrorDownloadTime))
 
-print(mirrorDownloadTime)
-print("Fastest mirror is " + mirrors[index])
+# print(mirrorDownloadTime)
+# print("Fastest mirror is " + mirrors[index])
 
 print(mirrors[index])
