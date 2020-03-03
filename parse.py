@@ -83,6 +83,7 @@ try:
         username="wikiactors",
         option_files="private.cnf",
         option_groups="wikiactors",
+        autocommit="true",
     )
 
     cursor = database.cursor()
@@ -118,9 +119,15 @@ else:
                 if revision.user.id:
                     user_id = revision.user.id
                     ip_address = "NULL"
+                    query = "INSERT INTO user (user_id, username) VALUES (%s, %s);"
+                    cursor.execute(query, (user_id, revision.user.text))
+                    user_table_id = cursor.lastrowid
                 else:
                     user_id = "NULL"
                     ip_address = revision.user.text
+                    query = "INSERT INTO user (ip_address) VALUES (%s);"
+                    cursor.execute(query, (ip_address, ))
+                    user_table_id = cursor.lastrowid
             else:
                 print(revision)
                 user_id = "NULL"
@@ -175,13 +182,13 @@ else:
                 ins_internal_link, ins_external_link, ins_longest_inserted_word, 
                 ins_longest_character_sequence, ins_capitalization, ins_digits, 
                 ins_special_chars, comment_personal_life, comment_copyedit, 
-                comment_length, comment_special_chars, blanking
+                comment_length, comment_special_chars, blanking, user_table_id
             ) VALUES (
                 %s, %s, %s, %s, %s, %s,
                 %s, %s, %s,
                 %s, %s, %s, 
                 %s, %s, %s, 
-                %s, %s, %s
+                %s, %s, %s, %s
             );
             """
 
@@ -203,12 +210,12 @@ else:
                 comment_copyedit,
                 comment_length,
                 comment_special_chars,
-                blanking,
+                blanking, 
+                user_table_id,
             )
 
             ## Insert page features into database
             cursor.execute(query, editTuple)
-            database.commit()
 
             # oldrevision = revision
 
