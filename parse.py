@@ -119,15 +119,22 @@ else:
                 if revision.user.id:
                     user_id = revision.user.id
                     ip_address = "NULL"
+
                     query = "INSERT INTO user (user_id, username) VALUES (%s, %s);"
                     cursor.execute(query, (user_id, revision.user.text))
                     user_table_id = cursor.lastrowid
+
+                    query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
+                    cursor.execute(query, (user_table_id,))
                 else:
                     user_id = "NULL"
                     ip_address = revision.user.text
                     query = "INSERT INTO user (ip_address) VALUES (%s);"
                     cursor.execute(query, (ip_address, ))
                     user_table_id = cursor.lastrowid
+
+                    query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
+                    cursor.execute(query, (user_table_id,))
 
                 edit_date = datetime.datetime.strptime(
                     str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
@@ -136,7 +143,7 @@ else:
                 edit_id = revision.id
                 page_id = revision.page.id
 
-                if revision.text:
+                if revision.text and not re.search("^\s+$", revision.text):
                     blanking = False
                     diff = revision.text
 
