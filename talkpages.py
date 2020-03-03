@@ -12,6 +12,10 @@ def countLines(f):
 
     return lines
 
+def findFastestMirror():
+    mirror = subprocess.check_output(["python3", "mirrors.py"]).decode("utf-8").strip()
+
+    return mirror
 
 wiki = "enwiki/"
 dump = "20200101/"
@@ -23,9 +27,7 @@ else:
     firstLine = ""
 
 if not re.match("\/.*7z$", firstLine):
-    fastestMirror = (
-        subprocess.check_output(["python3", "mirrors.py"]).decode("utf-8").strip()
-    )
+    fastestMirror = findFastestMirror()
 
     download = subprocess.run(["./download.sh", fastestMirror, wiki, dump])
 
@@ -34,12 +36,15 @@ while countLines("dumps.txt") > 0:
     print("start")
 
     # if theres space etc
-    if len(os.listdir("dumps")) == 0:
+    if not os.path.exists("dumps") or len(os.listdir("dumps")) == 0:
         ## Download one file
         with open("dumps.txt") as f:
             firstLine = f.readline().strip()
             fileName = re.findall("\/([^\/]*)$", firstLine)[0]
             print(fileName)
+
+        if not fastestMirror:
+            fastestMirror = findFastestMirror()
 
         subprocess.run(["wget", "-P", "archives/", fastestMirror + firstLine])
 
@@ -47,7 +52,6 @@ while countLines("dumps.txt") > 0:
 
         ## Unzip and delete if successful
         extract = subprocess.run(["7z", "e", "archives/" + fileName, "-odumps"])
-        extract.wait()
 
         # delete archive
 
@@ -55,7 +59,6 @@ while countLines("dumps.txt") > 0:
         split = subprocess.run(
             ["python3", "splitwiki.py", "-n", "40", "-o", "partitions"]
         )
-        split.wait()
 
         # delete dump
 

@@ -39,6 +39,9 @@ def main(number, outputfolder, deletefile):
                 with open("partitions.txt", "a+") as partitions:
                     partitions.write(partitionname + "\n")
 
+                if not os.path.exists("partitions"):
+                    os.mkdir("partitions")
+
                 with open(outfile, "w+") as outfile:
                     for line in infile:
                         iter = iter + 1
