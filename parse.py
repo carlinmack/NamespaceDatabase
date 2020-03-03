@@ -1,10 +1,11 @@
-from datetime import datetime
 import re
+import subprocess
+from datetime import datetime
 
 import mwxml
 import mysql.connector as sql
-from mysql.connector import errorcode
 import tqdm
+from mysql.connector import errorcode
 
 
 ##  FUNCTIONS TO EXTRACT FEATURES
@@ -172,7 +173,7 @@ else:
                     query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
                     cursor.execute(query, (user_table_id,))
 
-                edit_date = datetime.datetime.strptime(
+                edit_date = datetime.strptime(
                     str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
                 )
 

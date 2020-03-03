@@ -12,10 +12,12 @@ def countLines(f):
 
     return lines
 
+
 def findFastestMirror():
     mirror = subprocess.check_output(["python3", "mirrors.py"]).decode("utf-8").strip()
 
     return mirror
+
 
 wiki = "enwiki/"
 dump = "20200101/"

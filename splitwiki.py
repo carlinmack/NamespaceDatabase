@@ -18,7 +18,6 @@ from tqdm import trange
 @click.option(
     "-d", "--deletefile", default=False, is_flag=True,
 )
-
 def main(number, outputfolder, deletefile):
     files = glob.glob("dumps/*.xml*")
     file = files[0]
