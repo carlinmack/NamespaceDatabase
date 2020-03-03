@@ -128,96 +128,92 @@ else:
                     query = "INSERT INTO user (ip_address) VALUES (%s);"
                     cursor.execute(query, (ip_address, ))
                     user_table_id = cursor.lastrowid
-            else:
-                print(revision)
-                user_id = "NULL"
-                ip_address = "NULL"
 
-            edit_date = datetime.datetime.strptime(
-                str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
-            )
+                edit_date = datetime.datetime.strptime(
+                    str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
+                )
 
-            edit_id = revision.id
-            page_id = revision.page.id
+                edit_id = revision.id
+                page_id = revision.page.id
 
-            if revision.text:
-                blanking = False
-                diff = revision.text
+                if revision.text:
+                    blanking = False
+                    diff = revision.text
 
-                ins_internal_link = len(re.findall("\[\[.*?\]\]", diff))
-                ins_external_link = len(re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", diff))
+                    ins_internal_link = len(re.findall("\[\[.*?\]\]", diff))
+                    ins_external_link = len(re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", diff))
 
-                ins_longest_inserted_word = longestWord(diff)
-                ins_longest_character_sequence = longestCharSequence(diff)
+                    ins_longest_inserted_word = longestWord(diff)
+                    ins_longest_character_sequence = longestCharSequence(diff)
 
-                ins_capitalization = ratioCapitals(diff)
-                ins_digits = ratioDigits(diff)
-                ins_special_chars = ratioSpecial(diff)
-            else:
-                blanking = True
+                    ins_capitalization = ratioCapitals(diff)
+                    ins_digits = ratioDigits(diff)
+                    ins_special_chars = ratioSpecial(diff)
+                else:
+                    blanking = True
 
-                ins_internal_link = "NULL"
-                ins_external_link = "NULL"
-                ins_longest_inserted_word = "NULL"
-                ins_longest_character_sequence = "NULL"
-                ins_capitalization = "NULL"
-                ins_digits = "NULL"
-                ins_special_chars = "NULL"
+                    ins_internal_link = "NULL"
+                    ins_external_link = "NULL"
+                    ins_longest_inserted_word = "NULL"
+                    ins_longest_character_sequence = "NULL"
+                    ins_capitalization = "NULL"
+                    ins_digits = "NULL"
+                    ins_special_chars = "NULL"
 
-            if revision.comment:
-                comment = revision.comment.lower()
-                comment_copyedit = "copyedit" in comment
-                comment_personal_life = "personal life" in comment
-                comment_length = len(comment)
-                comment_special_chars = ratioSpecial(comment)
-            else:
-                comment_copyedit = "NULL"
-                comment_personal_life = "NULL"
-                comment_length = "NULL"
-                comment_special_chars = "NULL"
+                if revision.comment:
+                    comment = revision.comment.lower()
+                    comment_copyedit = "copyedit" in comment
+                    comment_personal_life = "personal life" in comment
+                    comment_length = len(comment)
+                    comment_special_chars = ratioSpecial(comment)
+                else:
+                    comment_copyedit = "NULL"
+                    comment_personal_life = "NULL"
+                    comment_length = "NULL"
+                    comment_special_chars = "NULL"
 
-            query = """
-            INSERT INTO edit (
-                namespace, user_id, ip_address, edit_date, edit_id, page_id,
-                ins_internal_link, ins_external_link, ins_longest_inserted_word, 
-                ins_longest_character_sequence, ins_capitalization, ins_digits, 
-                ins_special_chars, comment_personal_life, comment_copyedit, 
-                comment_length, comment_special_chars, blanking, user_table_id
-            ) VALUES (
-                %s, %s, %s, %s, %s, %s,
-                %s, %s, %s,
-                %s, %s, %s, 
-                %s, %s, %s, 
-                %s, %s, %s, %s
-            );
-            """
+                query = """
+                INSERT INTO edit (
+                    namespace, user_id, ip_address, edit_date, edit_id, page_id,
+                    ins_internal_link, ins_external_link, ins_longest_inserted_word, 
+                    ins_longest_character_sequence, ins_capitalization, ins_digits, 
+                    ins_special_chars, comment_personal_life, comment_copyedit, 
+                    comment_length, comment_special_chars, blanking, user_table_id
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s, 
+                    %s, %s, %s, 
+                    %s, %s, %s, %s
+                );
+                """
 
-            editTuple = (
-                namespace,
-                user_id,
-                ip_address,
-                edit_date,
-                edit_id,
-                page_id,
-                ins_internal_link,
-                ins_external_link,
-                ins_longest_inserted_word,
-                ins_longest_character_sequence,
-                ins_capitalization,
-                ins_digits,
-                ins_special_chars,
-                comment_personal_life,
-                comment_copyedit,
-                comment_length,
-                comment_special_chars,
-                blanking, 
-                user_table_id,
-            )
+                editTuple = (
+                    namespace,
+                    user_id,
+                    ip_address,
+                    edit_date,
+                    edit_id,
+                    page_id,
+                    ins_internal_link,
+                    ins_external_link,
+                    ins_longest_inserted_word,
+                    ins_longest_character_sequence,
+                    ins_capitalization,
+                    ins_digits,
+                    ins_special_chars,
+                    comment_personal_life,
+                    comment_copyedit,
+                    comment_length,
+                    comment_special_chars,
+                    blanking, 
+                    user_table_id,
+                )
 
-            ## Insert page features into database
-            cursor.execute(query, editTuple)
+                ## Insert page features into database
+                cursor.execute(query, editTuple)
 
-            # oldrevision = revision
+                # oldrevision = revision
 
     cursor.close()
     database.close()
