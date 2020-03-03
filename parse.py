@@ -18,9 +18,12 @@ def cleanString(string):
 def longestWord(string):
     string = cleanString(string)
     arr = string.split()
-    longestWord = max(arr, key=len)
-    # print(longestWord)
-    return len(longestWord)
+    if len(arr) > 0:
+        longestWord = max(arr, key=len)
+        # print(longestWord)
+        return len(longestWord)
+    else:
+        return 0
 
 
 def longestCharSequence(string):
@@ -61,8 +64,6 @@ def ratioCapitals(string):
 
 def ratioDigits(string):
     digits = 0
-
-    # print(string)
 
     for char in string:
         if char.isdigit():
@@ -157,8 +158,10 @@ else:
                     user_id = revision.user.id
                     ip_address = "NULL"
 
-                    query = "INSERT INTO user (user_id, username, namespaces) VALUES (%s, %s, %s);"
-                    cursor.execute(query, (user_id, revision.user.text, namespace))
+                    query = "INSERT INTO user (user_id, username, namespaces) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s);"
+                    cursor.execute(
+                        query, (user_id, revision.user.text, namespace, str(namespace))
+                    )
                     user_table_id = cursor.lastrowid
 
                     query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
@@ -166,8 +169,8 @@ else:
                 else:
                     user_id = "NULL"
                     ip_address = revision.user.text
-                    query = "INSERT INTO user (ip_address, namespaces) VALUES (%s, %s);"
-                    cursor.execute(query, (ip_address, namespace))
+                    query = "INSERT INTO user (ip_address, namespaces) VALUES (%s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s);"
+                    cursor.execute(query, (ip_address, namespace, str(namespace)))
                     user_table_id = cursor.lastrowid
 
                     query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
@@ -180,21 +183,33 @@ else:
                 edit_id = revision.id
                 page_id = revision.page.id
 
+                # if revision has text and the text isn't whitespace
                 if revision.text and not re.search("^\s+$", revision.text):
                     blanking = False
                     (added, deleted) = getDiff(oldtext, revision.text)
 
-                    ins_internal_link = len(re.findall("\[\[.*?\]\]", added))
-                    ins_external_link = len(
-                        re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", added)
-                    )
+                    if added and not re.search("^\s+$", added):
+                        ins_internal_link = len(re.findall("\[\[.*?\]\]", added))
+                        ins_external_link = len(
+                            re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", added)
+                        )
 
-                    ins_longest_inserted_word = longestWord(added)
-                    ins_longest_character_sequence = longestCharSequence(added)
+                        ins_longest_inserted_word = longestWord(added)
+                        ins_longest_character_sequence = longestCharSequence(added)
 
-                    ins_capitalization = ratioCapitals(added)
-                    ins_digits = ratioDigits(added)
-                    ins_special_chars = ratioSpecial(added)
+                        ins_capitalization = ratioCapitals(added)
+                        ins_digits = ratioDigits(added)
+                        ins_special_chars = ratioSpecial(added)
+                    else:
+                        ins_internal_link = 0
+                        ins_external_link = 0
+
+                        ins_longest_inserted_word = 0
+                        ins_longest_character_sequence = 0
+
+                        ins_capitalization = 0
+                        ins_digits = 0
+                        ins_special_chars = 0
 
                     del_words = len(deleted.split(" "))
 

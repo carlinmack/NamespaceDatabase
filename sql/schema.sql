@@ -1,5 +1,6 @@
 -- Manually created, but 90% there
 -- See annotated version at https://docs.google.com/spreadsheets/d/16aVV2Wh7ezjwaGnoYtqU9bVHTXNBPwHwhX3oVctmTUM/edit#gid=1860359731
+
 CREATE TABLE user (
     id int unsigned NOT NULL AUTO_INCREMENT,
     user_id int DEFAULT NULL,
@@ -14,45 +15,10 @@ CREATE TABLE user (
     user_talkpage tinyint(1) DEFAULT NULL,
     number_of_edits int unsigned NOT NULL DEFAULT '0',
     reverted_edits int unsigned DEFAULT NULL,
-    namespaces
-    set
-        (
-            '0',
-            '1',
-            '2',
-            '3',
-            '4',
-            '5',
-            '6',
-            '7',
-            '8',
-            '9',
-            '10',
-            '11',
-            '12',
-            '13',
-            '14',
-            '15',
-            '-1',
-            '-2',
-            '100',
-            '101',
-            '118',
-            '119',
-            '710',
-            '711',
-            '828',
-            '829',
-            '108',
-            '109',
-            '446',
-            '447',
-            '2300',
-            '2301',
-            '2302',
-            '2303'
-        ) NOT NULL,
-        PRIMARY KEY (id)
+    namespaces set('0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','-1','-2','100','101','118','119','710','711','828','829','108','109','446','447','2300','2301','2302','2303') NOT NULL DEFAULT '',
+    PRIMARY KEY (id),
+    UNIQUE KEY user_id_UNIQUE (user_id),
+    UNIQUE KEY ip_address_UNIQUE (ip_address)
 );
 
 /* check and trigger ? */
