@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import re
 
 import mwxml
@@ -74,6 +74,38 @@ def ratioSpecial(string):
     return len(re.findall(r'[!-/:-?{-~!"^_`\[\]]', string)) / len(string)
 
 
+def getDiff(old, new):
+    first = "oldrevision.txt"
+    with open(first, "w") as oldfile:
+        oldfile.writelines(old)
+
+    second = "newrevision.txt"
+    with open(second, "w") as newfile:
+        newfile.writelines(new)
+
+    removelines = (
+        "======================================================================"
+    )
+
+    added = (
+        subprocess.run(["wdiff", "-13", first, second], capture_output=True)
+        .stdout.decode("utf-8")
+        .strip()
+    )
+
+    added = re.sub(removelines, "", added)
+
+    deleted = (
+        subprocess.run(["wdiff", "-23", first, second], capture_output=True)
+        .stdout.decode("utf-8")
+        .strip()
+    )
+
+    deleted = re.sub(removelines, "", deleted)
+
+    return added, deleted
+
+
 ##	PRINT FEATURES FOR EVERY PAGE
 
 try:
@@ -104,13 +136,17 @@ else:
     dump = mwxml.Dump.from_page_xml(open(path))
 
     ## Change status of dump
+    currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    query = 'UPDATE partition SET status = "running", start_time_1 = %s WHERE file_name = %s;'
+    cursor.execute(query, (currenttime, filename))
 
     ## Parse
     for page in dump:
         query = "INSERT IGNORE INTO page (page_id, title) VALUES (%s, %s)"
         cursor.execute(query, (page.id, page.title))
-
         database.commit()
+
+        oldtext = ""
         for revision in tqdm.tqdm(page):
             ## Page Features
             namespace = revision.page.namespace
@@ -120,8 +156,8 @@ else:
                     user_id = revision.user.id
                     ip_address = "NULL"
 
-                    query = "INSERT INTO user (user_id, username) VALUES (%s, %s);"
-                    cursor.execute(query, (user_id, revision.user.text))
+                    query = "INSERT INTO user (user_id, username, namespaces) VALUES (%s, %s, %s);"
+                    cursor.execute(query, (user_id, revision.user.text, namespace))
                     user_table_id = cursor.lastrowid
 
                     query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
@@ -129,8 +165,8 @@ else:
                 else:
                     user_id = "NULL"
                     ip_address = revision.user.text
-                    query = "INSERT INTO user (ip_address) VALUES (%s);"
-                    cursor.execute(query, (ip_address, ))
+                    query = "INSERT INTO user (ip_address, namespaces) VALUES (%s, %s);"
+                    cursor.execute(query, (ip_address, namespace))
                     user_table_id = cursor.lastrowid
 
                     query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
@@ -145,17 +181,23 @@ else:
 
                 if revision.text and not re.search("^\s+$", revision.text):
                     blanking = False
-                    diff = revision.text
+                    (added, deleted) = getDiff(oldtext, revision.text)
 
-                    ins_internal_link = len(re.findall("\[\[.*?\]\]", diff))
-                    ins_external_link = len(re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", diff))
+                    ins_internal_link = len(re.findall("\[\[.*?\]\]", added))
+                    ins_external_link = len(
+                        re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", added)
+                    )
 
-                    ins_longest_inserted_word = longestWord(diff)
-                    ins_longest_character_sequence = longestCharSequence(diff)
+                    ins_longest_inserted_word = longestWord(added)
+                    ins_longest_character_sequence = longestCharSequence(added)
 
-                    ins_capitalization = ratioCapitals(diff)
-                    ins_digits = ratioDigits(diff)
-                    ins_special_chars = ratioSpecial(diff)
+                    ins_capitalization = ratioCapitals(added)
+                    ins_digits = ratioDigits(added)
+                    ins_special_chars = ratioSpecial(added)
+
+                    del_words = len(deleted.split(" "))
+
+                    oldtext = revision.text
                 else:
                     blanking = True
 
@@ -181,17 +223,19 @@ else:
 
                 query = """
                 INSERT INTO edit (
-                    namespace, user_id, ip_address, edit_date, edit_id, page_id,
-                    ins_internal_link, ins_external_link, ins_longest_inserted_word, 
-                    ins_longest_character_sequence, ins_capitalization, ins_digits, 
-                    ins_special_chars, comment_personal_life, comment_copyedit, 
-                    comment_length, comment_special_chars, blanking, user_table_id
+                    namespace, user_id, ip_address, added, deleted, edit_date, 
+                    edit_id, page_id, ins_internal_link, ins_external_link, 
+                    ins_longest_inserted_word, ins_longest_character_sequence, 
+                    ins_capitalization, ins_digits, ins_special_chars, del_words, 
+                    comment_personal_life, comment_copyedit, comment_length, 
+                    comment_special_chars, blanking, user_table_id
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s,
+                    %s, %s, %s, %s,
+                    %s, %s, 
+                    %s, %s, %s,  %s, 
                     %s, %s, %s, 
-                    %s, %s, %s, 
-                    %s, %s, %s, %s
+                    %s, %s, %s
                 );
                 """
 
@@ -199,6 +243,8 @@ else:
                     namespace,
                     user_id,
                     ip_address,
+                    added,
+                    deleted,
                     edit_date,
                     edit_id,
                     page_id,
@@ -209,11 +255,12 @@ else:
                     ins_capitalization,
                     ins_digits,
                     ins_special_chars,
+                    del_words,
                     comment_personal_life,
                     comment_copyedit,
                     comment_length,
                     comment_special_chars,
-                    blanking, 
+                    blanking,
                     user_table_id,
                 )
 
@@ -221,6 +268,13 @@ else:
                 cursor.execute(query, editTuple)
 
                 # oldrevision = revision
+
+    ## Change status of dump
+    currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    query = (
+        'UPDATE partition SET status = "done", end_time_1 = %s WHERE file_name = %s;'
+    )
+    cursor.execute(query, (currenttime, filename))
 
     cursor.close()
     database.close()
