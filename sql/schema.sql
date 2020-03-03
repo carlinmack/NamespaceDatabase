@@ -1,5 +1,30 @@
 -- Manually created, but 90% there
 -- See annotated version at https://docs.google.com/spreadsheets/d/16aVV2Wh7ezjwaGnoYtqU9bVHTXNBPwHwhX3oVctmTUM/edit#gid=1860359731
+
+CREATE TABLE user (
+    id int unsigned NOT NULL AUTO_INCREMENT,
+    user_id int DEFAULT NULL,
+    username varchar(85) DEFAULT NULL,
+    ip_address varbinary(16) DEFAULT NULL,
+    confirmed tinyint(1) DEFAULT NULL,
+    user_special tinyint(1) DEFAULT NULL,
+    bot tinyint(1) DEFAULT NULL,
+    blocked tinyint(1) DEFAULT NULL,
+    paid tinyint(1) DEFAULT NULL,
+    user_page tinyint(1) DEFAULT NULL,
+    user_talkpage tinyint(1) DEFAULT NULL,
+    number_of_edits int unsigned DEFAULT NULL,
+    reverted_edits int unsigned DEFAULT NULL,
+    PRIMARY KEY (id)
+);
+
+/* check and trigger ? */
+CREATE TABLE page (
+    page_id INT NOT NULL,
+    title TEXT,
+    PRIMARY KEY (page_id)
+);
+
 CREATE TABLE edit (
     id int unsigned NOT NULL AUTO_INCREMENT,
     namespace smallint NOT NULL,
@@ -40,30 +65,6 @@ CREATE TABLE edit (
     KEY page_idx (page_id),
     CONSTRAINT page FOREIGN KEY (page_id) REFERENCES page (page_id),
     CONSTRAINT user FOREIGN KEY (user_table_id) REFERENCES user (id)
-);
-
-CREATE TABLE user (
-    id int unsigned NOT NULL AUTO_INCREMENT,
-    user_id int DEFAULT NULL,
-    username varchar(85) DEFAULT NULL,
-    ip_address varbinary(16) DEFAULT NULL,
-    confirmed tinyint(1) DEFAULT NULL,
-    user_special tinyint(1) DEFAULT NULL,
-    bot tinyint(1) DEFAULT NULL,
-    blocked tinyint(1) DEFAULT NULL,
-    paid tinyint(1) DEFAULT NULL,
-    user_page tinyint(1) DEFAULT NULL,
-    user_talkpage tinyint(1) DEFAULT NULL,
-    number_of_edits int unsigned DEFAULT NULL,
-    reverted_edits int unsigned DEFAULT NULL,
-    PRIMARY KEY (id)
-);
-
-/* check and trigger ? */
-CREATE TABLE page (
-    page_id INT NOT NULL,
-    title TEXT,
-    PRIMARY KEY (page_id)
 );
 
 CREATE TABLE partition (
