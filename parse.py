@@ -158,23 +158,18 @@ else:
                     user_id = revision.user.id
                     ip_address = "NULL"
 
-                    query = "INSERT INTO user (user_id, username, namespaces) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s);"
+                    query = "INSERT INTO user (user_id, username, namespaces) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s), number_of_edits = number_of_edits + 1;"
                     cursor.execute(
                         query, (user_id, revision.user.text, namespace, str(namespace))
                     )
                     user_table_id = cursor.lastrowid
-
-                    query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
-                    cursor.execute(query, (user_table_id,))
                 else:
                     user_id = "NULL"
                     ip_address = revision.user.text
-                    query = "INSERT INTO user (ip_address, namespaces) VALUES (%s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s);"
+
+                    query = "INSERT INTO user (ip_address, namespaces) VALUES (%s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s), number_of_edits = number_of_edits + 1;"
                     cursor.execute(query, (ip_address, namespace, str(namespace)))
                     user_table_id = cursor.lastrowid
-
-                    query = "UPDATE user SET number_of_edits = number_of_edits + 1 WHERE id = (%s);"
-                    cursor.execute(query, (user_table_id,))
 
                 edit_date = datetime.strptime(
                     str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
