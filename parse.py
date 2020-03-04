@@ -133,159 +133,159 @@ else:
     ## Read dump from database
     query = "SELECT file_name FROM partition WHERE status = 'todo' LIMIT 1"
     cursor.execute(query)
-    filename = cursor.fetchone()[0]
-    path = "partitions/" + filename
-    dump = mwxml.Dump.from_page_xml(open(path))
+    todofile = cursor.fetchone()
+    if todofile:
+        filename = todofile[0]
+        path = "partitions/" + filename
+        dump = mwxml.Dump.from_page_xml(open(path))
 
-    ## Change status of dump
-    currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    query = 'UPDATE partition SET status = "running", start_time_1 = %s WHERE file_name = %s;'
-    cursor.execute(query, (currenttime, filename))
+        ## Change status of dump
+        currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        query = 'UPDATE partition SET status = "running", start_time_1 = %s WHERE file_name = %s;'
+        cursor.execute(query, (currenttime, filename))
 
-    ## Parse
-    for page in dump:
-        query = "INSERT IGNORE INTO page (page_id, title) VALUES (%s, %s)"
-        cursor.execute(query, (page.id, page.title))
-        database.commit()
+        ## Parse
+        for page in dump:
+            query = "INSERT IGNORE INTO page (page_id, title) VALUES (%s, %s)"
+            cursor.execute(query, (page.id, page.title))
+            database.commit()
 
-        oldtext = ""
-        for revision in tqdm.tqdm(page):
-            ## Page Features
-            namespace = revision.page.namespace
+            oldtext = ""
+            for revision in tqdm.tqdm(page):
+                ## Page Features
+                namespace = revision.page.namespace
+                if namespace == 1:
+                    if revision.user:
+                        if revision.user.id:
+                            user_id = revision.user.id
+                            ip_address = "NULL"
 
-            if revision.user:
-                if revision.user.id:
-                    user_id = revision.user.id
-                    ip_address = "NULL"
+                            query = "INSERT INTO user (user_id, username, namespaces) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s), number_of_edits = number_of_edits + 1;"
+                            cursor.execute(
+                                query, (user_id, revision.user.text, namespace, str(namespace))
+                            )
+                            user_table_id = cursor.lastrowid
+                        else:
+                            user_id = "NULL"
+                            ip_address = revision.user.text
 
-                    query = "INSERT INTO user (user_id, username, namespaces) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s), number_of_edits = number_of_edits + 1;"
-                    cursor.execute(
-                        query, (user_id, revision.user.text, namespace, str(namespace))
-                    )
-                    user_table_id = cursor.lastrowid
-                else:
-                    user_id = "NULL"
-                    ip_address = revision.user.text
+                            query = "INSERT INTO user (ip_address, namespaces) VALUES (%s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s), number_of_edits = number_of_edits + 1;"
+                            cursor.execute(query, (ip_address, namespace, str(namespace)))
+                            user_table_id = cursor.lastrowid
 
-                    query = "INSERT INTO user (ip_address, namespaces) VALUES (%s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s), number_of_edits = number_of_edits + 1;"
-                    cursor.execute(query, (ip_address, namespace, str(namespace)))
-                    user_table_id = cursor.lastrowid
-
-                edit_date = datetime.strptime(
-                    str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
-                )
-
-                edit_id = revision.id
-                page_id = revision.page.id
-
-                # if revision has text and the text isn't whitespace
-                if revision.text and not re.search("^\s+$", revision.text):
-                    blanking = False
-                    (added, deleted) = getDiff(oldtext, revision.text)
-
-                    if added and not re.search("^\s+$", added):
-                        ins_internal_link = len(re.findall("\[\[.*?\]\]", added))
-                        ins_external_link = len(
-                            re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", added)
+                        edit_date = datetime.strptime(
+                            str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
                         )
 
-                        ins_longest_inserted_word = longestWord(added)
-                        ins_longest_character_sequence = longestCharSequence(added)
+                        edit_id = revision.id
+                        page_id = revision.page.id
 
-                        ins_capitalization = ratioCapitals(added)
-                        ins_digits = ratioDigits(added)
-                        ins_special_chars = ratioSpecial(added)
-                    else:
-                        ins_internal_link = 0
-                        ins_external_link = 0
+                        # if revision has text and the text isn't whitespace
+                        if revision.text and not re.search("^\s+$", revision.text):
+                            blanking = False
+                            (added, deleted) = getDiff(oldtext, revision.text)
 
-                        ins_longest_inserted_word = 0
-                        ins_longest_character_sequence = 0
+                            if added and not re.search("^\s+$", added):
+                                ins_internal_link = len(re.findall("\[\[.*?\]\]", added))
+                                ins_external_link = len(
+                                    re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", added)
+                                )
 
-                        ins_capitalization = 0
-                        ins_digits = 0
-                        ins_special_chars = 0
+                                ins_longest_inserted_word = longestWord(added)
+                                ins_longest_character_sequence = longestCharSequence(added)
 
-                    del_words = len(deleted.split(" "))
+                                ins_capitalization = ratioCapitals(added)
+                                ins_digits = ratioDigits(added)
+                                ins_special_chars = ratioSpecial(added)
+                            else:
+                                ins_internal_link = 0
+                                ins_external_link = 0
 
-                    oldtext = revision.text
-                else:
-                    blanking = True
+                                ins_longest_inserted_word = 0
+                                ins_longest_character_sequence = 0
 
-                    ins_internal_link = "NULL"
-                    ins_external_link = "NULL"
-                    ins_longest_inserted_word = "NULL"
-                    ins_longest_character_sequence = "NULL"
-                    ins_capitalization = "NULL"
-                    ins_digits = "NULL"
-                    ins_special_chars = "NULL"
+                                ins_capitalization = 0
+                                ins_digits = 0
+                                ins_special_chars = 0
 
-                if revision.comment:
-                    comment = revision.comment.lower()
-                    comment_copyedit = "copyedit" in comment
-                    comment_personal_life = "personal life" in comment
-                    comment_length = len(comment)
-                    comment_special_chars = ratioSpecial(comment)
-                else:
-                    comment_copyedit = "NULL"
-                    comment_personal_life = "NULL"
-                    comment_length = "NULL"
-                    comment_special_chars = "NULL"
+                            del_words = len(deleted.split(" "))
 
-                query = """
-                INSERT INTO edit (
-                    namespace, user_id, ip_address, added, deleted, edit_date, 
-                    edit_id, page_id, ins_internal_link, ins_external_link, 
-                    ins_longest_inserted_word, ins_longest_character_sequence, 
-                    ins_capitalization, ins_digits, ins_special_chars, del_words, 
-                    comment_personal_life, comment_copyedit, comment_length, 
-                    comment_special_chars, blanking, user_table_id
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s,
-                    %s, %s, 
-                    %s, %s, %s,  %s, 
-                    %s, %s, %s, 
-                    %s, %s, %s
-                );
-                """
+                            oldtext = revision.text
+                        else:
+                            blanking = True
 
-                editTuple = (
-                    namespace,
-                    user_id,
-                    ip_address,
-                    added,
-                    deleted,
-                    edit_date,
-                    edit_id,
-                    page_id,
-                    ins_internal_link,
-                    ins_external_link,
-                    ins_longest_inserted_word,
-                    ins_longest_character_sequence,
-                    ins_capitalization,
-                    ins_digits,
-                    ins_special_chars,
-                    del_words,
-                    comment_personal_life,
-                    comment_copyedit,
-                    comment_length,
-                    comment_special_chars,
-                    blanking,
-                    user_table_id,
-                )
+                            ins_internal_link = "NULL"
+                            ins_external_link = "NULL"
+                            ins_longest_inserted_word = "NULL"
+                            ins_longest_character_sequence = "NULL"
+                            ins_capitalization = "NULL"
+                            ins_digits = "NULL"
+                            ins_special_chars = "NULL"
 
-                ## Insert page features into database
-                cursor.execute(query, editTuple)
+                        if revision.comment:
+                            comment = revision.comment.lower()
+                            comment_copyedit = "copyedit" in comment
+                            comment_personal_life = "personal life" in comment
+                            comment_length = len(comment)
+                            comment_special_chars = ratioSpecial(comment)
+                        else:
+                            comment_copyedit = "NULL"
+                            comment_personal_life = "NULL"
+                            comment_length = "NULL"
+                            comment_special_chars = "NULL"
 
-                # oldrevision = revision
+                        query = """
+                        INSERT INTO edit (
+                            namespace, added, deleted, edit_date, 
+                            edit_id, page_id, ins_internal_link, ins_external_link, 
+                            ins_longest_inserted_word, ins_longest_character_sequence, 
+                            ins_capitalization, ins_digits, ins_special_chars, del_words, 
+                            comment_personal_life, comment_copyedit, comment_length, 
+                            comment_special_chars, blanking, user_table_id
+                        ) VALUES (
+                            %s, %s, %s, %s,
+                            %s, %s, %s, %s,
+                            %s, %s, 
+                            %s, %s, %s,  %s, 
+                            %s, %s, %s, 
+                            %s, %s, %s
+                        );
+                        """
 
-    ## Change status of dump
-    currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    query = (
-        'UPDATE partition SET status = "done", end_time_1 = %s WHERE file_name = %s;'
-    )
-    cursor.execute(query, (currenttime, filename))
+                        editTuple = (
+                            namespace,
+                            added,
+                            deleted,
+                            edit_date,
+                            edit_id,
+                            page_id,
+                            ins_internal_link,
+                            ins_external_link,
+                            ins_longest_inserted_word,
+                            ins_longest_character_sequence,
+                            ins_capitalization,
+                            ins_digits,
+                            ins_special_chars,
+                            del_words,
+                            comment_personal_life,
+                            comment_copyedit,
+                            comment_length,
+                            comment_special_chars,
+                            blanking,
+                            user_table_id,
+                        )
+
+                        ## Insert page features into database
+                        cursor.execute(query, editTuple)
+
+                        # oldrevision = revision
+
+        ## Change status of dump
+        currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        query = (
+            'UPDATE partition SET status = "done", end_time_1 = %s WHERE file_name = %s;'
+        )
+        cursor.execute(query, (currenttime, filename))
 
     cursor.close()
     database.close()
