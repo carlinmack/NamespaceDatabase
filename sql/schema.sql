@@ -1,5 +1,10 @@
 -- Manually created, but 90% there
 -- See annotated version at https://docs.google.com/spreadsheets/d/16aVV2Wh7ezjwaGnoYtqU9bVHTXNBPwHwhX3oVctmTUM/edit#gid=1860359731
+DROP TABLE edit;
+
+DROP TABLE page;
+
+DROP TABLE user;
 
 CREATE TABLE user (
     id int unsigned NOT NULL AUTO_INCREMENT,
@@ -15,7 +20,9 @@ CREATE TABLE user (
     user_talkpage tinyint(1) DEFAULT NULL,
     number_of_edits int unsigned NOT NULL DEFAULT '0',
     reverted_edits int unsigned DEFAULT NULL,
-    namespaces set('0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','-1','-2','100','101','118','119','710','711','828','829','108','109','446','447','2300','2301','2302','2303') NOT NULL DEFAULT '',
+    namespaces set('0','1','2','3','4','5','6','7','8','9','10','11','12','13',
+        '14','15','-1','-2','100','101','118','119','710','711','828','829',
+        '108','109','446','447','2300','2301','2302','2303') NOT NULL DEFAULT '',
     PRIMARY KEY (id),
     UNIQUE KEY user_id_UNIQUE (user_id),
     UNIQUE KEY ip_address_UNIQUE (ip_address)
@@ -34,8 +41,7 @@ CREATE TABLE edit (
     edit_id int DEFAULT NULL,
     edit_date datetime NOT NULL,
     page_id int DEFAULT NULL,
-    user_id int DEFAULT NULL,
-    ip_address varbinary(16) DEFAULT NULL,
+    user_table_id int unsigned NOT NULL,
     added text,
     deleted text,
     blanking tinyint(1) DEFAULT NULL,
@@ -62,7 +68,6 @@ CREATE TABLE edit (
     ins_whitespace decimal(4, 4) DEFAULT NULL,
     ins_wp decimal(4, 4) DEFAULT NULL,
     kldnew2old decimal(5, 5) DEFAULT NULL,
-    user_table_id int unsigned NOT NULL,
     PRIMARY KEY (id),
     KEY user_idx (user_table_id),
     KEY page_idx (page_id),
@@ -73,15 +78,8 @@ CREATE TABLE edit (
 CREATE TABLE partition (
     id int unsigned NOT NULL AUTO_INCREMENT,
     file_name varchar(85) NOT NULL,
-    status enum(
-        'todo',
-        'running',
-        'failed',
-        'restarted',
-        'failed again',
-        'done',
-        'cleaned'
-    ) NOT NULL DEFAULT 'todo',
+    status enum('todo','running','failed','restarted','failed again','done',
+        'cleaned') NOT NULL DEFAULT 'todo',
     error text,
     start_time_1 timestamp NULL DEFAULT '0000-00-00 00:00:00',
     end_time_1 timestamp NULL DEFAULT '0000-00-00 00:00:00',
