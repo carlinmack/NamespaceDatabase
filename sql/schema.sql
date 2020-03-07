@@ -31,13 +31,14 @@ CREATE TABLE user (
 /* check and trigger ? */
 CREATE TABLE page (
     page_id INT NOT NULL,
+    namespace smallint NOT NULL,
     title TEXT,
+    file_name varchar(85) NOT NULL,
     PRIMARY KEY (page_id)
 );
 
 CREATE TABLE edit (
     id int unsigned NOT NULL AUTO_INCREMENT,
-    namespace smallint NOT NULL,
     edit_id int DEFAULT NULL,
     edit_date datetime NOT NULL,
     page_id int DEFAULT NULL,
