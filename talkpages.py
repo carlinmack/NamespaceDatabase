@@ -45,7 +45,9 @@ while countLines("dumps.txt") > 0:
             fileName = re.findall("\/([^\/]*)$", firstLine)[0]
             print(fileName)
 
-        if not fastestMirror:
+        try:
+            fastestMirror
+        except:
             fastestMirror = findFastestMirror()
 
         subprocess.run(["wget", "-P", "archives/", fastestMirror + firstLine])
