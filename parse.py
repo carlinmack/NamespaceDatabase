@@ -137,7 +137,7 @@ else:
     if todofile:
         filename = todofile[0]
         path = "partitions/" + filename
-        dump = mwxml.Dump.from_page_xml(open(path))
+        dump = mwxml.Dump.from_file(open(path))
 
         ## Change status of dump
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -146,15 +146,16 @@ else:
 
         ## Parse
         for page in dump:
-            query = "INSERT IGNORE INTO page (page_id, title) VALUES (%s, %s)"
-            cursor.execute(query, (page.id, page.title))
+            namespace = page.namespace
+            title = page.title
+            query = "INSERT IGNORE INTO page (page_id, namespace, title, file_name) VALUES (%s, %s, %s, %s)"
+            cursor.execute(query, (page.id, namespace, title, filename))
             database.commit()
 
-            oldtext = ""
-            for revision in tqdm.tqdm(page):
+            if namespace == 1:
+                oldtext = ""
+                for revision in tqdm.tqdm(page, desc=title, unit=" edits"):
                 ## Page Features
-                namespace = revision.page.namespace
-                if namespace == 1:
                     if revision.user:
                         if revision.user.id:
                             user_id = revision.user.id
@@ -235,15 +236,14 @@ else:
                             comment_special_chars = "NULL"
 
                         query = """
-                        INSERT INTO edit (
-                            namespace, added, deleted, edit_date, 
+                        INSERT INTO edit (added, deleted, edit_date, 
                             edit_id, page_id, ins_internal_link, ins_external_link, 
                             ins_longest_inserted_word, ins_longest_character_sequence, 
                             ins_capitalization, ins_digits, ins_special_chars, del_words, 
                             comment_personal_life, comment_copyedit, comment_length, 
                             comment_special_chars, blanking, user_table_id
                         ) VALUES (
-                            %s, %s, %s, %s,
+                            %s, %s, %s,
                             %s, %s, %s, %s,
                             %s, %s, 
                             %s, %s, %s,  %s, 
@@ -253,7 +253,6 @@ else:
                         """
 
                         editTuple = (
-                            namespace,
                             added,
                             deleted,
                             edit_date,
