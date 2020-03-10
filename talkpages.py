@@ -4,9 +4,10 @@ import re
 import subprocess
 import time
 
-import mirrors
+from glob import glob
+from  mirrors import fastest
 import mysql.connector as sql
-import splitwiki
+from splitwiki import split
 from mysql.connector import errorcode
 from parse import parse
 
@@ -28,7 +29,7 @@ else:
     firstLine = ""
 
 if not re.match("\/.*7z$", firstLine):
-    fastestMirror = findFastestMirror()
+    fastestMirror = fastest()
 
     download = subprocess.run(["./download.sh", fastestMirror, wiki, dump])
 
@@ -48,8 +49,8 @@ while countLines("dumps.txt") > 0:
 
         try:
             fastestMirror
-        except:
-            fastestMirror = mirrors.fastest()
+        except NameError:
+            fastestMirror = fastest()
 
         subprocess.run(["wget", "-P", "archives/", fastestMirror + firstLine])
 
@@ -58,14 +59,24 @@ while countLines("dumps.txt") > 0:
             fout.writelines(data)
 
         ## Unzip and delete if successful
-        extract = subprocess.run(["7z", "e", "archives/" + fileName, "-odumps"])
-
-        # delete archive
+        try:
+            extract = subprocess.run(["7z", "e", "archives/" + fileName, "-odumps"])
+        except:
+            raise
+        else:
+            # delete archive
+            os.remove("archives/" + fileName)
 
         ## Split into 40 partitions
-        splitwiki.split(40, "partitions", true)
-
-        # delete dump
+        try:
+            split(40, "partitions", true)
+        except:
+            raise
+        else:
+            # delete dump
+            files = glob("dumps/*.xml*")
+            file = files[0]
+            os.remove(file)
 
     ## write jobs to DB ids
     try:
