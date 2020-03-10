@@ -3,18 +3,19 @@ import os
 import re
 import subprocess
 import time
-
 from glob import glob
-from  mirrors import fastest
+
 import mysql.connector as sql
-from splitwiki import split
 from mysql.connector import errorcode
+
+from mirrors import fastest
 from parse import parse
+from splitwiki import split
 
 
-def countLines(f):
-    wc = subprocess.check_output(["wc", "-l", f]).decode("utf-8")
-    lines = int(wc.split(" ")[0])
+def countLines(file):
+    wordCount = subprocess.check_output(["wc", "-l", file]).decode("utf-8")
+    lines = int(wordCount.split(" ")[0])
 
     return lines
 
@@ -69,7 +70,7 @@ while countLines("dumps.txt") > 0:
 
         ## Split into 40 partitions
         try:
-            split(40, "partitions", true)
+            split(40, "partitions", True)
         except:
             raise
         else:
