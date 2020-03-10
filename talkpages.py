@@ -1,9 +1,14 @@
+import multiprocessing
+import os
 import re
 import subprocess
-import os
+import time
 
+import mirrors
 import mysql.connector as sql
+import splitwiki
 from mysql.connector import errorcode
+from parse import parse
 
 
 def countLines(f):
@@ -11,12 +16,6 @@ def countLines(f):
     lines = int(wc.split(" ")[0])
 
     return lines
-
-
-def findFastestMirror():
-    mirror = subprocess.check_output(["python3", "mirrors.py"]).decode("utf-8").strip()
-
-    return mirror
 
 
 wiki = "enwiki/"
@@ -45,14 +44,18 @@ while countLines("dumps.txt") > 0:
             fileName = re.findall("\/([^\/]*)$", firstLine)[0]
             print(fileName)
 
+            data = f.read().splitlines(True)
+
         try:
             fastestMirror
         except:
-            fastestMirror = findFastestMirror()
+            fastestMirror = mirrors.fastest()
 
         subprocess.run(["wget", "-P", "archives/", fastestMirror + firstLine])
 
         # delete first line
+        with open("file.txt", "w") as fout:
+            fout.writelines(data)
 
         ## Unzip and delete if successful
         extract = subprocess.run(["7z", "e", "archives/" + fileName, "-odumps"])
@@ -60,9 +63,7 @@ while countLines("dumps.txt") > 0:
         # delete archive
 
         ## Split into 40 partitions
-        split = subprocess.run(
-            ["python3", "splitwiki.py", "-n", "40", "-o", "partitions"]
-        )
+        splitwiki.split(40, "partitions", true)
 
         # delete dump
 
@@ -99,9 +100,21 @@ while countLines("dumps.txt") > 0:
         open("partitions.txt", "w").close()
 
     ## fire off 40 concurrenmt jobs - sbatch? hadoop?
-    ##   - read job data from database
-    ##   - read XML
-    ##   - write data to database
+    starttime = time.time()
+    processes = []
+    print("begin")
+    for i in range(0, 20):
+        print(i)
+        p = multiprocessing.Process(target=parse)
+        processes.append(p)
+
+    for p in processes:
+        p.start()
+    for p in processes:
+        p.join()
+
+    print("That took {} seconds".format(time.time() - starttime))
+    break
     ##   - write status to database - job done (0) or error
     ## while (jobs are running)
     ##   - query jobs
