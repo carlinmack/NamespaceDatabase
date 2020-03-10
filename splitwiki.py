@@ -1,7 +1,6 @@
 import glob
 import os
 import subprocess
-import time
 
 import click
 
@@ -18,14 +17,14 @@ from tqdm import trange
 @click.option(
     "-d", "--deletefile", default=False, is_flag=True,
 )
-def main(number, outputfolder, deletefile):
+def split(number, outputfolder, deletefile):
     files = glob.glob("dumps/*.xml*")
     file = files[0]
-    filename = file[6:]
-    print(filename)
+    fileName = file[6:]
+    
     lines = countLines(file)
 
-    chunksize = lines / number * 0.8
+    chunkSize = lines / number * 0.8
 
     header = '''<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">
     <siteinfo>
@@ -74,12 +73,13 @@ def main(number, outputfolder, deletefile):
     
     footer = '\n</mediawiki>\n'
 
-    with open(file) as infile:
-        iter = 0
-        inpage = False
+    with open(file) as inFile:
+        i = 0
+        inPage = False
+        moreFile = True
 
-        for index in trange(number, desc=file):
-            partitionname = filename + "." + str(index)
+        for index in trange(number, desc=fileName, unit=" partition"):
+            partitionname = fileName + "." + str(index)
             outfilename = os.path.join("partitions", partitionname)
 
             with open("partitions.txt", "a+") as partitions:
@@ -88,21 +88,24 @@ def main(number, outputfolder, deletefile):
             if not os.path.exists("partitions"):
                 os.mkdir("partitions")
 
-            with open(outfilename, "w+") as outfile:
-                outfile.write(header)
+            with open(outfilename, "w+") as outFile:
+                outFile.write(header)
 
-                for line in infile:
+                for line in inFile:
+                    moreFile = False
+
                     if line == "  <page>\n":
-                        inpage = True
-                    if inpage:
-                        iter = iter + 1
-                        outfile.write(line)
-                    if iter > chunksize:
+                        inPage = True
+                    if inPage:
+                        i = i + 1
+                        outFile.write(line)
+                    if i > chunkSize:
                         if line == "  </page>\n":
-                            iter = 0
+                            i = 0
+                            moreFile = True
                             break
 
-                outfile.write(footer)
+                outFile.write(footer)
 
     if deletefile:
         pass
@@ -117,4 +120,4 @@ def countLines(f):
 
 
 if __name__ == "__main__":
-    main()
+    split()
