@@ -3,7 +3,6 @@ import os
 import subprocess
 
 import click
-
 from tqdm import trange
 
 
@@ -21,12 +20,15 @@ def split(number, outputfolder, deletefile):
     files = glob.glob("dumps/*.xml*")
     file = files[0]
     fileName = file[6:]
-    
+
     lines = countLines(file)
 
     chunkSize = lines / number * 0.8
 
-    header = '''<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">
+    header = """<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://www.mediawiki.org/xml/export-0.10.xsd" 
+    version="0.10" xml:lang="en">
     <siteinfo>
     <sitename>Wikipedia</sitename>
     <dbname>enwiki</dbname>
@@ -69,9 +71,9 @@ def split(number, outputfolder, deletefile):
         <namespace key="2302" case="case-sensitive">Gadget definition</namespace>
         <namespace key="2303" case="case-sensitive">Gadget definition talk</namespace>
     </namespaces>
-    </siteinfo>\n'''
-    
-    footer = '\n</mediawiki>\n'
+    </siteinfo>\n"""
+
+    footer = "\n</mediawiki>\n"
 
     with open(file) as inFile:
         i = 0
@@ -115,9 +117,9 @@ def split(number, outputfolder, deletefile):
         # delete file
 
 
-def countLines(f):
-    print("counting lines: ", f)
-    lines = int(subprocess.check_output(["./wcle.sh", f]))
+def countLines(file):
+    print("counting lines: ", file)
+    lines = int(subprocess.check_output(["./wcle.sh", file]))
 
     return lines
 
