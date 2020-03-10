@@ -79,6 +79,9 @@ def split(number, outputfolder, deletefile):
         moreFile = True
 
         for index in trange(number, desc=fileName, unit=" partition"):
+            if not moreFile:
+                break
+
             partitionname = fileName + "." + str(index)
             outfilename = os.path.join("partitions", partitionname)
 
