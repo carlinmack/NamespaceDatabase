@@ -56,7 +56,7 @@ while countLines("dumps.txt") > 0:
         subprocess.run(["wget", "-P", "archives/", fastestMirror + firstLine])
 
         # delete first line
-        with open("file.txt", "w") as fout:
+        with open("dumps.txt", "w") as fout:
             fout.writelines(data)
 
         ## Unzip and delete if successful
