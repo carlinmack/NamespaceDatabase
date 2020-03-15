@@ -32,14 +32,7 @@ def countLines(file):
 # )
 def split(number=40, inputFolder="dumps", outputFolder="partitions", deleteDump=True):
     """Splits Wikipedia dumps into smaller partitions. Creates a file
-    partitions.txt with the created partitions
-
-    Parameters
-    ----------
-    number: intr - the number of partitionst to split into
-    inputFolder: str - the folder where the xml dumps are
-    outputFolder: str - the folder where the partitions should be output to
-    deleteDump: boolean - whether to delete the dump after successfully splitting
+    partitions.txt with the created partitions.
     """
     files = glob.glob(inputFolder + "/*.xml*")
     file = files[0]

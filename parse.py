@@ -2,7 +2,7 @@
 This script allows the user to parse a dump from a database connection
 and extract features to a database table.
 
-This tool uses a mysql database that is configured in the parse() function.
+This tool uses a MySQL database that is configured in the parse() function.
 
 Please run pip install -r requirements.txt before running this script.
 """

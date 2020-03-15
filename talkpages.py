@@ -72,8 +72,8 @@ def main():
             subprocess.run(["wget", "-P", "archives/", fastestMirror + firstLine])
 
             # delete first line
-            with open("dumps.txt", "w") as fout:
-                fout.writelines(data)
+            with open("dumps.txt", "w") as file:
+                file.writelines(data)
 
             ## Unzip and delete if successful
             try:
@@ -86,7 +86,7 @@ def main():
 
             ## Split into 40 partitions
             try:
-                split(40, "partitions", True)
+                split()
             except:
                 raise
             else:
