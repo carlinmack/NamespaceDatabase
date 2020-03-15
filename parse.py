@@ -229,15 +229,15 @@ def parse():
             if namespace != 1:
                 continue
 
-            oldtext = ""
+            oldText = ""
             for revision in tqdm.tqdm(page, desc=title, unit=" edits"):
                 ## Page Features
                 if not revision.user:
                     continue
 
                 if revision.user.id:
-                    user_id = revision.user.id
-                    ip_address = "NULL"
+                    userId = revision.user.id
+                    ipAddress = "NULL"
 
                     query = """INSERT INTO user (user_id, username, namespaces)
                         VALUES (%s, %s, %s) ON DUPLICATE KEY
@@ -245,92 +245,91 @@ def parse():
                             namespaces = CONCAT_WS(',', namespaces, %s),
                             number_of_edits = number_of_edits + 1;"""
                     cursor.execute(
-                        query,
-                        (user_id, revision.user.text, namespace, str(namespace),),
+                        query, (userId, revision.user.text, namespace, str(namespace),),
                     )
-                    user_table_id = cursor.lastrowid
+                    userTableId = cursor.lastrowid
                 else:
-                    user_id = "NULL"
-                    ip_address = revision.user.text
+                    userId = "NULL"
+                    ipAddress = revision.user.text
 
                     query = """INSERT INTO user (ip_address, namespaces)
                         VALUES (%s, %s) ON DUPLICATE KEY
                         UPDATE
                             namespaces = CONCAT_WS(',', namespaces, %s),
                             number_of_edits = number_of_edits + 1;"""
-                    cursor.execute(query, (ip_address, namespace, str(namespace)))
-                    user_table_id = cursor.lastrowid
+                    cursor.execute(query, (ipAddress, namespace, str(namespace)))
+                    userTableId = cursor.lastrowid
 
-                edit_date = datetime.strptime(
+                editDate = datetime.strptime(
                     str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
                 )
 
-                edit_id = revision.id
-                page_id = revision.page.id
+                editId = revision.id
+                pageId = revision.page.id
 
                 # if revision has text and the text isn't whitespace
-                if revision.text and not re.search("^\s+$", revision.text):
+                if revision.text and not re.search(r"^\s+$", revision.text):
                     blanking = False
-                    (added, deleted) = getDiff(oldtext, revision.text)
-                    blankAddition = re.search("^\s+$", added)
+                    (added, deleted) = getDiff(oldText, revision.text)
+                    blankAddition = re.search(r"^\s+$", added)
 
                     if added and not blankAddition:
-                        ins_internal_link = len(re.findall("\[\[.*?\]\]", added))
-                        ins_external_link = len(
-                            re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", added)
+                        insInternalLink = len(re.findall(r"\[\[.*?\]\]", added))
+                        insExternalLink = len(
+                            re.findall(r"[^\[]\[[^\[].*?[^\]]\][^\]]", added)
                         )
 
-                        ins_longest_inserted_word = longestWord(added)
-                        ins_longest_character_sequence = longestCharSequence(added)
+                        insLongestInsertedWord = longestWord(added)
+                        insLongestCharacterSequence = longestCharSequence(added)
 
-                        ins_capitalization = ratioCapitals(added)
-                        ins_digits = ratioDigits(added)
-                        ins_special_chars = ratioSpecial(added)
-                        ins_whitespace = ratioWhitespace(added)
+                        insCapitalization = ratioCapitals(added)
+                        insDigits = ratioDigits(added)
+                        insSpecialChars = ratioSpecial(added)
+                        insWhitespace = ratioWhitespace(added)
 
-                        ins_pronouns = ratioPronouns(added)
+                        insPronouns = ratioPronouns(added)
                     else:
-                        ins_internal_link = 0
-                        ins_external_link = 0
+                        insInternalLink = 0
+                        insExternalLink = 0
 
-                        ins_longest_inserted_word = 0
-                        ins_longest_character_sequence = 0
+                        insLongestInsertedWord = 0
+                        insLongestCharacterSequence = 0
 
-                        ins_capitalization = 0
-                        ins_digits = 0
-                        ins_special_chars = 0
+                        insCapitalization = 0
+                        insDigits = 0
+                        insSpecialChars = 0
                         if blankAddition:
-                            ins_whitespace = 1
+                            insWhitespace = 1
                         else:
-                            ins_whitespace = 0
+                            insWhitespace = 0
 
-                        ins_pronouns = 0
+                        insPronouns = 0
 
-                    del_words = len(deleted.split(" "))
+                    delWords = len(deleted.split(" "))
 
-                    oldtext = revision.text
+                    oldText = revision.text
                 else:
                     blanking = True
 
-                    ins_internal_link = "NULL"
-                    ins_external_link = "NULL"
-                    ins_longest_inserted_word = "NULL"
-                    ins_longest_character_sequence = "NULL"
-                    ins_capitalization = "NULL"
-                    ins_digits = "NULL"
-                    ins_special_chars = "NULL"
+                    insInternalLink = "NULL"
+                    insExternalLink = "NULL"
+                    insLongestInsertedWord = "NULL"
+                    insLongestCharacterSequence = "NULL"
+                    insCapitalization = "NULL"
+                    insDigits = "NULL"
+                    insSpecialChars = "NULL"
 
                 if revision.comment:
                     comment = revision.comment.lower()
-                    comment_copyedit = "copyedit" in comment
-                    comment_personal_life = "personal life" in comment
-                    comment_length = len(comment)
-                    comment_special_chars = ratioSpecial(comment)
+                    commentCopyedit = "copyedit" in comment
+                    commentPersonalLife = "personal life" in comment
+                    commentLength = len(comment)
+                    commentSpecialChars = ratioSpecial(comment)
                 else:
-                    comment_copyedit = "NULL"
-                    comment_personal_life = "NULL"
-                    comment_length = "NULL"
-                    comment_special_chars = "NULL"
+                    commentCopyedit = "NULL"
+                    commentPersonalLife = "NULL"
+                    commentLength = "NULL"
+                    commentSpecialChars = "NULL"
 
                 query = """
                 INSERT INTO edit (added, deleted, edit_date, 
@@ -352,25 +351,25 @@ def parse():
                 editTuple = (
                     added,
                     deleted,
-                    edit_date,
-                    edit_id,
-                    page_id,
-                    ins_internal_link,
-                    ins_external_link,
-                    ins_longest_inserted_word,
-                    ins_longest_character_sequence,
-                    ins_pronouns,
-                    ins_capitalization,
-                    ins_digits,
-                    ins_special_chars,
-                    ins_whitespace,
-                    del_words,
-                    comment_personal_life,
-                    comment_copyedit,
-                    comment_length,
-                    comment_special_chars,
+                    editDate,
+                    editId,
+                    pageId,
+                    insInternalLink,
+                    insExternalLink,
+                    insLongestInsertedWord,
+                    insLongestCharacterSequence,
+                    insPronouns,
+                    insCapitalization,
+                    insDigits,
+                    insSpecialChars,
+                    insWhitespace,
+                    delWords,
+                    commentPersonalLife,
+                    commentCopyedit,
+                    commentLength,
+                    commentSpecialChars,
                     blanking,
-                    user_table_id,
+                    userTableId,
                 )
 
                 ## Insert page features into database
@@ -380,7 +379,7 @@ def parse():
 
         ## Change status of dump
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        query = """UPDATE partition 
+        query = """UPDATE partition
             SET status = "done", end_time_1 = %s 
             WHERE file_name = %s;"""
         cursor.execute(query, (currenttime, filename))
