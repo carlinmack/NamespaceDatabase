@@ -2,20 +2,20 @@ import glob
 import os
 import subprocess
 
-import click
+# import click
 from tqdm import trange
 
 
-@click.command()
-@click.option(
-    "-n", "--number", default=40,
-)
-@click.option(
-    "-o", "--outputfolder",
-)
-@click.option(
-    "-d", "--deletefile", default=False, is_flag=True,
-)
+# @click.command()
+# @click.option(
+#     "-n", "--number", default=40,
+# )
+# @click.option(
+#     "-o", "--outputfolder",
+# )
+# @click.option(
+#     "-d", "--deletefile", default=False, is_flag=True,
+# )
 def split(number, outputfolder, deletefile):
     files = glob.glob("dumps/*.xml*")
     file = files[0]
@@ -23,7 +23,7 @@ def split(number, outputfolder, deletefile):
 
     lines = countLines(file)
 
-    chunkSize = lines / number * 0.8
+    chunkSize = lines / number * 0.75
 
     header = """<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
