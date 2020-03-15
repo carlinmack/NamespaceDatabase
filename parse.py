@@ -78,6 +78,10 @@ def ratioSpecial(string):
     return len(re.findall(r'[!-/:-?{-~!"^_`\[\]]', string)) / len(string)
 
 
+def ratioWhitespace(string):
+    return len(re.findall(r'\s', string)) / len(string)
+
+
 def getDiff(old, new):
     first = "oldrevision.txt"
     with open(first, "w") as oldfile:
@@ -203,8 +207,9 @@ def parse():
                     if revision.text and not re.search("^\s+$", revision.text):
                         blanking = False
                         (added, deleted) = getDiff(oldtext, revision.text)
+                        blankAddition = re.search("^\s+$", added)
 
-                        if added and not re.search("^\s+$", added):
+                        if added and not blankAddition:
                             ins_internal_link = len(re.findall("\[\[.*?\]\]", added))
                             ins_external_link = len(
                                 re.findall("[^\[]\[[^\[].*?[^\]]\][^\]]", added)
@@ -216,6 +221,7 @@ def parse():
                             ins_capitalization = ratioCapitals(added)
                             ins_digits = ratioDigits(added)
                             ins_special_chars = ratioSpecial(added)
+                            ins_whitespace = ratioWhitespace(added)
                         else:
                             ins_internal_link = 0
                             ins_external_link = 0
@@ -226,6 +232,11 @@ def parse():
                             ins_capitalization = 0
                             ins_digits = 0
                             ins_special_chars = 0
+                            if blankAddition:
+                                ins_whitespace = 1
+                            else:
+                                ins_whitespace = 0
+
 
                         del_words = len(deleted.split(" "))
 
@@ -257,15 +268,15 @@ def parse():
                     INSERT INTO edit (added, deleted, edit_date, 
                         edit_id, page_id, ins_internal_link, ins_external_link, 
                         ins_longest_inserted_word, ins_longest_character_sequence, 
-                        ins_capitalization, ins_digits, ins_special_chars, del_words, 
-                        comment_personal_life, comment_copyedit, comment_length, 
+                        ins_capitalization, ins_digits, ins_special_chars, ins_whitespace,
+                        del_words, comment_personal_life, comment_copyedit, comment_length, 
                         comment_special_chars, blanking, user_table_id
                     ) VALUES (
                         %s, %s, %s,
                         %s, %s, %s, %s,
                         %s, %s, 
-                        %s, %s, %s,  %s, 
-                        %s, %s, %s, 
+                        %s, %s, %s, %s, 
+                        %s, %s, %s, %s, 
                         %s, %s, %s
                     );
                     """
@@ -283,6 +294,7 @@ def parse():
                         ins_capitalization,
                         ins_digits,
                         ins_special_chars,
+                        ins_whitespace,
                         del_words,
                         comment_personal_life,
                         comment_copyedit,
