@@ -27,7 +27,7 @@ def cleanString(string: str):
     return removeDoubleSpaces
 
 
-def longestWord(string):
+def longestWord(string: str):
     """Returns the length of the longest word in text"""
     string = cleanString(string)
     arr = string.split()
@@ -77,7 +77,7 @@ def ratioCapitals(string: str):
     return uppercase / lowercase
 
 
-def ratioDigits(string):
+def ratioDigits(string: str):
     """Returns the ratio of digits to all characters in text"""
     digits = 0
 
@@ -88,24 +88,24 @@ def ratioDigits(string):
     return digits / len(string)
 
 
-def ratioSpecial(string):
+def ratioSpecial(string: str):
     """Returns the ratio of special characters to all characters in text"""
     return len(re.findall(r'[!-/:-?{-~!"^_`\[\]]', string)) / len(string)
 
 
-def ratioWhitespace(string):
+def ratioWhitespace(string: str):
     """Returns the ratio of whitespace to all characters in text"""
     return len(re.findall(r"\s", string)) / len(string)
 
 
-def ratioPronouns(string):
+def ratioPronouns(string: str):
     """Returns the ratio of personal pronouns to all words in text"""
     return len(re.findall(r"(\sI\s|\sme\s|\smy\s|\smine\s|\smyself\s)", string)) / len(
         string.split(" ")
     )
 
 
-def getDiff(old, new):
+def getDiff(old: str, new: str):
     """Returns the diff between two edits using wdiff
 
     Parameters
