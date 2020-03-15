@@ -25,7 +25,7 @@ def databaseConnect():
     Returns
     -------
     database: MySQLConnection - connection to the MySQL DB
-    deleted: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
     """
     try:
         database = sql.connect(
@@ -49,6 +49,48 @@ def databaseConnect():
         raise
     else:
         return database, cursor
+
+
+def getDump(cursor):
+    """Returns the next dump to be parsed from the database
+
+    Parameters
+    ----------
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+
+    Returns
+    -------
+    dump: class 'mwxml.iteration.dump.Dump' - dump file iterator
+    filename: str - filename of dump
+    """
+    ## Read dump from database
+    query = "SELECT file_name FROM partition WHERE status = 'todo' LIMIT 1"
+    cursor.execute(query)
+    todofile = cursor.fetchone()
+
+    if not todofile:
+        ## no files to run, close database connections and finish
+        return None, None
+
+    filename = todofile[0]
+    path = "partitions/" + filename
+
+    if not os.path.exists(path):
+        raise IOError("file not found on disk")
+
+    print(path)
+    dump = mwxml.Dump.from_file(open(path))
+
+    ## Change status of dump
+    currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    query = """UPDATE partition
+        SET
+            status = "running",
+            start_time_1 = %s
+        WHERE file_name = %s;"""
+    cursor.execute(query, (currenttime, filename))
+
+    return dump, filename
 
 
 ##  FUNCTIONS TO EXTRACT FEATURES
@@ -188,34 +230,13 @@ def parse():
     """
     database, cursor = databaseConnect()
 
+    if database is None:
+        cursor.close()
+        database.close()
+        return
+
     try:
-        ## Read dump from database
-        query = "SELECT file_name FROM partition WHERE status = 'todo' LIMIT 1"
-        cursor.execute(query)
-        todofile = cursor.fetchone()
-
-        if not todofile:
-            ## no files to run, close database connections and finish
-            cursor.close()
-            database.close()
-            return
-
-        filename = todofile[0]
-        path = "partitions/" + filename
-
-        if not os.path.exists(path):
-            raise IOError("file not found on disk")
-
-        dump = mwxml.Dump.from_file(open(path))
-
-        ## Change status of dump
-        currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        query = """UPDATE partition
-            SET
-                status = "running",
-                start_time_1 = %s
-            WHERE file_name = %s;"""
-        cursor.execute(query, (currenttime, filename))
+        dump, filename = getDump(cursor)
 
         ## Parse
         for page in dump:
@@ -386,7 +407,6 @@ def parse():
 
     except:
         err = str(sys.exc_info()[1])
-        filename = todofile[0]
 
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
