@@ -82,6 +82,10 @@ def ratioWhitespace(string):
     return len(re.findall(r'\s', string)) / len(string)
 
 
+def ratioPronouns(string):
+    return len(re.findall(r'(\sI\s|\sme\s|\smy\s|\smine\s|\smyself\s)', string)) / len(string.split(" "))
+
+
 def getDiff(old, new):
     first = "oldrevision.txt"
     with open(first, "w") as oldfile:
@@ -170,13 +174,13 @@ def parse():
                 database.commit()
 
                 if namespace != 1:
-                    break
+                    continue
 
                 oldtext = ""
                 for revision in tqdm.tqdm(page, desc=title, unit=" edits"):
                     ## Page Features
                     if not revision.user:
-                        break
+                        continue
 
                     if revision.user.id:
                         user_id = revision.user.id
@@ -222,6 +226,8 @@ def parse():
                             ins_digits = ratioDigits(added)
                             ins_special_chars = ratioSpecial(added)
                             ins_whitespace = ratioWhitespace(added)
+
+                            ins_pronouns = ratioPronouns(added)
                         else:
                             ins_internal_link = 0
                             ins_external_link = 0
@@ -237,6 +243,7 @@ def parse():
                             else:
                                 ins_whitespace = 0
 
+                            ins_pronouns = 0
 
                         del_words = len(deleted.split(" "))
 
@@ -268,16 +275,16 @@ def parse():
                     INSERT INTO edit (added, deleted, edit_date, 
                         edit_id, page_id, ins_internal_link, ins_external_link, 
                         ins_longest_inserted_word, ins_longest_character_sequence, 
-                        ins_capitalization, ins_digits, ins_special_chars, ins_whitespace,
-                        del_words, comment_personal_life, comment_copyedit, comment_length, 
-                        comment_special_chars, blanking, user_table_id
+                        ins_pronouns, ins_capitalization, ins_digits, ins_special_chars, 
+                        ins_whitespace, del_words, comment_personal_life, comment_copyedit, 
+                        comment_length, comment_special_chars, blanking, user_table_id
                     ) VALUES (
                         %s, %s, %s,
                         %s, %s, %s, %s,
                         %s, %s, 
                         %s, %s, %s, %s, 
                         %s, %s, %s, %s, 
-                        %s, %s, %s
+                        %s, %s, %s, %s
                     );
                     """
 
@@ -291,6 +298,7 @@ def parse():
                         ins_external_link,
                         ins_longest_inserted_word,
                         ins_longest_character_sequence,
+                        ins_pronouns,
                         ins_capitalization,
                         ins_digits,
                         ins_special_chars,
