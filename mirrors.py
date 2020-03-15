@@ -1,15 +1,27 @@
-# !/usr/bin/python
+"""
+This script finds the fastest mirror to download Wikipedia dumps from
+
+Please run pip install -r requirements.txt before running this script.
+"""
 import re
 import time
 
 import requests
 
+
 def fastest():
+    """Gets a list of the fastest mirrors, downloads a single file from each
+    and returns the fastest one
+
+    Returns
+    -------
+    fastestMirror: str - the url of the fastest mirror
+    """
     # find a list of mirrors
     url = "https://dumps.wikimedia.org/mirrors.html"
-    r = requests.get(url)
+    mirrorPage = requests.get(url)
 
-    html = r.content.decode("utf-8")
+    html = mirrorPage.content.decode("utf-8")
     mirrors = re.findall('href="(http:.*)"', html)
     mirrorDownloadTime = []
 
@@ -26,18 +38,18 @@ def fastest():
         url = mirror + wiki + dump + firstfile
 
         tick = time.time()
-        r = requests.get(url)
+        file = requests.get(url)
 
         # if 404 or similar
-        if r.content[0] == 60:
+        if file.content[0] == 60:
             # try other url scheme
             mirrors[index] = mirror + "dumps/"
             url = mirrors[index] + wiki + dump + firstfile
 
             tick = time.time()
-            r = requests.get(url)
+            file = requests.get(url)
 
-            if r.content[0] == 60:
+            if file.content[0] == 60:
                 mirrorDownloadTime.append(1000)
             else:
                 mirrorDownloadTime.append(time.time() - tick)
@@ -47,14 +59,14 @@ def fastest():
 
         # print(url)
 
-
     # return fastest mirror
-    val, index = min((val, index) for (index, val) in enumerate(mirrorDownloadTime))
+    _, index = min((val, index) for (index, val) in enumerate(mirrorDownloadTime))
 
     # print(mirrorDownloadTime)
     # print("Fastest mirror is " + mirrors[index])
 
     return mirrors[index]
+
 
 if __name__ == "__main__":
     fastest()
