@@ -18,7 +18,15 @@ import mysql.connector as sql
 import tqdm
 from mysql.connector import errorcode
 
+
 def databaseConnect():
+    """Connect to MySQL database using password stored in options file
+
+    Returns
+    -------
+    database: MySQLConnection - connection to the MySQL DB
+    deleted: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    """
     try:
         database = sql.connect(
             host="wikiactors.cs.virginia.edu",
@@ -41,6 +49,7 @@ def databaseConnect():
         raise
     else:
         return database, cursor
+
 
 ##  FUNCTIONS TO EXTRACT FEATURES
 def cleanString(string: str):
@@ -371,9 +380,11 @@ def parse():
 
         ## Change status of dump
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        query = 'UPDATE partition SET status = "done", end_time_1 = %s WHERE file_name = %s;'
+        query = """UPDATE partition 
+            SET status = "done", end_time_1 = %s 
+            WHERE file_name = %s;"""
         cursor.execute(query, (currenttime, filename))
-    
+
     except:
         err = str(sys.exc_info()[1])
         filename = todofile[0]
