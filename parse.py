@@ -1,3 +1,12 @@
+"""
+This script allows the user to parse a dump from a database connection
+and extract features to a database table.
+
+This tool uses a mysql database that is configured in the parse() function.
+
+Please run pip install -r requirements before running this script.
+"""
+
 import os
 import re
 import subprocess
@@ -11,13 +20,15 @@ from mysql.connector import errorcode
 
 
 ##  FUNCTIONS TO EXTRACT FEATURES
-def cleanString(string):
+def cleanString(string: str):
+    """Removes special characters and unnecessary whitespace from text"""
     removeSymbols = re.sub(r'[$-/:-?{-~!"^_`\[\]]', " ", string)
     removeDoubleSpaces = re.sub(r"\s\s+", " ", removeSymbols)
     return removeDoubleSpaces
 
 
 def longestWord(string):
+    """Returns the length of the longest word in text"""
     string = cleanString(string)
     arr = string.split()
     if len(arr) > 0:
@@ -28,7 +39,8 @@ def longestWord(string):
         return 0
 
 
-def longestCharSequence(string):
+def longestCharSequence(string: str):
+    """Returns the length of the longest repeated character sequence in text"""
     string = cleanString(string)
     # print(string)
     previous = ""
@@ -49,7 +61,8 @@ def longestCharSequence(string):
     return maxLength
 
 
-def ratioCapitals(string):
+def ratioCapitals(string: str):
+    """Returns the ratio of uppercase to lowercase characters in text"""
     uppercase = 0
     lowercase = 1  # to avoid infinity
 
@@ -65,6 +78,7 @@ def ratioCapitals(string):
 
 
 def ratioDigits(string):
+    """Returns the ratio of digits to all characters in text"""
     digits = 0
 
     for char in string:
@@ -75,18 +89,35 @@ def ratioDigits(string):
 
 
 def ratioSpecial(string):
+    """Returns the ratio of special characters to all characters in text"""
     return len(re.findall(r'[!-/:-?{-~!"^_`\[\]]', string)) / len(string)
 
 
 def ratioWhitespace(string):
-    return len(re.findall(r'\s', string)) / len(string)
+    """Returns the ratio of whitespace to all characters in text"""
+    return len(re.findall(r"\s", string)) / len(string)
 
 
 def ratioPronouns(string):
-    return len(re.findall(r'(\sI\s|\sme\s|\smy\s|\smine\s|\smyself\s)', string)) / len(string.split(" "))
+    """Returns the ratio of personal pronouns to all words in text"""
+    return len(re.findall(r"(\sI\s|\sme\s|\smy\s|\smine\s|\smyself\s)", string)) / len(
+        string.split(" ")
+    )
 
 
 def getDiff(old, new):
+    """Returns the diff between two edits using wdiff
+
+    Parameters
+    ----------
+    old : str - old revision
+    new : str - new revision
+
+    Returns
+    -------
+    added: str - all the text that is exclusively in the new revision
+    deleted: str - all the text that is exclusively in the old revision
+    """
     first = "oldrevision.txt"
     with open(first, "w") as oldfile:
         oldfile.writelines(old)
@@ -120,6 +151,9 @@ def getDiff(old, new):
 
 ##	PRINT FEATURES FOR EVERY PAGE
 def parse():
+    """Selects the next dump from the database, extracts the features and
+    imports them into several database tables.
+    """
     try:
         database = sql.connect(
             host="wikiactors.cs.virginia.edu",
@@ -162,14 +196,19 @@ def parse():
 
             ## Change status of dump
             currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            query = 'UPDATE partition SET status = "running", start_time_1 = %s WHERE file_name = %s;'
+            query = """UPDATE partition
+                SET
+                    status = "running",
+                    start_time_1 = %s
+                WHERE file_name = %s;"""
             cursor.execute(query, (currenttime, filename))
 
             ## Parse
             for page in dump:
                 namespace = page.namespace
                 title = page.title
-                query = "INSERT IGNORE INTO page (page_id, namespace, title, file_name) VALUES (%s, %s, %s, %s)"
+                query = """INSERT IGNORE INTO page (page_id, namespace, title, file_name)
+                    VALUES (%s, %s, %s, %s)"""
                 cursor.execute(query, (page.id, namespace, title, filename))
                 database.commit()
 
@@ -186,7 +225,11 @@ def parse():
                         user_id = revision.user.id
                         ip_address = "NULL"
 
-                        query = "INSERT INTO user (user_id, username, namespaces) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s), number_of_edits = number_of_edits + 1;"
+                        query = """INSERT INTO user (user_id, username, namespaces)
+                            VALUES (%s, %s, %s) ON DUPLICATE KEY
+                            UPDATE
+                                namespaces = CONCAT_WS(',', namespaces, %s),
+                                number_of_edits = number_of_edits + 1;"""
                         cursor.execute(
                             query,
                             (user_id, revision.user.text, namespace, str(namespace),),
@@ -196,7 +239,11 @@ def parse():
                         user_id = "NULL"
                         ip_address = revision.user.text
 
-                        query = "INSERT INTO user (ip_address, namespaces) VALUES (%s, %s) ON DUPLICATE KEY UPDATE namespaces=CONCAT_WS(',',namespaces,%s), number_of_edits = number_of_edits + 1;"
+                        query = """INSERT INTO user (ip_address, namespaces)
+                            VALUES (%s, %s) ON DUPLICATE KEY
+                            UPDATE
+                                namespaces = CONCAT_WS(',', namespaces, %s),
+                                number_of_edits = number_of_edits + 1;"""
                         cursor.execute(query, (ip_address, namespace, str(namespace)))
                         user_table_id = cursor.lastrowid
 
@@ -330,11 +377,17 @@ def parse():
 
             print(err)
 
-            query = 'UPDATE partition SET status = "failed", end_time_1 = %s, error = %s WHERE file_name = %s;'
+            query = """UPDATE partition
+                SET
+                    status = "failed",
+                    end_time_1 = %s,
+                    error = %s
+                WHERE
+                    file_name = %s;"""
             cursor.execute(query, (currenttime, err, filename))
 
             raise
-            
+
         cursor.close()
         database.close()
 
