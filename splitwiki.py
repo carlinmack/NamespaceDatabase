@@ -1,9 +1,23 @@
+"""
+This script looks in the dumps/ directory and splits the first file into 40
+partitions by default. This can be changed by adjusting the parameters to split()
+
+Please run pip install -r requirements.txt before running this script.
+"""
 import glob
 import os
 import subprocess
 
 # import click
 from tqdm import trange
+
+
+def countLines(file):
+    """Returns the estimated number of lines in a dump using wcle.sh"""
+    print("counting lines: ", file)
+    lines = int(subprocess.check_output(["./wcle.sh", file]))
+
+    return lines
 
 
 # @click.command()
@@ -14,10 +28,20 @@ from tqdm import trange
 #     "-o", "--outputfolder",
 # )
 # @click.option(
-#     "-d", "--deletefile", default=False, is_flag=True,
+#     "-d", "--deletedump", default=False, is_flag=True,
 # )
-def split(number, outputfolder, deletefile):
-    files = glob.glob("dumps/*.xml*")
+def split(number=40, inputFolder="dumps", outputFolder="partitions", deleteDump=True):
+    """Splits Wikipedia dumps into smaller partitions. Creates a file
+    partitions.txt with the created partitions
+
+    Parameters
+    ----------
+    number: intr - the number of partitionst to split into
+    inputFolder: str - the folder where the xml dumps are
+    outputFolder: str - the folder where the partitions should be output to
+    deleteDump: boolean - whether to delete the dump after successfully splitting
+    """
+    files = glob.glob(inputFolder + "/*.xml*")
     file = files[0]
     fileName = file[6:]
 
@@ -84,16 +108,16 @@ def split(number, outputfolder, deletefile):
             if not moreFile:
                 break
 
-            partitionname = fileName + "." + str(index)
-            outfilename = os.path.join("partitions", partitionname)
+            partitionName = fileName + "." + str(index)
+            outputFileName = os.path.join(outputFolder, partitionName)
 
             with open("partitions.txt", "a+") as partitions:
-                partitions.write(partitionname + "\n")
+                partitions.write(partitionName + "\n")
 
-            if not os.path.exists("partitions"):
-                os.mkdir("partitions")
+            if not os.path.exists(outputFolder):
+                os.mkdir(outputFolder)
 
-            with open(outfilename, "w+") as outFile:
+            with open(outputFileName, "w+") as outFile:
                 outFile.write(header)
 
                 for line in inFile:
@@ -112,16 +136,8 @@ def split(number, outputfolder, deletefile):
 
                 outFile.write(footer)
 
-    if deletefile:
-        pass
-        # delete file
-
-
-def countLines(file):
-    print("counting lines: ", file)
-    lines = int(subprocess.check_output(["./wcle.sh", file]))
-
-    return lines
+    if deleteDump:
+        os.remove(file)
 
 
 if __name__ == "__main__":
