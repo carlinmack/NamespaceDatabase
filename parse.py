@@ -238,6 +238,10 @@ def parse():
     try:
         dump, filename = getDump(cursor)
 
+        blankText = re.compile(r"^\s+$")
+        internalLink = re.compile(r"\[\[.*?\]\]")
+        externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
+
         ## Parse
         for page in dump:
             namespace = page.namespace
@@ -289,16 +293,14 @@ def parse():
                 pageId = revision.page.id
 
                 # if revision has text and the text isn't whitespace
-                if revision.text and not re.search(r"^\s+$", revision.text):
+                if revision.text and not blankText.search(revision.text):
                     blanking = False
                     (added, deleted) = getDiff(oldText, revision.text)
-                    blankAddition = re.search(r"^\s+$", added)
+                    blankAddition = blankText.search(added)
 
                     if added and not blankAddition:
-                        insInternalLink = len(re.findall(r"\[\[.*?\]\]", added))
-                        insExternalLink = len(
-                            re.findall(r"[^\[]\[[^\[].*?[^\]]\][^\]]", added)
-                        )
+                        insInternalLink = len(internalLink.findall(added))
+                        insExternalLink = len(externalLink.findall(added))
 
                         insLongestInsertedWord = longestWord(added)
                         insLongestCharacterSequence = longestCharSequence(added)
