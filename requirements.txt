@@ -1,4 +1,6 @@
 click
+mwxml
+mysql
+mysql-connector-python
 requests
 tqdm
-mysql-connector-python
