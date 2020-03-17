@@ -223,26 +223,28 @@ def getDiff(old: str, new: str):
     return added, deleted
 
 
-##	PRINT FEATURES FOR EVERY PAGE
 def parse():
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
     """
     database, cursor = databaseConnect()
 
-    if database is None:
-        cursor.close()
-        database.close()
-        return
-
     try:
         dump, filename = getDump(cursor)
+
+        if dump is None:
+            cursor.close()
+            database.close()
+            return
+
+        # for development, disable namespace check
+        # filename = "test.xml"
+        # dump = mwxml.Dump.from_page_xml(open(filename))
 
         blankText = re.compile(r"^\s+$")
         internalLink = re.compile(r"\[\[.*?\]\]")
         externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
 
-        ## Parse
         for page in dump:
             namespace = page.namespace
             title = page.title
@@ -255,35 +257,30 @@ def parse():
                 continue
 
             oldText = ""
+            ## Extract page features from each revision
             for revision in tqdm.tqdm(page, desc=title, unit=" edits"):
-                ## Page Features
                 if not revision.user:
                     continue
 
-                if revision.user.id:
+                # Check if not None as there is a user 0, Larry Sanger
+                if revision.user.id != None:
                     userId = revision.user.id
+                    username = revision.user.text
                     ipAddress = "NULL"
-
-                    query = """INSERT INTO user (user_id, username, namespaces)
-                        VALUES (%s, %s, %s) ON DUPLICATE KEY
-                        UPDATE
-                            namespaces = CONCAT_WS(',', namespaces, %s),
-                            number_of_edits = number_of_edits + 1;"""
-                    cursor.execute(
-                        query, (userId, revision.user.text, namespace, str(namespace),),
-                    )
-                    userTableId = cursor.lastrowid
                 else:
                     userId = "NULL"
+                    username = "NULL"
                     ipAddress = revision.user.text
 
-                    query = """INSERT INTO user (ip_address, namespaces)
-                        VALUES (%s, %s) ON DUPLICATE KEY
-                        UPDATE
-                            namespaces = CONCAT_WS(',', namespaces, %s),
-                            number_of_edits = number_of_edits + 1;"""
-                    cursor.execute(query, (ipAddress, namespace, str(namespace)))
-                    userTableId = cursor.lastrowid
+                query = """INSERT INTO user (user_id, username, ip_address, namespaces)
+                    VALUES (%s, %s, %s, %s) ON DUPLICATE KEY
+                    UPDATE
+                        namespaces = CONCAT_WS(',', namespaces, %s),
+                        number_of_edits = number_of_edits + 1;"""
+                cursor.execute(
+                    query, (userId, username, ipAddress, namespace, str(namespace))
+                )
+                userTableId = cursor.lastrowid
 
                 editDate = datetime.strptime(
                     str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
