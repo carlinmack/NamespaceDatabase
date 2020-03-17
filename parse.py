@@ -245,6 +245,7 @@ def parse():
         internalLink = re.compile(r"\[\[.*?\]\]")
         externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
 
+
         for page in dump:
             namespace = page.namespace
             title = page.title
@@ -253,12 +254,64 @@ def parse():
             cursor.execute(query, (page.id, namespace, title, filename))
             database.commit()
 
+            if namespace == 0:
+                userDict = {}
+                
+                for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
+                    if not revision.user:
+                        continue
+
+                    # Check if not None as there is a user 0, Larry Sanger
+                    if revision.user.id is not None:
+                        userId = revision.user.id
+                        username = revision.user.text
+
+                        if not username in userDict:
+                            userDict[username] = [1, userId]
+                        else:
+                            userDict[username][0] += 1
+                        
+                    else:
+                        ipAddress = revision.user.text
+
+                        if not ipAddress in userDict:
+                            userDict[ipAddress] = [1, -1]
+                        else:
+                            userDict[ipAddress][0] += 1
+
+                for key, value in userDict.items(): 
+                    editCount = value[0]
+                    userId = value[1]
+                    namespace = str(namespace)
+
+                    if userId > -1:
+                        query = """INSERT INTO user (user_id, username, namespaces, number_of_edits)
+                        VALUES (%s, %s, %s, %s) ON DUPLICATE KEY
+                        UPDATE
+                            namespaces = CONCAT_WS(',', namespaces, %s),
+                            number_of_edits = number_of_edits + %s;"""
+
+                        cursor.execute(query, (userId, key, namespace, editCount, namespace, editCount))
+                    else:
+                        query = """INSERT INTO user (ip_address, namespaces, number_of_edits)
+                        VALUES (%s, %s, %s) ON DUPLICATE KEY
+                        UPDATE
+                            namespaces = CONCAT_WS(',', namespaces, %s),
+                            number_of_edits = number_of_edits + %s;"""
+
+                        cursor.execute(query, (key, namespace, editCount, namespace, editCount))
+
+                userDict.clear()
+                
+                continue
+
             if namespace != 1:
                 continue
 
             oldText = ""
             ## Extract page features from each revision
-            for revision in tqdm.tqdm(page, desc=title, unit=" edits"):
+            for revision in tqdm.tqdm(page, desc=title, unit=" edits",
+              smoothing=0):
                 if not revision.user:
                     continue
 
@@ -266,23 +319,24 @@ def parse():
                 if revision.user.id is not None:
                     userId = revision.user.id
                     username = revision.user.text
+                    namespace = str(namespace)
 
-                    query = """INSERT INTO user (user_id, username, namespaces)
-                        VALUES (%s, %s, %s) ON DUPLICATE KEY
+                    query = """INSERT INTO user (user_id, username, namespaces, talkpage_number_of_edits)
+                        VALUES (%s, %s, %s, 1) ON DUPLICATE KEY
                         UPDATE
                             namespaces = CONCAT_WS(',', namespaces, %s),
-                            number_of_edits = number_of_edits + 1;"""
-                    cursor.execute(query, (userId, username, namespace, str(namespace)))
+                            talkpage_number_of_edits = talkpage_number_of_edits + 1;"""
+                    cursor.execute(query, (userId, username, namespace, namespace))
                 else:
                     ipAddress = revision.user.text
-                    print(revision.user.text)
+                    namespace = str(namespace)
 
-                    query = """INSERT INTO user (ip_address, namespaces)
-                        VALUES (%s, %s) ON DUPLICATE KEY
+                    query = """INSERT INTO user (ip_address, namespaces, talkpage_number_of_edits)
+                        VALUES (%s, %s, 1) ON DUPLICATE KEY
                         UPDATE
                             namespaces = CONCAT_WS(',', namespaces, %s),
-                            number_of_edits = number_of_edits + 1;"""
-                    cursor.execute(query, (ipAddress, namespace, str(namespace)))
+                            talkpage_number_of_edits = talkpage_number_of_edits + 1;"""
+                    cursor.execute(query, (ipAddress, namespace, namespace))
 
                 userTableId = cursor.lastrowid
 
@@ -397,8 +451,19 @@ def parse():
                 )
 
                 ## Insert page features into database
-                cursor.execute(query, editTuple)
-
+                if editId == 127976896 or editId == 127977052 or editId == 127978510 or editId == 127978612:
+                    # print('heah===nestioaes===hntnoei===ashtn')
+                    lst = list(editTuple)
+                    lst[0] = ''
+                    lst[1] = ''
+                    editTuple = tuple(lst)
+                try:
+                    cursor.execute(query, editTuple)
+                except:
+                    print(editTuple)
+                    if editId == 127976896 or editId == 127977052 or editId == 127978510 or editId == 127978612:
+                        print('heah===nestioaes===hntnoei===ashtn')
+                    raise
                 # oldrevision = revision
 
         ## Change status of dump
