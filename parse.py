@@ -263,23 +263,27 @@ def parse():
                     continue
 
                 # Check if not None as there is a user 0, Larry Sanger
-                if revision.user.id != None:
+                if revision.user.id is not None:
                     userId = revision.user.id
                     username = revision.user.text
-                    ipAddress = "NULL"
-                else:
-                    userId = "NULL"
-                    username = "NULL"
-                    ipAddress = revision.user.text
 
-                query = """INSERT INTO user (user_id, username, ip_address, namespaces)
-                    VALUES (%s, %s, %s, %s) ON DUPLICATE KEY
-                    UPDATE
-                        namespaces = CONCAT_WS(',', namespaces, %s),
-                        number_of_edits = number_of_edits + 1;"""
-                cursor.execute(
-                    query, (userId, username, ipAddress, namespace, str(namespace))
-                )
+                    query = """INSERT INTO user (user_id, username, namespaces)
+                        VALUES (%s, %s, %s) ON DUPLICATE KEY
+                        UPDATE
+                            namespaces = CONCAT_WS(',', namespaces, %s),
+                            number_of_edits = number_of_edits + 1;"""
+                    cursor.execute(query, (userId, username, namespace, str(namespace)))
+                else:
+                    ipAddress = revision.user.text
+                    print(revision.user.text)
+
+                    query = """INSERT INTO user (ip_address, namespaces)
+                        VALUES (%s, %s) ON DUPLICATE KEY
+                        UPDATE
+                            namespaces = CONCAT_WS(',', namespaces, %s),
+                            number_of_edits = number_of_edits + 1;"""
+                    cursor.execute(query, (ipAddress, namespace, str(namespace)))
+
                 userTableId = cursor.lastrowid
 
                 editDate = datetime.strptime(
