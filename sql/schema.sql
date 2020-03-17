@@ -24,7 +24,7 @@ CREATE TABLE user (
         '14','15','-1','-2','100','101','118','119','710','711','828','829',
         '108','109','446','447','2300','2301','2302','2303') NOT NULL DEFAULT '',
     PRIMARY KEY (id),
-    UNIQUE KEY user_id_UNIQUE (user_id),
+    UNIQUE KEY username_UNIQUE (username),
     UNIQUE KEY ip_address_UNIQUE (ip_address)
 );
 
