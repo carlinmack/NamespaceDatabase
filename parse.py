@@ -245,7 +245,6 @@ def parse():
         internalLink = re.compile(r"\[\[.*?\]\]")
         externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
 
-
         for page in dump:
             namespace = page.namespace
             title = page.title
@@ -256,7 +255,7 @@ def parse():
 
             if namespace == 0:
                 userDict = {}
-                
+
                 for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
                     if not revision.user:
                         continue
@@ -270,7 +269,7 @@ def parse():
                             userDict[username] = [1, userId]
                         else:
                             userDict[username][0] += 1
-                        
+
                     else:
                         ipAddress = revision.user.text
 
@@ -279,7 +278,7 @@ def parse():
                         else:
                             userDict[ipAddress][0] += 1
 
-                for key, value in userDict.items(): 
+                for key, value in userDict.items():
                     editCount = value[0]
                     userId = value[1]
                     namespace = str(namespace)
@@ -291,7 +290,10 @@ def parse():
                             namespaces = CONCAT_WS(',', namespaces, %s),
                             number_of_edits = number_of_edits + %s;"""
 
-                        cursor.execute(query, (userId, key, namespace, editCount, namespace, editCount))
+                        cursor.execute(
+                            query,
+                            (userId, key, namespace, editCount, namespace, editCount),
+                        )
                     else:
                         query = """INSERT INTO user (ip_address, namespaces, number_of_edits)
                         VALUES (%s, %s, %s) ON DUPLICATE KEY
@@ -299,10 +301,12 @@ def parse():
                             namespaces = CONCAT_WS(',', namespaces, %s),
                             number_of_edits = number_of_edits + %s;"""
 
-                        cursor.execute(query, (key, namespace, editCount, namespace, editCount))
+                        cursor.execute(
+                            query, (key, namespace, editCount, namespace, editCount)
+                        )
 
                 userDict.clear()
-                
+
                 continue
 
             if namespace != 1:
@@ -310,8 +314,7 @@ def parse():
 
             oldText = ""
             ## Extract page features from each revision
-            for revision in tqdm.tqdm(page, desc=title, unit=" edits",
-              smoothing=0):
+            for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
                 if not revision.user:
                     continue
 
@@ -451,18 +454,28 @@ def parse():
                 )
 
                 ## Insert page features into database
-                if editId == 127976896 or editId == 127977052 or editId == 127978510 or editId == 127978612:
+                if (
+                    editId == 127976896
+                    or editId == 127977052
+                    or editId == 127978510
+                    or editId == 127978612
+                ):
                     # print('heah===nestioaes===hntnoei===ashtn')
                     lst = list(editTuple)
-                    lst[0] = ''
-                    lst[1] = ''
+                    lst[0] = ""
+                    lst[1] = ""
                     editTuple = tuple(lst)
                 try:
                     cursor.execute(query, editTuple)
                 except:
                     print(editTuple)
-                    if editId == 127976896 or editId == 127977052 or editId == 127978510 or editId == 127978612:
-                        print('heah===nestioaes===hntnoei===ashtn')
+                    if (
+                        editId == 127976896
+                        or editId == 127977052
+                        or editId == 127978510
+                        or editId == 127978612
+                    ):
+                        print("heah===nestioaes===hntnoei===ashtn")
                     raise
                 # oldrevision = revision
 
