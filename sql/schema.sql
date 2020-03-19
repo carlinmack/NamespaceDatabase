@@ -1,10 +1,11 @@
 -- Manually created, but 90% there
 -- See annotated version at https://docs.google.com/spreadsheets/d/16aVV2Wh7ezjwaGnoYtqU9bVHTXNBPwHwhX3oVctmTUM/edit#gid=1860359731
-DROP TABLE edit;
 
-DROP TABLE page;
+DROP TABLE IF EXISTS edit;
 
-DROP TABLE user;
+DROP TABLE IF EXISTS page;
+
+DROP TABLE IF EXISTS user;
 
 CREATE TABLE user (
     id int unsigned NOT NULL AUTO_INCREMENT,
@@ -47,6 +48,8 @@ CREATE TABLE edit (
     user_table_id int unsigned NOT NULL,
     added text,
     deleted text,
+    added_length MEDIUMINT,
+    deleted_length MEDIUMINT, 
     blanking tinyint(1) DEFAULT NULL,
     comment_copyedit tinyint(1) DEFAULT NULL,
     comment_length tinyint(1) DEFAULT NULL,
