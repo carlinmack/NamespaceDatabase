@@ -2,6 +2,8 @@
 
 👉 [Wikipedia Research Page](https://meta.wikimedia.org/wiki/Research:Classifying_Actors_on_Talk_Pages#Goals)
 
+> If there is a feature you'd like or a roadblock to you using this, please [create an issue!](https://github.com/carlinmack/talkpages/issues/new)
+
 ## Contents
 
 * [Introduction](#Introduction)
