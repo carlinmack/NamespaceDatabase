@@ -93,6 +93,59 @@ def getDump(cursor):
     return dump, filename
 
 
+def parseNonTargetNamespace(page, title, namespace, cursor):
+    userDict = {}
+
+    for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
+        if not revision.user:
+            continue
+
+        # Check if not None as there is a user 0, Larry Sanger
+        if revision.user.id is not None:
+            userId = revision.user.id
+            username = revision.user.text
+
+            if not username in userDict:
+                userDict[username] = [1, userId]
+            else:
+                userDict[username][0] += 1
+
+        else:
+            ipAddress = revision.user.text
+
+            if not ipAddress in userDict:
+                userDict[ipAddress] = [1, -1]
+            else:
+                userDict[ipAddress][0] += 1
+
+    for key, value in userDict.items():
+        editCount = value[0]
+        userId = value[1]
+        namespace = str(namespace)
+
+        if userId > -1:
+            query = """INSERT INTO user (user_id, username, namespaces, number_of_edits)
+            VALUES (%s, %s, %s, %s) ON DUPLICATE KEY
+            UPDATE
+                namespaces = CONCAT_WS(',', namespaces, %s),
+                number_of_edits = number_of_edits + %s;"""
+
+            cursor.execute(
+                query, (userId, key, namespace, editCount, namespace, editCount),
+            )
+        else:
+            query = """INSERT INTO user (ip_address, namespaces, number_of_edits)
+            VALUES (%s, %s, %s) ON DUPLICATE KEY
+            UPDATE
+                namespaces = CONCAT_WS(',', namespaces, %s),
+                number_of_edits = number_of_edits + %s;"""
+
+            cursor.execute(query, (key, namespace, editCount, namespace, editCount))
+
+    userDict.clear()
+    return namespace
+
+
 ##  FUNCTIONS TO EXTRACT FEATURES
 def cleanString(string: str):
     """Removes special characters and unnecessary whitespace from text"""
@@ -245,6 +298,8 @@ def parse():
         internalLink = re.compile(r"\[\[.*?\]\]")
         externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
 
+        namespaces = [0]
+
         for page in dump:
             namespace = page.namespace
             title = page.title
@@ -253,63 +308,9 @@ def parse():
             cursor.execute(query, (page.id, namespace, title, filename))
             database.commit()
 
-            if namespace == 0:
-                userDict = {}
+            if namespace not in namespaces:
+                parseNonTargetNamespace(page, title, namespace, cursor)
 
-                for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
-                    if not revision.user:
-                        continue
-
-                    # Check if not None as there is a user 0, Larry Sanger
-                    if revision.user.id is not None:
-                        userId = revision.user.id
-                        username = revision.user.text
-
-                        if not username in userDict:
-                            userDict[username] = [1, userId]
-                        else:
-                            userDict[username][0] += 1
-
-                    else:
-                        ipAddress = revision.user.text
-
-                        if not ipAddress in userDict:
-                            userDict[ipAddress] = [1, -1]
-                        else:
-                            userDict[ipAddress][0] += 1
-
-                for key, value in userDict.items():
-                    editCount = value[0]
-                    userId = value[1]
-                    namespace = str(namespace)
-
-                    if userId > -1:
-                        query = """INSERT INTO user (user_id, username, namespaces, number_of_edits)
-                        VALUES (%s, %s, %s, %s) ON DUPLICATE KEY
-                        UPDATE
-                            namespaces = CONCAT_WS(',', namespaces, %s),
-                            number_of_edits = number_of_edits + %s;"""
-
-                        cursor.execute(
-                            query,
-                            (userId, key, namespace, editCount, namespace, editCount),
-                        )
-                    else:
-                        query = """INSERT INTO user (ip_address, namespaces, number_of_edits)
-                        VALUES (%s, %s, %s) ON DUPLICATE KEY
-                        UPDATE
-                            namespaces = CONCAT_WS(',', namespaces, %s),
-                            number_of_edits = number_of_edits + %s;"""
-
-                        cursor.execute(
-                            query, (key, namespace, editCount, namespace, editCount)
-                        )
-
-                userDict.clear()
-
-                continue
-
-            if namespace != 1:
                 continue
 
             oldText = ""
