@@ -93,7 +93,16 @@ def getDump(cursor):
     return dump, filename
 
 
-def parseNonTargetNamespace(page, title, namespace, cursor):
+def parseNonTargetNamespace(page, title: str, namespace: str, cursor):
+    """Counts the number of edits each user makes and inserts them to the database.
+
+    Parameters
+    ----------
+    page: mwtypes.Page
+    title: str - Title of the page
+    namespace: str - Namespace of the page
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    """
     userDict = {}
 
     for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
@@ -121,7 +130,6 @@ def parseNonTargetNamespace(page, title, namespace, cursor):
     for key, value in userDict.items():
         editCount = value[0]
         userId = value[1]
-        namespace = str(namespace)
 
         if userId > -1:
             query = """INSERT INTO user (user_id, username, namespaces, number_of_edits)
@@ -142,11 +150,20 @@ def parseNonTargetNamespace(page, title, namespace, cursor):
 
             cursor.execute(query, (key, namespace, editCount, namespace, editCount))
 
-    userDict.clear()
-    return namespace
 
+def parseTargetNamespace(page, title: str, namespace: str, cursor):
+    """Extracts features from each revision of a page into a database
 
-def parseTargetNamespace(page, title, namespace, cursor):
+    Ignores edits that have been deleted like:
+        https://en.wikipedia.org/w/index.php?oldid=614217720
+
+    Parameters
+    ----------
+    page: mwtypes.Page
+    title: str - Title of the page
+    namespace: str - Namespace of the page
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    """
     blankText = re.compile(r"^\s+$")
     internalLink = re.compile(r"\[\[.*?\]\]")
     externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
@@ -161,7 +178,6 @@ def parseTargetNamespace(page, title, namespace, cursor):
         if revision.user.id is not None:
             userId = revision.user.id
             username = revision.user.text
-            namespace = str(namespace)
 
             query = """INSERT INTO user (user_id, username, namespaces, talkpage_number_of_edits)
                 VALUES (%s, %s, %s, 1) ON DUPLICATE KEY
@@ -171,7 +187,6 @@ def parseTargetNamespace(page, title, namespace, cursor):
             cursor.execute(query, (userId, username, namespace, namespace))
         else:
             ipAddress = revision.user.text
-            namespace = str(namespace)
 
             query = """INSERT INTO user (ip_address, namespaces, talkpage_number_of_edits)
                 VALUES (%s, %s, 1) ON DUPLICATE KEY
@@ -291,12 +306,7 @@ def parseTargetNamespace(page, title, namespace, cursor):
         )
 
         ## Insert page features into database
-        if (
-            editId == 127976896
-            or editId == 127977052
-            or editId == 127978510
-            or editId == 127978612
-        ):
+        if editId in (127976896, 127977052, 127978510, 127978612):
             # print('heah===nestioaes===hntnoei===ashtn')
             lst = list(editTuple)
             lst[0] = ""
@@ -306,12 +316,7 @@ def parseTargetNamespace(page, title, namespace, cursor):
             cursor.execute(query, editTuple)
         except:
             print(editTuple)
-            if (
-                editId == 127976896
-                or editId == 127977052
-                or editId == 127978510
-                or editId == 127978612
-            ):
+            if editId in (127976896, 127977052, 127978510, 127978612):
                 print("heah===nestioaes===hntnoei===ashtn")
             raise
         # oldrevision = revision
@@ -476,11 +481,11 @@ def parse():
             database.commit()
 
             if namespace not in namespaces:
-                parseNonTargetNamespace(page, title, namespace, cursor)
+                parseNonTargetNamespace(page, title, str(namespace), cursor)
 
                 continue
 
-            parseTargetNamespace(page, title, namespace, cursor)
+            parseTargetNamespace(page, title, str(namespace), cursor)
 
         ## Change status of dump
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
