@@ -16,12 +16,24 @@ SELECT '' AS '';
 
 SELECT 'Proportion of:' AS '';
     /* - edits containing bad words */
+SELECT CONCAT(FORMAT(IF(population=0,0,(talk*100.0)/population),2),'%') AS '- IP users that edit talkpages:' 
+FROM (
+    SELECT 
+        (SELECT count(*) FROM user WHERE ip_address is not NULL) AS population,
+        (SELECT count(*) FROM user WHERE ip_address is not NULL and talkpage_number_of_edits > 0) AS talk
+    ) AS proportion; 
     /* - ip users that edit talkpages */
-SELECT CONCAT(FORMAT(IF(main=0,0,(talk*100.0)/main),2),'%') AS '- pages with talk pages:' FROM (SELECT (SELECT count(page_id) FROM page WHERE namespace =0) AS main,
-(SELECT count(page_id) FROM page WHERE namespace = 1) AS talk) AS proportion; 
+SELECT CONCAT(FORMAT(IF(main=0,0,(talk*100.0)/main),2),'%') AS '- pages with talk pages:' 
+FROM (
+    SELECT 
+        (SELECT count(page_id) FROM page WHERE namespace = 0) AS main,
+        (SELECT count(page_id) FROM page WHERE namespace = 1) AS talk
+    ) AS proportion; 
+
 SELECT '- partitions that are done vs error:' AS '';
-SELECT status AS 'job status', count(id) AS 'count' FROM partition GROUP BY status; 
-SELECT '' AS '';
+SELECT status AS 'job status', count(id) AS 'count' FROM partition GROUP BY status;
+SELECT '' AS ''; 
+SELECT AVG(TIMESTAMPDIFF(SECOND,start_time_1,end_time_1)) AS 'Average time to parse dump (secs):' FROM partition WHERE status = 'done';
 
 SELECT 'Distribution of:' AS '';
 SELECT '- users by number of mainspace edits:' AS '';
@@ -43,8 +55,8 @@ SELECT '- pages by namespace:' AS '';
 SELECT namespace, count(page_id) AS 'count' FROM page GROUP BY namespace; 
 SELECT '' AS '';
 
-SELECT 'Size of databASe:' AS '';
-SELECT table_schema AS "DatabASe", SUM(data_length + index_length) / 1024 / 1024 / 1024 AS "Size (GB)" 
+SELECT 'Size of database:' AS '';
+SELECT table_schema AS "Database", SUM(data_length + index_length) / 1024 / 1024 / 1024 AS "Size (GB)" 
     FROM information_schema.TABLES GROUP BY table_schema;
 
 -- Connecting blocked users to edits
