@@ -146,6 +146,177 @@ def parseNonTargetNamespace(page, title, namespace, cursor):
     return namespace
 
 
+def parseTargetNamespace(page, title, namespace, cursor):
+    blankText = re.compile(r"^\s+$")
+    internalLink = re.compile(r"\[\[.*?\]\]")
+    externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
+
+    oldText = ""
+    ## Extract page features from each revision
+    for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
+        if not revision.user:
+            continue
+
+        # Check if not None as there is a user 0, Larry Sanger
+        if revision.user.id is not None:
+            userId = revision.user.id
+            username = revision.user.text
+            namespace = str(namespace)
+
+            query = """INSERT INTO user (user_id, username, namespaces, talkpage_number_of_edits)
+                VALUES (%s, %s, %s, 1) ON DUPLICATE KEY
+                UPDATE
+                    namespaces = CONCAT_WS(',', namespaces, %s),
+                    talkpage_number_of_edits = talkpage_number_of_edits + 1;"""
+            cursor.execute(query, (userId, username, namespace, namespace))
+        else:
+            ipAddress = revision.user.text
+            namespace = str(namespace)
+
+            query = """INSERT INTO user (ip_address, namespaces, talkpage_number_of_edits)
+                VALUES (%s, %s, 1) ON DUPLICATE KEY
+                UPDATE
+                    namespaces = CONCAT_WS(',', namespaces, %s),
+                    talkpage_number_of_edits = talkpage_number_of_edits + 1;"""
+            cursor.execute(query, (ipAddress, namespace, namespace))
+
+        userTableId = cursor.lastrowid
+
+        editDate = datetime.strptime(str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ")
+
+        editId = revision.id
+        pageId = revision.page.id
+
+        # if revision has text and the text isn't whitespace
+        if revision.text and not blankText.search(revision.text):
+            blanking = False
+            (added, deleted) = getDiff(oldText, revision.text)
+            blankAddition = blankText.search(added)
+
+            if added and not blankAddition:
+                insInternalLink = len(internalLink.findall(added))
+                insExternalLink = len(externalLink.findall(added))
+
+                insLongestInsertedWord = longestWord(added)
+                insLongestCharacterSequence = longestCharSequence(added)
+
+                insCapitalization = ratioCapitals(added)
+                insDigits = ratioDigits(added)
+                insSpecialChars = ratioSpecial(added)
+                insWhitespace = ratioWhitespace(added)
+
+                insPronouns = ratioPronouns(added)
+            else:
+                insInternalLink = 0
+                insExternalLink = 0
+
+                insLongestInsertedWord = 0
+                insLongestCharacterSequence = 0
+
+                insCapitalization = 0
+                insDigits = 0
+                insSpecialChars = 0
+                if blankAddition:
+                    insWhitespace = 1
+                else:
+                    insWhitespace = 0
+
+                insPronouns = 0
+
+            delWords = len(deleted.split(" "))
+
+            oldText = revision.text
+        else:
+            blanking = True
+
+            insInternalLink = "NULL"
+            insExternalLink = "NULL"
+            insLongestInsertedWord = "NULL"
+            insLongestCharacterSequence = "NULL"
+            insCapitalization = "NULL"
+            insDigits = "NULL"
+            insSpecialChars = "NULL"
+
+        if revision.comment:
+            comment = revision.comment.lower()
+            commentCopyedit = "copyedit" in comment
+            commentPersonalLife = "personal life" in comment
+            commentLength = len(comment)
+            commentSpecialChars = ratioSpecial(comment)
+        else:
+            commentCopyedit = "NULL"
+            commentPersonalLife = "NULL"
+            commentLength = "NULL"
+            commentSpecialChars = "NULL"
+
+        query = """
+        INSERT INTO edit (added, deleted, edit_date, 
+            edit_id, page_id, ins_internal_link, ins_external_link, 
+            ins_longest_inserted_word, ins_longest_character_sequence, 
+            ins_pronouns, ins_capitalization, ins_digits, ins_special_chars, 
+            ins_whitespace, del_words, comment_personal_life, comment_copyedit, 
+            comment_length, comment_special_chars, blanking, user_table_id
+        ) VALUES (
+            %s, %s, %s,
+            %s, %s, %s, %s,
+            %s, %s, 
+            %s, %s, %s, %s, 
+            %s, %s, %s, %s, 
+            %s, %s, %s, %s
+        );
+        """
+
+        editTuple = (
+            added,
+            deleted,
+            editDate,
+            editId,
+            pageId,
+            insInternalLink,
+            insExternalLink,
+            insLongestInsertedWord,
+            insLongestCharacterSequence,
+            insPronouns,
+            insCapitalization,
+            insDigits,
+            insSpecialChars,
+            insWhitespace,
+            delWords,
+            commentPersonalLife,
+            commentCopyedit,
+            commentLength,
+            commentSpecialChars,
+            blanking,
+            userTableId,
+        )
+
+        ## Insert page features into database
+        if (
+            editId == 127976896
+            or editId == 127977052
+            or editId == 127978510
+            or editId == 127978612
+        ):
+            # print('heah===nestioaes===hntnoei===ashtn')
+            lst = list(editTuple)
+            lst[0] = ""
+            lst[1] = ""
+            editTuple = tuple(lst)
+        try:
+            cursor.execute(query, editTuple)
+        except:
+            print(editTuple)
+            if (
+                editId == 127976896
+                or editId == 127977052
+                or editId == 127978510
+                or editId == 127978612
+            ):
+                print("heah===nestioaes===hntnoei===ashtn")
+            raise
+        # oldrevision = revision
+
+
 ##  FUNCTIONS TO EXTRACT FEATURES
 def cleanString(string: str):
     """Removes special characters and unnecessary whitespace from text"""
@@ -294,10 +465,6 @@ def parse():
         # filename = "test.xml"
         # dump = mwxml.Dump.from_page_xml(open(filename))
 
-        blankText = re.compile(r"^\s+$")
-        internalLink = re.compile(r"\[\[.*?\]\]")
-        externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
-
         namespaces = [0]
 
         for page in dump:
@@ -313,172 +480,7 @@ def parse():
 
                 continue
 
-            oldText = ""
-            ## Extract page features from each revision
-            for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
-                if not revision.user:
-                    continue
-
-                # Check if not None as there is a user 0, Larry Sanger
-                if revision.user.id is not None:
-                    userId = revision.user.id
-                    username = revision.user.text
-                    namespace = str(namespace)
-
-                    query = """INSERT INTO user (user_id, username, namespaces, talkpage_number_of_edits)
-                        VALUES (%s, %s, %s, 1) ON DUPLICATE KEY
-                        UPDATE
-                            namespaces = CONCAT_WS(',', namespaces, %s),
-                            talkpage_number_of_edits = talkpage_number_of_edits + 1;"""
-                    cursor.execute(query, (userId, username, namespace, namespace))
-                else:
-                    ipAddress = revision.user.text
-                    namespace = str(namespace)
-
-                    query = """INSERT INTO user (ip_address, namespaces, talkpage_number_of_edits)
-                        VALUES (%s, %s, 1) ON DUPLICATE KEY
-                        UPDATE
-                            namespaces = CONCAT_WS(',', namespaces, %s),
-                            talkpage_number_of_edits = talkpage_number_of_edits + 1;"""
-                    cursor.execute(query, (ipAddress, namespace, namespace))
-
-                userTableId = cursor.lastrowid
-
-                editDate = datetime.strptime(
-                    str(revision.timestamp), "%Y-%m-%dT%H:%M:%SZ"
-                )
-
-                editId = revision.id
-                pageId = revision.page.id
-
-                # if revision has text and the text isn't whitespace
-                if revision.text and not blankText.search(revision.text):
-                    blanking = False
-                    (added, deleted) = getDiff(oldText, revision.text)
-                    blankAddition = blankText.search(added)
-
-                    if added and not blankAddition:
-                        insInternalLink = len(internalLink.findall(added))
-                        insExternalLink = len(externalLink.findall(added))
-
-                        insLongestInsertedWord = longestWord(added)
-                        insLongestCharacterSequence = longestCharSequence(added)
-
-                        insCapitalization = ratioCapitals(added)
-                        insDigits = ratioDigits(added)
-                        insSpecialChars = ratioSpecial(added)
-                        insWhitespace = ratioWhitespace(added)
-
-                        insPronouns = ratioPronouns(added)
-                    else:
-                        insInternalLink = 0
-                        insExternalLink = 0
-
-                        insLongestInsertedWord = 0
-                        insLongestCharacterSequence = 0
-
-                        insCapitalization = 0
-                        insDigits = 0
-                        insSpecialChars = 0
-                        if blankAddition:
-                            insWhitespace = 1
-                        else:
-                            insWhitespace = 0
-
-                        insPronouns = 0
-
-                    delWords = len(deleted.split(" "))
-
-                    oldText = revision.text
-                else:
-                    blanking = True
-
-                    insInternalLink = "NULL"
-                    insExternalLink = "NULL"
-                    insLongestInsertedWord = "NULL"
-                    insLongestCharacterSequence = "NULL"
-                    insCapitalization = "NULL"
-                    insDigits = "NULL"
-                    insSpecialChars = "NULL"
-
-                if revision.comment:
-                    comment = revision.comment.lower()
-                    commentCopyedit = "copyedit" in comment
-                    commentPersonalLife = "personal life" in comment
-                    commentLength = len(comment)
-                    commentSpecialChars = ratioSpecial(comment)
-                else:
-                    commentCopyedit = "NULL"
-                    commentPersonalLife = "NULL"
-                    commentLength = "NULL"
-                    commentSpecialChars = "NULL"
-
-                query = """
-                INSERT INTO edit (added, deleted, edit_date, 
-                    edit_id, page_id, ins_internal_link, ins_external_link, 
-                    ins_longest_inserted_word, ins_longest_character_sequence, 
-                    ins_pronouns, ins_capitalization, ins_digits, ins_special_chars, 
-                    ins_whitespace, del_words, comment_personal_life, comment_copyedit, 
-                    comment_length, comment_special_chars, blanking, user_table_id
-                ) VALUES (
-                    %s, %s, %s,
-                    %s, %s, %s, %s,
-                    %s, %s, 
-                    %s, %s, %s, %s, 
-                    %s, %s, %s, %s, 
-                    %s, %s, %s, %s
-                );
-                """
-
-                editTuple = (
-                    added,
-                    deleted,
-                    editDate,
-                    editId,
-                    pageId,
-                    insInternalLink,
-                    insExternalLink,
-                    insLongestInsertedWord,
-                    insLongestCharacterSequence,
-                    insPronouns,
-                    insCapitalization,
-                    insDigits,
-                    insSpecialChars,
-                    insWhitespace,
-                    delWords,
-                    commentPersonalLife,
-                    commentCopyedit,
-                    commentLength,
-                    commentSpecialChars,
-                    blanking,
-                    userTableId,
-                )
-
-                ## Insert page features into database
-                if (
-                    editId == 127976896
-                    or editId == 127977052
-                    or editId == 127978510
-                    or editId == 127978612
-                ):
-                    # print('heah===nestioaes===hntnoei===ashtn')
-                    lst = list(editTuple)
-                    lst[0] = ""
-                    lst[1] = ""
-                    editTuple = tuple(lst)
-                try:
-                    cursor.execute(query, editTuple)
-                except:
-                    print(editTuple)
-                    if (
-                        editId == 127976896
-                        or editId == 127977052
-                        or editId == 127978510
-                        or editId == 127978612
-                    ):
-                        print("heah===nestioaes===hntnoei===ashtn")
-                    raise
-                # oldrevision = revision
+            parseTargetNamespace(page, title, namespace, cursor)
 
         ## Change status of dump
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
