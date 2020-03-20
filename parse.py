@@ -424,8 +424,8 @@ def getDiff(old: str, new: str):
     with open(second, "w") as newfile:
         newfile.writelines(new)
 
-    removelines = (
-        "======================================================================"
+    lineSeperators = re.compile(
+        r"======================================================================"
     )
 
     added = (
@@ -434,7 +434,7 @@ def getDiff(old: str, new: str):
         .strip()
     )
 
-    added = re.sub(removelines, "", added)
+    added = lineSeperators.sub("", added)
 
     deleted = (
         subprocess.run(["wdiff", "-23", first, second], capture_output=True)
@@ -442,7 +442,7 @@ def getDiff(old: str, new: str):
         .strip()
     )
 
-    deleted = re.sub(removelines, "", deleted)
+    deleted = lineSeperators.sub("", deleted)
 
     return added, deleted
 
