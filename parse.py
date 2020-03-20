@@ -452,9 +452,17 @@ def getDiff(old: str, new: str):
     return added, deleted
 
 
-def parse():
+def parse(namespaces = [1]):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
+
+    Detailed extraction of features is performed for namespaces of interest. 
+    Pages that are not in the namespace of choice will instead only have the edits 
+    counted per user.
+
+    Parameters
+    ----------
+    namespaces : list[int] - Wikipedia namespaces of interest.
     """
     database, cursor = databaseConnect()
 
@@ -469,8 +477,6 @@ def parse():
         # for development, disable namespace check
         # filename = "test.xml"
         # dump = mwxml.Dump.from_page_xml(open(filename))
-
-        namespaces = [0]
 
         for page in dump:
             namespace = page.namespace
