@@ -1,4 +1,4 @@
-Module talkpages
+Module [talkpages](talkpages/talkpages.py)
 ================
 This script finds the fastest mirror, downloads and splits one Wikipedia
 dump.
@@ -23,7 +23,7 @@ Functions
     download one and split it, then process the dump on multiple threads
 
 
-Module parse
+Module [parse](talkpages/parse.py)
 ============
 This script allows the user to parse a dump from a database connection
 and extract features to a database table.
@@ -45,8 +45,9 @@ Functions
     
     Returns
     -------
-    database: MySQLConnection - connection to the MySQL DB
-    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    * database: MySQLConnection - connection to the MySQL DB
+    
+    * cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
 
     
 `getDiff(old, new)`
@@ -54,13 +55,15 @@ Functions
     
     Parameters
     ----------
-    old : str - old revision
-    new : str - new revision
+    * old : str - old revision
+    
+    * new : str - new revision
     
     Returns
     -------
-    added: str - all the text that is exclusively in the new revision
-    deleted: str - all the text that is exclusively in the old revision
+    * added: str - all the text that is exclusively in the new revision
+    
+    * deleted: str - all the text that is exclusively in the old revision
 
     
 `getDump(cursor)`
@@ -68,12 +71,13 @@ Functions
     
     Parameters
     ----------
-    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    * cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
     
     Returns
     -------
-    dump: class 'mwxml.iteration.dump.Dump' - dump file iterator
-    filename: str - filename of dump
+    * dump: class 'mwxml.iteration.dump.Dump' - dump file iterator
+    
+    * filename: str - filename of dump
 
     
 `longestCharSequence(string)`
@@ -84,9 +88,48 @@ Functions
 :   Returns the length of the longest word in text
 
     
-`parse()`
+`parse(namespaces=[1])`
 :   Selects the next dump from the database, extracts the features and
     imports them into several database tables.
+    
+    Detailed extraction of features is performed for namespaces of interest. 
+    Pages that are not in the namespace of choice will instead only have the edits 
+    counted per user.
+    
+    Parameters
+    ----------
+    * namespaces : list[int] - Wikipedia namespaces of interest.
+
+    
+`parseNonTargetNamespace(page, title, namespace, cursor)`
+:   Counts the number of edits each user makes and inserts them to the database.
+    
+    Parameters
+    ----------
+    * page: mwtypes.Page
+    
+    * title: str - Title of the page
+    
+    * namespace: str - Namespace of the page
+    
+    * cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+
+    
+`parseTargetNamespace(page, title, namespace, cursor)`
+:   Extracts features from each revision of a page into a database
+    
+    Ignores edits that have been deleted like:
+        https://en.wikipedia.org/w/index.php?oldid=614217720
+    
+    Parameters
+    ----------
+    * page: mwtypes.Page
+    
+    * title: str - Title of the page
+    
+    * namespace: str - Namespace of the page
+    
+    * cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
 
     
 `ratioCapitals(string)`
@@ -109,7 +152,7 @@ Functions
 :   Returns the ratio of whitespace to all characters in text
 
 
-Module splitwiki
+Module [splitwiki](talkpages/splitwiki.py)
 ================
 This script looks in the dumps/ directory and splits the first file into 40
 partitions by default. This can be changed by adjusting the parameters to split()
@@ -124,12 +167,12 @@ Functions
 :   Returns the estimated number of lines in a dump using wcle.sh
 
     
-`split(number=40, inputFolder='dumps', outputFolder='partitions', deleteDump=True)`
+`split(number=40, inputFolder='../dumps', outputFolder='../partitions', deleteDump=True)`
 :   Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
 
 
-Module mirrors
+Module [mirrors](talkpages/mirrors.py)
 ==============
 This script finds the fastest mirror to download Wikipedia dumps from
 
@@ -145,4 +188,4 @@ Functions
     
     Returns
     -------
-    fastestMirror: str - the url of the fastest mirror
+    * fastestMirror: str - the url of the fastest mirror
