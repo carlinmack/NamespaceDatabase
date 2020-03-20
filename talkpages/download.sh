@@ -11,6 +11,7 @@ wget -O $file $url
 
 grep -oP '(?<=href=").*pages-meta-history.*7z(?=")' ../index.html > ../dumps.txt
 
+rm ../index.html
 # while read line; do 
 #         wget "$mirror$line"; 
 #     done <dumps.txt
