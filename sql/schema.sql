@@ -20,7 +20,7 @@ CREATE TABLE user (
     user_page tinyint(1) DEFAULT NULL,
     user_talkpage tinyint(1) DEFAULT NULL,
     number_of_edits int unsigned NOT NULL DEFAULT '0',
-    reverted_edits int unsigned DEFAULT NULL,
+    reverted_edits int unsigned DEFAULT '0',
     talkpage_number_of_edits int unsigned NOT NULL DEFAULT '0',
     talkpage_reverted_edits int unsigned DEFAULT '0',
     namespaces set('0','1','2','3','4','5','6','7','8','9','10','11','12','13',

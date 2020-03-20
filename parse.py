@@ -207,6 +207,9 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
             blanking = False
             (added, deleted) = getDiff(oldText, revision.text)
             blankAddition = blankText.search(added)
+            
+            addedLength = len(added)
+            deletedLength = len(deleted)
 
             if added and not blankAddition:
                 insInternalLink = len(internalLink.findall(added))
@@ -240,6 +243,9 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
 
             delWords = len(deleted.split(" "))
 
+            added = added[:65535]
+            deleted = deleted[:65535]
+
             oldText = revision.text
         else:
             blanking = True
@@ -265,14 +271,14 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
             commentSpecialChars = "NULL"
 
         query = """
-        INSERT INTO edit (added, deleted, edit_date, 
+        INSERT INTO edit (added, deleted, added_length, deleted_length, edit_date, 
             edit_id, page_id, ins_internal_link, ins_external_link, 
             ins_longest_inserted_word, ins_longest_character_sequence, 
             ins_pronouns, ins_capitalization, ins_digits, ins_special_chars, 
             ins_whitespace, del_words, comment_personal_life, comment_copyedit, 
             comment_length, comment_special_chars, blanking, user_table_id
         ) VALUES (
-            %s, %s, %s,
+            %s, %s, %s, %s, %s,
             %s, %s, %s, %s,
             %s, %s, 
             %s, %s, %s, %s, 
@@ -284,6 +290,8 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
         editTuple = (
             added,
             deleted,
+            addedLength,
+            deletedLength,
             editDate,
             editId,
             pageId,
@@ -306,21 +314,8 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
         )
 
         ## Insert page features into database
-        if editId in (127976896, 127977052, 127978510, 127978612):
-            # print('heah===nestioaes===hntnoei===ashtn')
-            lst = list(editTuple)
-            lst[0] = ""
-            lst[1] = ""
-            editTuple = tuple(lst)
-        try:
-            cursor.execute(query, editTuple)
-        except:
-            print(editTuple)
-            if editId in (127976896, 127977052, 127978510, 127978612):
-                print("heah===nestioaes===hntnoei===ashtn")
-            raise
-        # oldrevision = revision
-
+        cursor.execute(query, editTuple)
+       
 
 ##  FUNCTIONS TO EXTRACT FEATURES
 def cleanString(string: str):
@@ -452,7 +447,7 @@ def getDiff(old: str, new: str):
     return added, deleted
 
 
-def parse(namespaces = [1]):
+def parse(namespaces=[1]):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
 
@@ -484,7 +479,6 @@ def parse(namespaces = [1]):
             query = """INSERT IGNORE INTO page (page_id, namespace, title, file_name)
                 VALUES (%s, %s, %s, %s)"""
             cursor.execute(query, (page.id, namespace, title, filename))
-            database.commit()
 
             if namespace not in namespaces:
                 parseNonTargetNamespace(page, title, str(namespace), cursor)
