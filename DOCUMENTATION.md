@@ -45,9 +45,8 @@ Functions
     
     Returns
     -------
-    * database: MySQLConnection - connection to the MySQL DB
-    
-    * cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    database: MySQLConnection - connection to the MySQL DB
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
 
     
 `getDiff(old, new)`
@@ -55,15 +54,13 @@ Functions
     
     Parameters
     ----------
-    * old : str - old revision
-    
-    * new : str - new revision
+    old : str - old revision
+    new : str - new revision
     
     Returns
     -------
-    * added: str - all the text that is exclusively in the new revision
-    
-    * deleted: str - all the text that is exclusively in the old revision
+    added: str - all the text that is exclusively in the new revision
+    deleted: str - all the text that is exclusively in the old revision
 
     
 `getDump(cursor)`
@@ -71,13 +68,12 @@ Functions
     
     Parameters
     ----------
-    * cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
     
     Returns
     -------
-    * dump: class 'mwxml.iteration.dump.Dump' - dump file iterator
-    
-    * filename: str - filename of dump
+    dump: class 'mwxml.iteration.dump.Dump' - dump file iterator
+    filename: str - filename of dump
 
     
 `longestCharSequence(string)`
@@ -98,7 +94,7 @@ Functions
     
     Parameters
     ----------
-    * namespaces : list[int] - Wikipedia namespaces of interest.
+    namespaces : list[int] - Wikipedia namespaces of interest.
 
     
 `parseNonTargetNamespace(page, title, namespace, cursor)`
@@ -106,13 +102,10 @@ Functions
     
     Parameters
     ----------
-    * page: mwtypes.Page
-    
-    * title: str - Title of the page
-    
-    * namespace: str - Namespace of the page
-    
-    * cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    page: mwtypes.Page
+    title: str - Title of the page
+    namespace: str - Namespace of the page
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
 
     
 `parseTargetNamespace(page, title, namespace, cursor)`
@@ -123,13 +116,10 @@ Functions
     
     Parameters
     ----------
-    * page: mwtypes.Page
-    
-    * title: str - Title of the page
-    
-    * namespace: str - Namespace of the page
-    
-    * cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    page: mwtypes.Page
+    title: str - Title of the page
+    namespace: str - Namespace of the page
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
 
     
 `ratioCapitals(string)`
@@ -188,4 +178,4 @@ Functions
     
     Returns
     -------
-    * fastestMirror: str - the url of the fastest mirror
+    fastestMirror: str - the url of the fastest mirror
