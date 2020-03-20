@@ -6,6 +6,7 @@ Please run pip install -r requirements.txt before running this script.
 import re
 import time
 
+from tqdm import tqdm
 import requests
 
 
@@ -33,8 +34,8 @@ def fastest():
     dump = "20200101/"
 
     firstfile = "enwiki-20200101-pages-meta-history2.xml-p40221p40268.7z"
-
-    for index, mirror in enumerate(mirrors):
+    print("Finding fastest mirror")
+    for index, mirror in enumerate(tqdm(mirrors, unit=" mirror")):
         url = mirror + wiki + dump + firstfile
 
         tick = time.time()
