@@ -30,13 +30,15 @@ def countLines(file):
 # @click.option(
 #     "-d", "--deletedump", default=False, is_flag=True,
 # )
-def split(number=40, inputFolder="dumps", outputFolder="partitions", deleteDump=True):
+def split(
+    number=40, inputFolder="../dumps", outputFolder="../partitions", deleteDump=True
+):
     """Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
     """
     files = glob.glob(inputFolder + "/*.xml*")
     file = files[0]
-    fileName = file[6:]
+    fileName = file[9:]
 
     lines = countLines(file)
 
@@ -104,7 +106,7 @@ def split(number=40, inputFolder="dumps", outputFolder="partitions", deleteDump=
             partitionName = fileName + "." + str(index)
             outputFileName = os.path.join(outputFolder, partitionName)
 
-            with open("partitions.txt", "a+") as partitions:
+            with open("../partitions.txt", "a+") as partitions:
                 partitions.write(partitionName + "\n")
 
             if not os.path.exists(outputFolder):

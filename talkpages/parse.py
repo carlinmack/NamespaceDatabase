@@ -73,7 +73,7 @@ def getDump(cursor):
         return None, None
 
     filename = todofile[0]
-    path = "partitions/" + filename
+    path = "../partitions/" + filename
 
     if not os.path.exists(path):
         raise IOError("file not found on disk")
@@ -207,7 +207,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
             blanking = False
             (added, deleted) = getDiff(oldText, revision.text)
             blankAddition = blankText.search(added)
-            
+
             addedLength = len(added)
             deletedLength = len(deleted)
 
@@ -315,7 +315,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
 
         ## Insert page features into database
         cursor.execute(query, editTuple)
-       
+
 
 ##  FUNCTIONS TO EXTRACT FEATURES
 def cleanString(string: str):

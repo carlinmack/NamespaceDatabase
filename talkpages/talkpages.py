@@ -38,9 +38,11 @@ def main():
     download one and split it, then process the dump on multiple threads"""
     wiki = "enwiki/"
     dump = "20200101/"
+    listOfDumps = "../dumps.txt"
+    listOfPartitions = "../partitions.txt"
 
-    if os.path.isfile("dumps.txt"):
-        with open("dumps.txt") as file:
+    if os.path.isfile(listOfDumps):
+        with open(listOfDumps) as file:
             firstLine = file.readline().strip()
     else:
         firstLine = ""
@@ -51,13 +53,13 @@ def main():
         download = subprocess.run(["./download.sh", fastestMirror, wiki, dump])
 
     # while (files to go)
-    while countLines("dumps.txt") > 0:
+    while countLines(listOfDumps) > 0:
         print("start")
 
         # if theres space etc
-        if not os.path.exists("dumps") or len(os.listdir("dumps")) == 0:
+        if not os.path.exists("../dumps") or len(os.listdir("../dumps")) == 0:
             ## Download one file
-            with open("dumps.txt") as file:
+            with open(listOfDumps) as file:
                 firstLine = file.readline().strip()
                 fileName = re.findall(r"\/([^\/]*)$", firstLine)[0]
                 print(fileName)
@@ -69,20 +71,22 @@ def main():
             except NameError:
                 fastestMirror = fastest()
 
-            subprocess.run(["wget", "-P", "archives/", fastestMirror + firstLine])
+            subprocess.run(["wget", "-P", "../archives/", fastestMirror + firstLine])
 
             # delete first line
-            with open("dumps.txt", "w") as file:
+            with open(listOfDumps, "w") as file:
                 file.writelines(data)
 
             ## Unzip and delete if successful
             try:
-                extract = subprocess.run(["7z", "e", "archives/" + fileName, "-odumps"])
+                extract = subprocess.run(
+                    ["7z", "e", "../archives/" + fileName, "-o../dumps"]
+                )
             except:
                 raise
             else:
                 # delete archive
-                os.remove("archives/" + fileName)
+                os.remove("../archives/" + fileName)
 
             ## Split into 40 partitions
             try:
@@ -91,7 +95,7 @@ def main():
                 raise
             else:
                 # delete dump
-                files = glob("dumps/*.xml*")
+                files = glob("../dumps/*.xml*")
                 file = files[0]
                 os.remove(file)
 
@@ -114,7 +118,7 @@ def main():
             else:
                 print(err)
         else:
-            with open("partitions.txt") as file:
+            with open(listOfPartitions) as file:
                 for line in file:
                     query = "INSERT INTO partition (file_name) VALUES (%s)"
                     cursor.execute(query, (line.strip(),))
@@ -125,7 +129,7 @@ def main():
             database.close()
 
             # clear partitions.txt
-            open("partitions.txt", "w").close()
+            open(listOfPartitions, "w").close()
 
         ## fire off 40 concurrenmt jobs - sbatch? hadoop?
         starttime = time.time()
