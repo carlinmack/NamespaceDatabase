@@ -2,7 +2,7 @@
 
 👉 [Wikipedia Research Page](https://meta.wikimedia.org/wiki/Research:Classifying_Actors_on_Talk_Pages#Goals)
 
-> If there is a feature you'd like or a roadblock to you using this, please [create an issue!](https://github.com/carlinmack/talkpages/issues/new)
+> If there is a feature you'd like or a roadblock to you using this, please [create an issue!](https://github.com/carlinmack/NamespaceDatabase/issues/new)
 
 ## Contents
 
@@ -66,7 +66,7 @@ The resulting database has at least 100x reduction in size from the extracted du
 To create a list of dumps, download the first, partition it and add the partition names to a database run.
 
 ```
-python talkpages.py
+python nsdb.py
 ```
 > Make sure to edit the database connection first so that it can connect to the database
 

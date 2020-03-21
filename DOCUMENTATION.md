@@ -1,4 +1,4 @@
-Module [talkpages](talkpages/talkpages.py)
+Module [nsdb](nsdb/nsdb.py)
 ================
 This script finds the fastest mirror, downloads and splits one Wikipedia
 dump.
@@ -23,7 +23,7 @@ Functions
     download one and split it, then process the dump on multiple threads
 
 
-Module [parse](talkpages/parse.py)
+Module [parse](nsdb/parse.py)
 ============
 This script allows the user to parse a dump from a database connection
 and extract features to a database table.
@@ -142,7 +142,7 @@ Functions
 :   Returns the ratio of whitespace to all characters in text
 
 
-Module [splitwiki](talkpages/splitwiki.py)
+Module [splitwiki](nsdb/splitwiki.py)
 ================
 This script looks in the dumps/ directory and splits the first file into 40
 partitions by default. This can be changed by adjusting the parameters to split()
@@ -162,7 +162,7 @@ Functions
     partitions.txt with the created partitions.
 
 
-Module [mirrors](talkpages/mirrors.py)
+Module [mirrors](nsdb/mirrors.py)
 ==============
 This script finds the fastest mirror to download Wikipedia dumps from
 

@@ -93,7 +93,7 @@ def getDump(cursor):
     return dump, filename
 
 
-def parseNonTargetNamespace(page, title: str, namespace: str, cursor):
+def parseNonTargetNamespace(page, title: str, namespace: str, cursor, multiprocessing: bool):
     """Counts the number of edits each user makes and inserts them to the database.
 
     Parameters
@@ -102,10 +102,11 @@ def parseNonTargetNamespace(page, title: str, namespace: str, cursor):
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    multiprocessing: Bool - True if called from multiprocessing, hides progress bars
     """
     userDict = {}
 
-    for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
+    for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0, disable=multiprocessing):
         if not revision.user:
             continue
 
@@ -151,7 +152,7 @@ def parseNonTargetNamespace(page, title: str, namespace: str, cursor):
             cursor.execute(query, (key, namespace, editCount, namespace, editCount))
 
 
-def parseTargetNamespace(page, title: str, namespace: str, cursor):
+def parseTargetNamespace(page, title: str, namespace: str, cursor, multiprocessing: bool):
     """Extracts features from each revision of a page into a database
 
     Ignores edits that have been deleted like:
@@ -163,6 +164,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    multiprocessing: Bool - True if called from multiprocessing, hides progress bars
     """
     blankText = re.compile(r"^\s+$")
     internalLink = re.compile(r"\[\[.*?\]\]")
@@ -170,7 +172,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor):
 
     oldText = ""
     ## Extract page features from each revision
-    for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0):
+    for revision in tqdm.tqdm(page, desc=title, unit=" edits", smoothing=0, disable=multiprocessing):
         if not revision.user:
             continue
 
@@ -447,7 +449,7 @@ def getDiff(old: str, new: str):
     return added, deleted
 
 
-def parse(namespaces=[1]):
+def parse(namespaces=[1], multiprocessing=False):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
 
@@ -481,11 +483,11 @@ def parse(namespaces=[1]):
             cursor.execute(query, (page.id, namespace, title, filename))
 
             if namespace not in namespaces:
-                parseNonTargetNamespace(page, title, str(namespace), cursor)
+                parseNonTargetNamespace(page, title, str(namespace), cursor, multiprocessing)
 
                 continue
 
-            parseTargetNamespace(page, title, str(namespace), cursor)
+            parseTargetNamespace(page, title, str(namespace), cursor, multiprocessing)
 
         ## Change status of dump
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

@@ -3,15 +3,11 @@ SELECT 'How many:' AS '';
 SELECT count(*) AS '- users:' 
 FROM user;
 
-SELECT count(*) AS '- users with over 100 edits:' 
-FROM user WHERE number_of_edits > 100;
-
 SELECT count(*) AS '- pages:' 
 FROM page;
 
 SELECT count(*) AS '- edits:' 
 FROM edit;
--- SELECT count(*) AS '- IP users that edit talkpages:' FROM edit;
 SELECT '' AS '';
 
 SELECT 'Proportion of:' AS '';
@@ -58,6 +54,23 @@ SELECT '' AS '';
 SELECT 'Size of database:' AS '';
 SELECT table_schema AS "Database", SUM(data_length + index_length) / 1024 / 1024 / 1024 AS "Size (GB)" 
     FROM information_schema.TABLES GROUP BY table_schema;
+
+
+SELECT 'Size of tables:' AS '';
+SELECT 
+    table_name AS 'Table', 
+    round(((data_length + index_length) / 1024 / 1024 ), 2) `Size in MB` 
+FROM information_schema.TABLES
+WHERE table_name = "edit" or table_name = "page" or table_name = "user" or table_name = "partition";
+
+SELECT 'users with most edits:' AS '';
+SELECT username, number_of_edits AS 'mainspace edits' 
+FROM user order by number_of_edits desc limit 5;
+SELECT '' AS '';
+
+SELECT username, talkpage_number_of_edits AS 'talkpage edits' 
+FROM user order by talkpage_number_of_edits desc limit 5;
+SELECT '' AS '';
 
 -- Connecting blocked users to edits
 --      What do the blocked users edits look like?  (number words/chars, mostly adds, mostly deletes,...)

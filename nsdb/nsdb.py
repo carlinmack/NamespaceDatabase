@@ -40,6 +40,7 @@ def main():
     dump = "20200101/"
     listOfDumps = "../dumps.txt"
     listOfPartitions = "../partitions.txt"
+    namespaces = [1]
 
     if os.path.isfile(listOfDumps):
         with open(listOfDumps) as file:
@@ -57,7 +58,7 @@ def main():
         print("start")
 
         # if theres space etc
-        if not os.path.exists("../dumps") or len(os.listdir("../dumps")) == 0:
+        if not os.path.exists("../dumps") or len(os.listdir("../partitions")) == 0:
             ## Download one file
             with open(listOfDumps) as file:
                 firstLine = file.readline().strip()
@@ -135,15 +136,20 @@ def main():
         starttime = time.time()
         processes = []
         print("begin")
-        for i in range(0, 20):
+        for i in range(0, 90):
             print(i)
-            process = multiprocessing.Process(target=parse)
+            process = multiprocessing.Process(target=parse, args=(namespaces, True))
             processes.append(process)
 
         for process in processes:
             process.start()
+
+        # for i in range(10):
+        print(processes)
+
         for process in processes:
             process.join()
+
 
         print("That took {} seconds".format(time.time() - starttime))
         break
