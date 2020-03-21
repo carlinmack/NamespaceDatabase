@@ -320,14 +320,14 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, multiprocessi
 
 
 ##  FUNCTIONS TO EXTRACT FEATURES
-def cleanString(string: str):
+def cleanString(string: str) -> str:
     """Removes special characters and unnecessary whitespace from text"""
     removeSymbols = re.sub(r'[$-/:-?{-~!"^_`\[\]]', " ", string)
     removeDoubleSpaces = re.sub(r"\s\s+", " ", removeSymbols)
     return removeDoubleSpaces
 
 
-def longestWord(string: str):
+def longestWord(string: str) -> int:
     """Returns the length of the longest word in text"""
     string = cleanString(string)
     arr = string.split()
@@ -339,7 +339,7 @@ def longestWord(string: str):
         return 0
 
 
-def longestCharSequence(string: str):
+def longestCharSequence(string: str) -> int:
     """Returns the length of the longest repeated character sequence in text"""
     string = cleanString(string)
     # print(string)
@@ -361,7 +361,7 @@ def longestCharSequence(string: str):
     return maxLength
 
 
-def ratioCapitals(string: str):
+def ratioCapitals(string: str) -> int:
     """Returns the ratio of uppercase to lowercase characters in text"""
     uppercase = 0
     lowercase = 1  # to avoid infinity
@@ -377,7 +377,7 @@ def ratioCapitals(string: str):
     return uppercase / lowercase
 
 
-def ratioDigits(string: str):
+def ratioDigits(string: str) -> int:
     """Returns the ratio of digits to all characters in text"""
     digits = 0
 
@@ -388,24 +388,24 @@ def ratioDigits(string: str):
     return digits / len(string)
 
 
-def ratioSpecial(string: str):
+def ratioSpecial(string: str) -> int:
     """Returns the ratio of special characters to all characters in text"""
     return len(re.findall(r'[!-/:-?{-~!"^_`\[\]]', string)) / len(string)
 
 
-def ratioWhitespace(string: str):
+def ratioWhitespace(string: str) -> int:
     """Returns the ratio of whitespace to all characters in text"""
     return len(re.findall(r"\s", string)) / len(string)
 
 
-def ratioPronouns(string: str):
+def ratioPronouns(string: str) -> int:
     """Returns the ratio of personal pronouns to all words in text"""
     return len(re.findall(r"(\sI\s|\sme\s|\smy\s|\smine\s|\smyself\s)", string)) / len(
         string.split(" ")
     )
 
 
-def getDiff(old: str, new: str):
+def getDiff(old: str, new: str) -> str, str:
     """Returns the diff between two edits using wdiff
 
     Parameters

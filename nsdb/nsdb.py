@@ -25,7 +25,7 @@ from parse import parse
 from splitwiki import split
 
 
-def countLines(file):
+def countLines(file) -> int:
     """Returns the number of lines in a file using wc from bash"""
     wordCount = subprocess.check_output(["wc", "-l", file]).decode("utf-8")
     lines = int(wordCount.split(" ")[0])

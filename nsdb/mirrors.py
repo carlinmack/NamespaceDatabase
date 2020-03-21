@@ -10,7 +10,7 @@ from tqdm import tqdm
 import requests
 
 
-def fastest():
+def fastest() -> str:
     """Gets a list of the fastest mirrors, downloads a single file from each
     and returns the fastest one
 

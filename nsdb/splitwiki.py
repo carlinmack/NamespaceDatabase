@@ -12,7 +12,7 @@ import subprocess
 from tqdm import trange
 
 
-def countLines(file):
+def countLines(file) -> int:
     """Returns the estimated number of lines in a dump using wcle.sh"""
     print("counting lines: ", file)
     lines = int(subprocess.check_output(["./wcle.sh", file]))
