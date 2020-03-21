@@ -1,5 +1,5 @@
 Module [nsdb](nsdb/nsdb.py)
-================
+===========
 This script finds the fastest mirror, downloads and splits one Wikipedia
 dump.
 
@@ -21,6 +21,8 @@ Functions
 `main()`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
+
+-----
 
 
 Module [parse](nsdb/parse.py)
@@ -84,20 +86,21 @@ Functions
 :   Returns the length of the longest word in text
 
     
-`parse(namespaces=[1])`
+`parse(namespaces=[1], parallel=False)`
 :   Selects the next dump from the database, extracts the features and
     imports them into several database tables.
     
-    Detailed extraction of features is performed for namespaces of interest. 
-    Pages that are not in the namespace of choice will instead only have the edits 
+    Detailed extraction of features is performed for namespaces of interest.
+    Pages that are not in the namespace of choice will instead only have the edits
     counted per user.
     
     Parameters
     ----------
     namespaces : list[int] - Wikipedia namespaces of interest.
+    parallel: Bool - whether to parse with multiple cores
 
     
-`parseNonTargetNamespace(page, title, namespace, cursor)`
+`parseNonTargetNamespace(page, title, namespace, cursor, parallel)`
 :   Counts the number of edits each user makes and inserts them to the database.
     
     Parameters
@@ -106,9 +109,10 @@ Functions
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    parallel: Bool - True if called from parallel, hides progress bars
 
     
-`parseTargetNamespace(page, title, namespace, cursor)`
+`parseTargetNamespace(page, title, namespace, cursor, parallel)`
 :   Extracts features from each revision of a page into a database
     
     Ignores edits that have been deleted like:
@@ -120,6 +124,7 @@ Functions
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+    parallel: Bool - True if called from parallel, hides progress bars
 
     
 `ratioCapitals(string)`
@@ -141,6 +146,8 @@ Functions
 `ratioWhitespace(string)`
 :   Returns the ratio of whitespace to all characters in text
 
+-----
+
 
 Module [splitwiki](nsdb/splitwiki.py)
 ================
@@ -161,6 +168,8 @@ Functions
 :   Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
 
+-----
+
 
 Module [mirrors](nsdb/mirrors.py)
 ==============
@@ -179,3 +188,5 @@ Functions
     Returns
     -------
     fastestMirror: str - the url of the fastest mirror
+
+-----
