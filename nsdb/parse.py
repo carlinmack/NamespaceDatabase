@@ -6,12 +6,12 @@ This tool uses a MySQL database that is configured in the parse() function.
 
 Please run pip install -r requirements.txt before running this script.
 """
-
 import os
 import re
 import subprocess
 import sys
 from datetime import datetime
+from typing import Tuple
 
 import mwxml
 import mysql.connector as sql
@@ -405,7 +405,7 @@ def ratioPronouns(string: str) -> int:
     )
 
 
-def getDiff(old: str, new: str) -> str, str:
+def getDiff(old: str, new: str) -> Tuple[str, str]:
     """Returns the diff between two edits using wdiff
 
     Parameters
@@ -453,8 +453,8 @@ def parse(namespaces=[1], multiprocessing=False):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
 
-    Detailed extraction of features is performed for namespaces of interest. 
-    Pages that are not in the namespace of choice will instead only have the edits 
+    Detailed extraction of features is performed for namespaces of interest.
+    Pages that are not in the namespace of choice will instead only have the edits
     counted per user.
 
     Parameters
