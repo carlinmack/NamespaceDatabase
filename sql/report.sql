@@ -65,12 +65,44 @@ WHERE table_name = "edit" or table_name = "page" or table_name = "user" or table
 
 SELECT 'users with most edits:' AS '';
 SELECT username, number_of_edits AS 'mainspace edits' 
-FROM user order by number_of_edits desc limit 5;
-SELECT '' AS '';
+FROM user
+where bot is null 
+order by number_of_edits desc 
+limit 5;
 
+SELECT 'bots with most edits:' AS '';
+SELECT username, number_of_edits AS 'mainspace edits' 
+FROM user
+where bot is True
+order by number_of_edits desc 
+limit 5;
+
+SELECT 'users with most talkpage edits:' AS '';
 SELECT username, talkpage_number_of_edits AS 'talkpage edits' 
 FROM user order by talkpage_number_of_edits desc limit 5;
 SELECT '' AS '';
+
+SELECT 'users with most reversions:' AS '';
+SELECT username, reverted_edits 
+FROM user 
+where bot is null 
+and username is not null 
+order by reverted_edits desc 
+limit 5;
+
+SELECT 'bots with most reversions:' AS '';
+SELECT username, reverted_edits 
+FROM user 
+where bot is True
+order by reverted_edits desc 
+limit 5;
+
+SELECT 'ip users with most reversions:' AS '';
+SELECT ip_address, reverted_edits 
+FROM user 
+where ip_address is not null 
+order by reverted_edits desc 
+limit 5;
 
 -- Connecting blocked users to edits
 --      What do the blocked users edits look like?  (number words/chars, mostly adds, mostly deletes,...)
