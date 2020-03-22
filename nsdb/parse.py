@@ -13,6 +13,7 @@ import sys
 from datetime import datetime
 from typing import Tuple
 
+import mwreverts
 import mwxml
 import mysql.connector as sql
 import tqdm
@@ -171,8 +172,12 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: boo
     blankText = re.compile(r"^\s+$")
     internalLink = re.compile(r"\[\[.*?\]\]")
     externalLink = re.compile(r"[^\[]\[[^\[].*?[^\]]\][^\]]")
+    undidRevision = re.compile(r"^Undid revision (\d+) by.*?\|(.*?)\]")
 
     oldText = ""
+
+    detector = mwreverts.Detector()
+
     ## Extract page features from each revision
     for revision in tqdm.tqdm(
         page, desc=title, unit=" edits", smoothing=0, disable=parallel
@@ -275,6 +280,47 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: boo
             commentPersonalLife = "NULL"
             commentLength = "NULL"
             commentSpecialChars = "NULL"
+
+        reverted = detector.process(
+            revision.sha1, [{"revisionId": editId, "user": revision.user.text}]
+        )
+
+        # check with mwreverts first as it is a source of truth, comments may lie
+        # however check the comment anyway as they may make additional edits that
+        # will bypass mwreverts
+        if reverted:
+            # usually performs 1 loop, not really O(n^2)
+            for reversion in reverted.reverteds:
+                for revert in reversion:
+                    revisionId = revert["revisionId"]
+                    user = revert["user"]
+
+                    query = """UPDATE edit
+                        SET reverted = True
+                        WHERE edit_id = %s;"""
+                    cursor.execute(query, (revisionId,))
+
+                    query = """UPDATE user
+                        SET reverted_edits = reverted_edits + 1
+                        WHERE username = %s or ip_address = %s;"""
+                    cursor.execute(query, (user, user))
+
+        elif revision.comment:
+            reverted = undidRevision.match(revision.comment)
+
+            if reverted:
+                revisionId = reverted.groups(0)[0]
+                user = reverted.groups(0)[1]
+
+                query = """UPDATE edit
+                    SET reverted = True
+                    WHERE edit_id = %s;"""
+                cursor.execute(query, (revisionId,))
+
+                query = """UPDATE user
+                    SET reverted_edits = reverted_edits + 1
+                    WHERE username = %s or ip_address = %s;"""
+                cursor.execute(query, (user, user))
 
         query = """
         INSERT INTO edit (added, deleted, added_length, deleted_length, edit_date, 
@@ -477,7 +523,7 @@ def parse(namespaces=[1], parallel=False):
             return
 
         # for development, disable namespace check
-        # filename = "test.xml"
+        # filename = "../test.xml"
         # dump = mwxml.Dump.from_page_xml(open(filename))
 
         for page in dump:

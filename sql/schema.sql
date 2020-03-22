@@ -74,6 +74,7 @@ CREATE TABLE edit (
     ins_whitespace decimal(4, 4) DEFAULT NULL,
     -- ins_wp decimal(4, 4) DEFAULT NULL,
     -- kldnew2old decimal(5, 5) DEFAULT NULL,
+    reverted tinyint(1) DEFAULT 0,
     PRIMARY KEY (id),
     KEY user_idx (user_table_id),
     KEY page_idx (page_id),
