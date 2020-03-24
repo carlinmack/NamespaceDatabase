@@ -470,20 +470,18 @@ def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     deleted: str - all the text that is exclusively in the old revision
     parallel: int - id of the parallel process, 0 if not
     """
-    first = "oldrevision"+ parallel + ".txt"
-    with open(first, "w") as oldfile:
-        oldfile.writelines(old)
+    oldRevision = "oldrevision" + str(parallel) + ".txt"
+    newRevision = "newrevision" + str(parallel) + ".txt"
 
-    second = "newrevision"+ parallel + ".txt"
-    with open(second, "w") as newfile:
-        newfile.writelines(new)
+    with open(newRevision, "w") as newFile:
+        newFile.writelines(new)
 
     lineSeperators = re.compile(
         r"======================================================================"
     )
 
     added = (
-        subprocess.run(["wdiff", "-13", first, second], capture_output=True)
+        subprocess.run(["wdiff", "-13", oldRevision, newRevision], capture_output=True)
         .stdout.decode("utf-8")
         .strip()
     )
@@ -491,12 +489,15 @@ def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     added = lineSeperators.sub("", added)
 
     deleted = (
-        subprocess.run(["wdiff", "-23", first, second], capture_output=True)
+        subprocess.run(["wdiff", "-23", oldRevision, newRevision], capture_output=True)
         .stdout.decode("utf-8")
         .strip()
     )
 
     deleted = lineSeperators.sub("", deleted)
+
+    os.rename(newRevision, oldRevision)
+    open("newrevision" + str(parallel) + ".txt", "w+")
 
     return added, deleted
 
@@ -515,6 +516,9 @@ def parse(namespaces=[1], parallel=0):
     parallel: Int - whether to parse with multiple cores
     """
     database, cursor = databaseConnect()
+    
+    open("oldrevision"+ str(parallel) + ".txt","w+")
+    open("newrevision"+ str(parallel) + ".txt","w+")
 
     try:
         dump, filename = getDump(cursor)
@@ -566,6 +570,9 @@ def parse(namespaces=[1], parallel=0):
         cursor.execute(query, (currenttime, err, filename))
 
         raise
+
+    os.remove("oldrevision"+ str(parallel) + ".txt")
+    os.remove("newrevision"+ str(parallel) + ".txt")
 
     cursor.close()
     database.close()
