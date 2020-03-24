@@ -103,7 +103,7 @@ def parseNonTargetNamespace(page, title: str, namespace: str, cursor, parallel: 
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: Bool - True if called from parallel, hides progress bars
+    parallel: Int - >0 if called from parallel, hides progress bars
     """
     userDict = {}
 
@@ -155,7 +155,7 @@ def parseNonTargetNamespace(page, title: str, namespace: str, cursor, parallel: 
             cursor.execute(query, (key, namespace, editCount, namespace, editCount))
 
 
-def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: bool):
+def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: int):
     """Extracts features from each revision of a page into a database
 
     Ignores edits that have been deleted like:
@@ -167,7 +167,8 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: boo
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: Bool - True if called from parallel, hides progress bars
+    parallel: Int - id number of parallel slurm process, >0 if called from parallel, 
+      hides progress bars
     """
     blankText = re.compile(r"^\s+$")
     internalLink = re.compile(r"\[\[.*?\]\]")
@@ -216,7 +217,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: boo
         # if revision has text and the text isn't whitespace
         if revision.text and not blankText.search(revision.text):
             blanking = False
-            (added, deleted) = getDiff(oldText, revision.text)
+            (added, deleted) = getDiff(oldText, revision.text, parallel)
             blankAddition = blankText.search(added)
 
             addedLength = len(added)
@@ -455,7 +456,7 @@ def ratioPronouns(string: str) -> int:
     )
 
 
-def getDiff(old: str, new: str) -> Tuple[str, str]:
+def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     """Returns the diff between two edits using wdiff
 
     Parameters
@@ -467,12 +468,13 @@ def getDiff(old: str, new: str) -> Tuple[str, str]:
     -------
     added: str - all the text that is exclusively in the new revision
     deleted: str - all the text that is exclusively in the old revision
+    parallel: int - id of the parallel process, 0 if not
     """
-    first = "oldrevision.txt"
+    first = "oldrevision"+ parallel + ".txt"
     with open(first, "w") as oldfile:
         oldfile.writelines(old)
 
-    second = "newrevision.txt"
+    second = "newrevision"+ parallel + ".txt"
     with open(second, "w") as newfile:
         newfile.writelines(new)
 
@@ -499,7 +501,7 @@ def getDiff(old: str, new: str) -> Tuple[str, str]:
     return added, deleted
 
 
-def parse(namespaces=[1], parallel=False):
+def parse(namespaces=[1], parallel=0):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
 
@@ -510,7 +512,7 @@ def parse(namespaces=[1], parallel=False):
     Parameters
     ----------
     namespaces : list[int] - Wikipedia namespaces of interest.
-    parallel: Bool - whether to parse with multiple cores
+    parallel: Int - whether to parse with multiple cores
     """
     database, cursor = databaseConnect()
 
