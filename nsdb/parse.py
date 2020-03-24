@@ -516,9 +516,9 @@ def parse(namespaces=[1], parallel=0):
     parallel: Int - whether to parse with multiple cores
     """
     database, cursor = databaseConnect()
-    
-    open("oldrevision"+ str(parallel) + ".txt","w+")
-    open("newrevision"+ str(parallel) + ".txt","w+")
+
+    open("oldrevision" + str(parallel) + ".txt", "w").close()
+    open("newrevision" + str(parallel) + ".txt", "w").close()
 
     try:
         dump, filename = getDump(cursor)
@@ -533,6 +533,9 @@ def parse(namespaces=[1], parallel=0):
         # dump = mwxml.Dump.from_page_xml(open(filename))
 
         for page in dump:
+            open("oldrevision" + str(parallel) + ".txt", "w").close()
+            open("newrevision" + str(parallel) + ".txt", "w").close()
+
             namespace = page.namespace
             title = page.title
             query = """INSERT IGNORE INTO page (page_id, namespace, title, file_name)
@@ -571,8 +574,8 @@ def parse(namespaces=[1], parallel=0):
 
         raise
 
-    os.remove("oldrevision"+ str(parallel) + ".txt")
-    os.remove("newrevision"+ str(parallel) + ".txt")
+    os.remove("oldrevision" + str(parallel) + ".txt")
+    os.remove("newrevision" + str(parallel) + ".txt")
 
     cursor.close()
     database.close()
