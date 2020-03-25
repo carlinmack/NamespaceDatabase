@@ -79,7 +79,9 @@ limit 5;
 
 SELECT 'users with most talkpage edits:' AS '';
 SELECT username, talkpage_number_of_edits AS 'talkpage edits' 
-FROM user order by talkpage_number_of_edits desc limit 5;
+FROM user 
+where bot is null 
+order by talkpage_number_of_edits desc limit 5;
 SELECT '' AS '';
 
 SELECT 'users with most reversions:' AS '';

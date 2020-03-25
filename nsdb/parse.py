@@ -495,7 +495,7 @@ def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     deleted = lineSeperators.sub("", deleted)
 
     os.rename(newRevision, oldRevision)
-    open("newrevision" + str(parallel) + ".txt", "w+")
+    open("newrevision" + str(parallel) + ".txt", "w").close()
 
     return added, deleted
 

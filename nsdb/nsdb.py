@@ -89,7 +89,7 @@ def splitFile():
 
 
 def writeJobIds(listOfPartitions: str):
-    """Write list of partitions to database"""
+    """Write list of partitions to database, clears partitions.txt"""
     try:
         database = sql.connect(
             host="wikiactors.cs.virginia.edu",
@@ -155,11 +155,11 @@ def main():
 
     createDumpsFile(listOfDumps, wiki, dump)
 
-    # while (files to go)
+    # while (things-to-do or jobs still running)
     while countLines(listOfDumps) > 0:
         print("start")
 
-        # if theres space etc
+        # if countLines(listOfDumps) > 0:
         if not os.path.exists("../dumps") or len(os.listdir("../partitions")) == 0:
             fileName = downloadFirstDump(listOfDumps)
 
@@ -167,18 +167,25 @@ def main():
 
             splitFile()
 
+            # writeJobIds(listOfPartitions)
+
+            # add jobs to queue ?
+            # startJobs(namespaces)
+
         writeJobIds(listOfPartitions)
 
+        # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
+
+            # Mark jobs as error if taken too long
+
+            # Remove completed dumps with no error, mark as cleaned
+
+            # add dumps labelled failed to sbatch queue, mark as restarted
+
+            # sleep
         startJobs(namespaces)
 
         break
-        ##   - write status to database - job done (0) or error
-        ## while (jobs are running)
-        ##   - query jobs
-        ##       - restart dumps with errors, mark as restarted
-        ##       - remove completed dumps with no error, mark as cleaned
-        ##   - if (jobs < max and more-files-to-read and more-space)
-        ##       -break loop
 
 
 if __name__ == "__main__":
