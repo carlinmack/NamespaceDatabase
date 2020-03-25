@@ -1,8 +1,6 @@
 """
 This script looks in the dumps/ directory and splits the first file into 40
 partitions by default. This can be changed by adjusting the parameters to split()
-
-Please run pip install -r requirements.txt before running this script.
 """
 import glob
 import os

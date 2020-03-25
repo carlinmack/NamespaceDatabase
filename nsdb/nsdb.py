@@ -150,7 +150,6 @@ def main():
         for process in processes:
             process.join()
 
-
         print("That took {} seconds".format(time.time() - starttime))
         break
         ##   - write status to database - job done (0) or error

@@ -1,7 +1,5 @@
 """
 This script finds the fastest mirror to download Wikipedia dumps from
-
-Please run pip install -r requirements.txt before running this script.
 """
 import re
 import time

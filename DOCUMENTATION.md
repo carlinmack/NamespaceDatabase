@@ -32,8 +32,6 @@ and extract features to a database table.
 
 This tool uses a MySQL database that is configured in the parse() function.
 
-Please run pip install -r requirements.txt before running this script.
-
 Functions
 ---------
 
@@ -51,7 +49,7 @@ Functions
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
 
     
-`getDiff(old, new)`
+`getDiff(old, new, parallel)`
 :   Returns the diff between two edits using wdiff
     
     Parameters
@@ -63,6 +61,7 @@ Functions
     -------
     added: str - all the text that is exclusively in the new revision
     deleted: str - all the text that is exclusively in the old revision
+    parallel: int - id of the parallel process, 0 if not
 
     
 `getDump(cursor)`
@@ -86,7 +85,7 @@ Functions
 :   Returns the length of the longest word in text
 
     
-`parse(namespaces=[1], parallel=False)`
+`parse(namespaces=[1], parallel=0)`
 :   Selects the next dump from the database, extracts the features and
     imports them into several database tables.
     
@@ -97,7 +96,7 @@ Functions
     Parameters
     ----------
     namespaces : list[int] - Wikipedia namespaces of interest.
-    parallel: Bool - whether to parse with multiple cores
+    parallel: Int - whether to parse with multiple cores
 
     
 `parseNonTargetNamespace(page, title, namespace, cursor, parallel)`
@@ -109,7 +108,7 @@ Functions
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: Bool - True if called from parallel, hides progress bars
+    parallel: Int - >0 if called from parallel, hides progress bars
 
     
 `parseTargetNamespace(page, title, namespace, cursor, parallel)`
@@ -124,7 +123,8 @@ Functions
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: Bool - True if called from parallel, hides progress bars
+    parallel: Int - id number of parallel slurm process, >0 if called from parallel, 
+      hides progress bars
 
     
 `ratioCapitals(string)`
@@ -154,8 +154,6 @@ Module [splitwiki](nsdb/splitwiki.py)
 This script looks in the dumps/ directory and splits the first file into 40
 partitions by default. This can be changed by adjusting the parameters to split()
 
-Please run pip install -r requirements.txt before running this script.
-
 Functions
 ---------
 
@@ -174,8 +172,6 @@ Functions
 Module [mirrors](nsdb/mirrors.py)
 ==============
 This script finds the fastest mirror to download Wikipedia dumps from
-
-Please run pip install -r requirements.txt before running this script.
 
 Functions
 ---------
