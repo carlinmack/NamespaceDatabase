@@ -16,6 +16,7 @@ import re
 import subprocess
 import time
 from glob import glob
+from typing import List
 
 import mysql.connector as sql
 from mysql.connector import errorcode
@@ -25,12 +26,122 @@ from parse import parse
 from splitwiki import split
 
 
+def createDumpsFile(listOfDumps: str, wiki: str, dump: str):
+    """Creates dumps.txt if it doesn't exist"""
+
+    if not os.path.isfile(listOfDumps):
+        download = subprocess.run(
+            ["./download.sh", "https://dumps.wikimedia.org/", wiki, dump]
+        )
+
+
 def countLines(file) -> int:
     """Returns the number of lines in a file using wc from bash"""
     wordCount = subprocess.check_output(["wc", "-l", file]).decode("utf-8")
     lines = int(wordCount.split(" ")[0])
 
     return lines
+
+
+def downloadFirstDump(listOfDumps) -> str:
+    """Downloads the first dump in dumps.txt"""
+
+    with open(listOfDumps) as file:
+        firstLine = file.readline().strip()
+        fileName = re.findall(r"\/([^\/]*)$", firstLine)[0]
+        print(fileName)
+
+        data = file.read().splitlines(True)
+
+    fastestMirror = fastest()
+
+    subprocess.run(["wget", "-P", "../archives/", fastestMirror + firstLine])
+
+    # delete first line
+    with open(listOfDumps, "w") as file:
+        file.writelines(data)
+
+    return fileName
+
+
+def extractFile(fileName: str):
+    """Unzip and delete if successful"""
+    try:
+        extract = subprocess.run(["7z", "e", "../archives/" + fileName, "-o../dumps"])
+    except:
+        raise
+    else:
+        # delete archive
+        os.remove("../archives/" + fileName)
+
+
+def splitFile():
+    """Split first dump into 40 partitions"""
+    try:
+        split()
+    except:
+        raise
+    else:
+        # delete dump
+        files = glob("../dumps/*.xml*")
+        file = files[0]
+        os.remove(file)
+
+
+def writeJobIds(listOfPartitions: str):
+    """Write list of partitions to database"""
+    try:
+        database = sql.connect(
+            host="wikiactors.cs.virginia.edu",
+            database="wikiactors",
+            username="wikiactors",
+            option_files="private.cnf",
+            option_groups="wikiactors",
+        )
+
+        cursor = database.cursor()
+    except sql.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+    else:
+        with open(listOfPartitions) as file:
+            for line in file:
+                query = "INSERT INTO partition (file_name) VALUES (%s)"
+                cursor.execute(query, (line.strip(),))
+
+        database.commit()
+
+        cursor.close()
+        database.close()
+
+        # clear partitions.txt
+        open(listOfPartitions, "w").close()
+
+
+def startJobs(namespaces: List[int]):
+    """Start 40 concurrent jobs with python's multiprocessing"""
+    starttime = time.time()
+    processes = []
+    print("begin")
+    for i in range(0, 90):
+        print(i)
+        process = multiprocessing.Process(target=parse, args=(namespaces, i))
+        processes.append(process)
+
+    for process in processes:
+        process.start()
+
+    # for i in range(10):
+    print(processes)
+
+    for process in processes:
+        process.join()
+
+    print("That took {} seconds".format(time.time() - starttime))
 
 
 def main():
@@ -42,16 +153,7 @@ def main():
     listOfPartitions = "../partitions.txt"
     namespaces = [1]
 
-    if os.path.isfile(listOfDumps):
-        with open(listOfDumps) as file:
-            firstLine = file.readline().strip()
-    else:
-        firstLine = ""
-
-    if not re.match(r"\/.*7z$", firstLine):
-        fastestMirror = fastest()
-
-        download = subprocess.run(["./download.sh", fastestMirror, wiki, dump])
+    createDumpsFile(listOfDumps, wiki, dump)
 
     # while (files to go)
     while countLines(listOfDumps) > 0:
@@ -59,98 +161,16 @@ def main():
 
         # if theres space etc
         if not os.path.exists("../dumps") or len(os.listdir("../partitions")) == 0:
-            ## Download one file
-            with open(listOfDumps) as file:
-                firstLine = file.readline().strip()
-                fileName = re.findall(r"\/([^\/]*)$", firstLine)[0]
-                print(fileName)
+            fileName = downloadFirstDump(listOfDumps)
 
-                data = file.read().splitlines(True)
+            extractFile(fileName)
 
-            try:
-                fastestMirror
-            except NameError:
-                fastestMirror = fastest()
+            splitFile()
 
-            subprocess.run(["wget", "-P", "../archives/", fastestMirror + firstLine])
+        writeJobIds(listOfPartitions)
 
-            # delete first line
-            with open(listOfDumps, "w") as file:
-                file.writelines(data)
+        startJobs(namespaces)
 
-            ## Unzip and delete if successful
-            try:
-                extract = subprocess.run(
-                    ["7z", "e", "../archives/" + fileName, "-o../dumps"]
-                )
-            except:
-                raise
-            else:
-                # delete archive
-                os.remove("../archives/" + fileName)
-
-            ## Split into 40 partitions
-            try:
-                split()
-            except:
-                raise
-            else:
-                # delete dump
-                files = glob("../dumps/*.xml*")
-                file = files[0]
-                os.remove(file)
-
-        ## write jobs to DB ids
-        try:
-            database = sql.connect(
-                host="wikiactors.cs.virginia.edu",
-                database="wikiactors",
-                username="wikiactors",
-                option_files="private.cnf",
-                option_groups="wikiactors",
-            )
-
-            cursor = database.cursor()
-        except sql.Error as err:
-            if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-                print("Something is wrong with your user name or password")
-            elif err.errno == errorcode.ER_BAD_DB_ERROR:
-                print("Database does not exist")
-            else:
-                print(err)
-        else:
-            with open(listOfPartitions) as file:
-                for line in file:
-                    query = "INSERT INTO partition (file_name) VALUES (%s)"
-                    cursor.execute(query, (line.strip(),))
-
-            database.commit()
-
-            cursor.close()
-            database.close()
-
-            # clear partitions.txt
-            open(listOfPartitions, "w").close()
-
-        ## fire off 40 concurrenmt jobs - sbatch? hadoop?
-        starttime = time.time()
-        processes = []
-        print("begin")
-        for i in range(0, 90):
-            print(i)
-            process = multiprocessing.Process(target=parse, args=(namespaces, True))
-            processes.append(process)
-
-        for process in processes:
-            process.start()
-
-        # for i in range(10):
-        print(processes)
-
-        for process in processes:
-            process.join()
-
-        print("That took {} seconds".format(time.time() - starttime))
         break
         ##   - write status to database - job done (0) or error
         ## while (jobs are running)

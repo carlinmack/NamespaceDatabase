@@ -18,9 +18,33 @@ Functions
 :   Returns the number of lines in a file using wc from bash
 
     
+`createDumpsFile(listOfDumps, wiki, dump)`
+:   Creates dumps.txt if it doesn't exist
+
+    
+`downloadFirstDump(listOfDumps)`
+:   Downloads the first dump in dumps.txt
+
+    
+`extractFile(fileName)`
+:   Unzip and delete if successful
+
+    
 `main()`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
+
+    
+`splitFile()`
+:   Split first dump into 40 partitions
+
+    
+`startJobs(namespaces)`
+:   Start 40 concurrent jobs with python's multiprocessing
+
+    
+`writeJobIds(listOfPartitions)`
+:   Write list of partitions to database
 
 -----
 
