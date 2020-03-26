@@ -84,6 +84,8 @@ python splitwiki.py
 
 👉 [Documentation of all available modules ](DOCUMENTATION.md)
 
+👉 [Schema of the database](schema.md)
+
 ## Contributions
 
 I gladly accept contributions via GitHub pull requests, however please include documentation of the use case with your PR.
