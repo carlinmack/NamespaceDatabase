@@ -15,25 +15,21 @@ import os
 import re
 import subprocess
 import time
+from datetime import datetime
 from glob import glob
 from typing import List
 
-import mysql.connector as sql
-from mysql.connector import errorcode
-
+import Database
 from mirrors import fastest
 from parse import parse
 from splitwiki import split
-import Database
 
 
 def createDumpsFile(listOfDumps: str, wiki: str, dump: str):
     """Creates dumps.txt if it doesn't exist"""
 
     if not os.path.isfile(listOfDumps):
-        download = subprocess.run(
-            ["./download.sh", "https://dumps.wikimedia.org/", wiki, dump]
-        )
+        subprocess.run(["./download.sh", "https://dumps.wikimedia.org/", wiki, dump])
 
 
 def countLines(file) -> int:
@@ -89,23 +85,18 @@ def splitFile():
         os.remove(file)
 
 
-def writeJobIds(listOfPartitions: str):
+def writeJobIds(listOfPartitions: str, cursor):
     """Write list of partitions to database, clears partitions.txt"""
-    database, cursor = Database.connect()
-
     with open(listOfPartitions) as file:
         for line in file:
             query = "INSERT INTO partition (file_name) VALUES (%s)"
             cursor.execute(query, (line.strip(),))
 
-    cursor.close()
-    database.close()
-
     # clear partitions.txt
     open(listOfPartitions, "w").close()
 
 
-def startJobs(namespaces: List[int]):
+def startJobs(namespaces: List[int], cursor):
     """Start 40 concurrent jobs with python's multiprocessing"""
     starttime = time.time()
     processes = []
@@ -125,6 +116,54 @@ def startJobs(namespaces: List[int]):
         process.join()
 
     print("That took {} seconds".format(time.time() - starttime))
+
+
+def outstandingJobs(cursor) -> int:
+    """Returns number of jobs with status 'todo' or 'failed'"""
+    query = "SELECT count(*) FROM partition WHERE status = 'todo' OR status = 'failed'"
+    cursor.execute(query)
+    numJobs = cursor.fetchone()[0]
+
+    return numJobs
+
+
+def markLongRunningJobsAsError(cursor):
+    """Marks jobs that take over 20 minutes as error.
+
+    This doesn't halt execution but does allow the job to be requeued."""
+    query = "UPDATE partition SET status = 'failed' WHERE TIMESTAMPDIFF(MINUTE,start_time_1,end_time_1) > 15;"
+    cursor.execute(query)
+
+
+def removeDoneJobs(cursor):
+    """Remove partitions that are completed"""
+    query = "SELECT file_name FROM partition WHERE status = 'done'"
+    cursor.execute(query)
+    output = cursor.fetchall()
+
+    for file in output:
+        # os.remove("../partitions/" + file[0])
+        pass
+
+
+def restartJobs(namespaces: List[int], cursor):
+    """Restart jobs labelled failed, mark them as restarted"""
+    query = "SELECT file_name FROM partition WHERE status = 'failed'"
+    cursor.execute(query)
+    output = cursor.fetchall()
+
+    for file in output:
+        file = file[0]
+
+        # start jobs
+
+        currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        query = """UPDATE partition
+            SET
+                status = "restarted",
+                start_time_1 = %s
+            WHERE file_name = %s;"""
+        cursor.execute(query, (currenttime, file))
 
 
 def main():
@@ -155,20 +194,32 @@ def main():
             # add jobs to queue ?
             # startJobs(namespaces)
 
-        writeJobIds(listOfPartitions)
+        database, cursor = Database.connect()
 
-        # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
+        writeJobIds(listOfPartitions, cursor)
 
-            # Mark jobs as error if taken too long
-
-            # Remove completed dumps with no error, mark as cleaned
-
-            # add dumps labelled failed to sbatch queue, mark as restarted
-
-            # sleep
-        startJobs(namespaces)
+        startJobs(namespaces, cursor)
 
         break
+
+        jobsTodo = outstandingJobs(cursor)
+
+        # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
+        while jobsTodo:
+
+            # Mark jobs as error if taken too long
+            markLongRunningJobsAsError(cursor)
+
+            removeDoneJobs(cursor)
+
+            restartJobs(namespaces, cursor)
+
+            # sleep
+            time.sleep(30)
+            jobsTodo = outstandingJobs(cursor)
+
+        cursor.close()
+        database.close()
 
 
 if __name__ == "__main__":

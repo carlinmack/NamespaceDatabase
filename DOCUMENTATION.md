@@ -35,15 +35,33 @@ Functions
     download one and split it, then process the dump on multiple threads
 
     
+`markLongRunningJobsAsError(cursor)`
+:   Marks jobs that take over 20 minutes as error.
+    
+    This doesn't halt execution but does allow the job to be requeued.
+
+    
+`outstandingJobs(cursor)`
+:   Returns number of jobs with status 'todo' or 'failed'
+
+    
+`removeDoneJobs(cursor)`
+:   Remove partitions that are completed
+
+    
+`restartJobs(namespaces, cursor)`
+:   Restart jobs labelled failed, mark them as restarted
+
+    
 `splitFile()`
 :   Split first dump into 40 partitions
 
     
-`startJobs(namespaces)`
+`startJobs(namespaces, cursor)`
 :   Start 40 concurrent jobs with python's multiprocessing
 
     
-`writeJobIds(listOfPartitions)`
+`writeJobIds(listOfPartitions, cursor)`
 :   Write list of partitions to database, clears partitions.txt
 
 -----
