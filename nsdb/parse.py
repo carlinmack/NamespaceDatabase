@@ -2,7 +2,7 @@
 This script allows the user to parse a dump from a database connection
 and extract features to a database table.
 
-This tool uses a MySQL database that is configured in the parse() function.
+This tool uses a MySQL database that is configured in the Database() module.
 """
 import os
 import re
@@ -13,42 +13,9 @@ from typing import Tuple
 
 import mwreverts
 import mwxml
-import mysql.connector as sql
 import tqdm
-from mysql.connector import errorcode
 
-
-def databaseConnect():
-    """Connect to MySQL database using password stored in options file
-
-    Returns
-    -------
-    database: MySQLConnection - connection to the MySQL DB
-    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    """
-    try:
-        database = sql.connect(
-            host="wikiactors.cs.virginia.edu",
-            database="wikiactors",
-            username="wikiactors",
-            option_files="private.cnf",
-            option_groups="wikiactors",
-            autocommit="true",
-        )
-
-        cursor = database.cursor()
-
-    except sql.Error as err:
-        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            print("Something is wrong with your user name or password")
-        elif err.errno == errorcode.ER_BAD_DB_ERROR:
-            print("Database does not exist")
-        else:
-            print(err)
-        raise
-    else:
-        return database, cursor
-
+import Database
 
 def getDump(cursor):
     """Returns the next dump to be parsed from the database
@@ -513,7 +480,7 @@ def parse(namespaces=[1], parallel=0):
     namespaces : list[int] - Wikipedia namespaces of interest.
     parallel: Int - whether to parse with multiple cores
     """
-    database, cursor = databaseConnect()
+    database, cursor = Database.connect()
 
     open("oldrevision" + str(parallel) + ".txt", "w").close()
     open("newrevision" + str(parallel) + ".txt", "w").close()

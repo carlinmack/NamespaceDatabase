@@ -24,6 +24,7 @@ from mysql.connector import errorcode
 from mirrors import fastest
 from parse import parse
 from splitwiki import split
+import Database
 
 
 def createDumpsFile(listOfDumps: str, wiki: str, dump: str):
@@ -90,36 +91,18 @@ def splitFile():
 
 def writeJobIds(listOfPartitions: str):
     """Write list of partitions to database, clears partitions.txt"""
-    try:
-        database = sql.connect(
-            host="wikiactors.cs.virginia.edu",
-            database="wikiactors",
-            username="wikiactors",
-            option_files="private.cnf",
-            option_groups="wikiactors",
-        )
+    database, cursor = Database.connect()
 
-        cursor = database.cursor()
-    except sql.Error as err:
-        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            print("Something is wrong with your user name or password")
-        elif err.errno == errorcode.ER_BAD_DB_ERROR:
-            print("Database does not exist")
-        else:
-            print(err)
-    else:
-        with open(listOfPartitions) as file:
-            for line in file:
-                query = "INSERT INTO partition (file_name) VALUES (%s)"
-                cursor.execute(query, (line.strip(),))
+    with open(listOfPartitions) as file:
+        for line in file:
+            query = "INSERT INTO partition (file_name) VALUES (%s)"
+            cursor.execute(query, (line.strip(),))
 
-        database.commit()
+    cursor.close()
+    database.close()
 
-        cursor.close()
-        database.close()
-
-        # clear partitions.txt
-        open(listOfPartitions, "w").close()
+    # clear partitions.txt
+    open(listOfPartitions, "w").close()
 
 
 def startJobs(namespaces: List[int]):
