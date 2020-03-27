@@ -82,6 +82,10 @@ Functions
 :   Removes special characters and unnecessary whitespace from text
 
     
+`containsVulgarity(string)`
+:   Returns whether text contains profanity based on a simple wordlist approach
+
+    
 `getDiff(old, new, parallel)`
 :   Returns the diff between two edits using wdiff
     

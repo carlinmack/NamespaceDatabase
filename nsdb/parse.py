@@ -14,8 +14,10 @@ from typing import Tuple
 import mwreverts
 import mwxml
 import tqdm
+from profanity import profanity
 
 import Database
+
 
 def getDump(cursor):
     """Returns the next dump to be parsed from the database
@@ -201,6 +203,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: int
                 insWhitespace = ratioWhitespace(added)
 
                 insPronouns = ratioPronouns(added)
+                insVulgarity = containsVulgarity(added)
             else:
                 insInternalLink = 0
                 insExternalLink = 0
@@ -217,6 +220,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: int
                     insWhitespace = 0
 
                 insPronouns = 0
+                insVulgarity = 0
 
             delWords = len(deleted.split(" "))
 
@@ -293,15 +297,17 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: int
             edit_id, page_id, ins_internal_link, ins_external_link, 
             ins_longest_inserted_word, ins_longest_character_sequence, 
             ins_pronouns, ins_capitalization, ins_digits, ins_special_chars, 
-            ins_whitespace, del_words, comment_personal_life, comment_copyedit, 
-            comment_length, comment_special_chars, blanking, user_table_id
+            ins_vulgarity, ins_whitespace, del_words, comment_personal_life, 
+            comment_copyedit, comment_length, comment_special_chars, blanking, 
+            user_table_id
         ) VALUES (
             %s, %s, %s, %s, %s,
             %s, %s, %s, %s,
             %s, %s, 
             %s, %s, %s, %s, 
             %s, %s, %s, %s, 
-            %s, %s, %s, %s
+            %s, %s, %s, %s,
+            %s
         );
         """
 
@@ -321,6 +327,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: int
             insCapitalization,
             insDigits,
             insSpecialChars,
+            insVulgarity,
             insWhitespace,
             delWords,
             commentPersonalLife,
@@ -419,6 +426,11 @@ def ratioPronouns(string: str) -> int:
     return len(re.findall(r"(\sI\s|\sme\s|\smy\s|\smine\s|\smyself\s)", string)) / len(
         string.split(" ")
     )
+
+
+def containsVulgarity(string: str) -> bool:
+    """Returns whether text contains profanity based on a simple wordlist approach"""
+    return profanity.contains_profanity(string)
 
 
 def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:

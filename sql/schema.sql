@@ -70,7 +70,7 @@ CREATE TABLE edit (
     -- ins_sex decimal(4, 4) DEFAULT NULL,
     ins_special_chars decimal(4, 4) DEFAULT NULL,
     -- ins_special_words decimal(4, 4) DEFAULT NULL,
-    -- ins_vulgarity tinyint(1) DEFAULT NULL,
+    ins_vulgarity tinyint(1) DEFAULT NULL,
     ins_whitespace decimal(4, 4) DEFAULT NULL,
     -- ins_wp decimal(4, 4) DEFAULT NULL,
     -- kldnew2old decimal(5, 5) DEFAULT NULL,

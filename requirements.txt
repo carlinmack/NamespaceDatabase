@@ -1,4 +1,6 @@
 click
+profanity
+mwreverts
 mwxml
 mysql
 mysql-connector-python
