@@ -44,7 +44,7 @@ Functions
 
     
 `writeJobIds(listOfPartitions)`
-:   Write list of partitions to database
+:   Write list of partitions to database, clears partitions.txt
 
 -----
 
@@ -54,7 +54,7 @@ Module [parse](nsdb/parse.py)
 This script allows the user to parse a dump from a database connection
 and extract features to a database table.
 
-This tool uses a MySQL database that is configured in the parse() function.
+This tool uses a MySQL database that is configured in the Database() module.
 
 Functions
 ---------
@@ -62,15 +62,6 @@ Functions
     
 `cleanString(string)`
 :   Removes special characters and unnecessary whitespace from text
-
-    
-`databaseConnect()`
-:   Connect to MySQL database using password stored in options file
-    
-    Returns
-    -------
-    database: MySQLConnection - connection to the MySQL DB
-    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
 
     
 `getDiff(old, new, parallel)`
@@ -208,5 +199,27 @@ Functions
     Returns
     -------
     fastestMirror: str - the url of the fastest mirror
+
+-----
+
+
+Module [Database](nsdb/Database.py)
+===============
+This module creates a database connection for other scripts to use.
+
+The connection is configured in the private.cnf function. See public.cnf for an 
+example configuration.
+
+Functions
+---------
+
+    
+`connect()`
+:   Connect to MySQL database using password stored in options file
+    
+    Returns
+    -------
+    database: MySQLConnection - connection to the MySQL DB
+    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
 
 -----
