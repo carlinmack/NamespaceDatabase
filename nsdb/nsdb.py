@@ -100,13 +100,13 @@ def startJobs(namespaces: List[int], cursor):
     """Start 40 concurrent jobs with python's multiprocessing"""
     starttime = time.time()
     processes = []
-    print("begin")
-    for i in range(0, 90):
-        print(i)
+    
+    for i in range(1, 99):
         process = multiprocessing.Process(target=parse, args=(namespaces, i))
         processes.append(process)
 
     for process in processes:
+        time.sleep(1)
         process.start()
 
     # for i in range(10):
@@ -179,24 +179,21 @@ def main():
 
     # while (things-to-do or jobs still running)
     while countLines(listOfDumps) > 0:
-        print("start")
+        database, cursor = Database.connect()
 
         # if countLines(listOfDumps) > 0:
         if not os.path.exists("../dumps") or len(os.listdir("../partitions")) == 0:
+            print('download')
             fileName = downloadFirstDump(listOfDumps)
 
             extractFile(fileName)
 
             splitFile()
 
-            # writeJobIds(listOfPartitions)
+            writeJobIds(listOfPartitions, cursor)
 
             # add jobs to queue ?
             # startJobs(namespaces)
-
-        database, cursor = Database.connect()
-
-        writeJobIds(listOfPartitions, cursor)
 
         startJobs(namespaces, cursor)
 
