@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import sys
+import traceback
 from datetime import datetime
 from typing import Tuple
 
@@ -447,10 +448,10 @@ def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     deleted: str - all the text that is exclusively in the old revision
     parallel: int - id of the parallel process, 0 if not
     """
-    oldRevision = "oldrevision" + str(parallel) + ".txt"
-    newRevision = "newrevision" + str(parallel) + ".txt"
+    oldrevision = "revision/old" + str(parallel) + ".txt"
+    newrevision = "revision/new" + str(parallel) + ".txt"
 
-    with open(newRevision, "w") as newFile:
+    with open(newrevision, "w") as newFile:
         newFile.writelines(new)
 
     lineSeperators = re.compile(
@@ -458,7 +459,7 @@ def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     )
 
     added = (
-        subprocess.run(["wdiff", "-13", oldRevision, newRevision], capture_output=True)
+        subprocess.run(["wdiff", "-13", oldrevision, newrevision], capture_output=True)
         .stdout.decode("utf-8")
         .strip()
     )
@@ -466,15 +467,15 @@ def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     added = lineSeperators.sub("", added)
 
     deleted = (
-        subprocess.run(["wdiff", "-23", oldRevision, newRevision], capture_output=True)
+        subprocess.run(["wdiff", "-23", oldrevision, newrevision], capture_output=True)
         .stdout.decode("utf-8")
         .strip()
     )
 
     deleted = lineSeperators.sub("", deleted)
 
-    os.rename(newRevision, oldRevision)
-    open("newrevision" + str(parallel) + ".txt", "w").close()
+    os.rename(newrevision, oldrevision)
+    open("revision/new" + str(parallel) + ".txt", "w").close()
 
     return added, deleted
 
@@ -494,8 +495,8 @@ def parse(namespaces=[1], parallel=0):
     """
     database, cursor = Database.connect()
 
-    open("oldrevision" + str(parallel) + ".txt", "w").close()
-    open("newrevision" + str(parallel) + ".txt", "w").close()
+    open("revision/old" + str(parallel) + ".txt", "w").close()
+    open("revision/new" + str(parallel) + ".txt", "w").close()
 
     try:
         dump, filename = getDump(cursor)
@@ -508,10 +509,13 @@ def parse(namespaces=[1], parallel=0):
         # for development, disable namespace check
         # filename = "../test.xml"
         # dump = mwxml.Dump.from_page_xml(open(filename))
+        
+        if not os.path.exists('revision'):
+            os.mkdir('revision')
 
         for page in dump:
-            open("oldrevision" + str(parallel) + ".txt", "w").close()
-            open("newrevision" + str(parallel) + ".txt", "w").close()
+            open("revision/old" + str(parallel) + ".txt", "w").close()
+            open("revision/new" + str(parallel) + ".txt", "w").close()
 
             namespace = page.namespace
             title = page.title
@@ -533,12 +537,21 @@ def parse(namespaces=[1], parallel=0):
             WHERE file_name = %s;"""
         cursor.execute(query, (currenttime, filename))
 
-    except:
+    except Exception as e:
         err = str(sys.exc_info()[1])
 
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+        if not parallel:
+            print(err)
 
-        print(err)
+        if not os.path.exists('error'):
+            os.mkdir('error')
+
+        with open("error/" + filename, "a") as file:
+            file.write(currenttime + "\n\n")
+            file.write(str(e) + "\n\n")
+            file.write(traceback.format_exc())
 
         query = """UPDATE partition
             SET
@@ -551,8 +564,8 @@ def parse(namespaces=[1], parallel=0):
 
         raise
 
-    os.remove("oldrevision" + str(parallel) + ".txt")
-    os.remove("newrevision" + str(parallel) + ".txt")
+    os.remove("revision/old" + str(parallel) + ".txt")
+    os.remove("revision/new" + str(parallel) + ".txt")
 
     cursor.close()
     database.close()
