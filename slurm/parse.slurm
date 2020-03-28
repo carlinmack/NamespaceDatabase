@@ -6,7 +6,8 @@
 #SBATCH --requeue
 #SBATCH --job-name="parsewiki"
 #SBATCH --ntasks=1
-#SBATCH --array=0-98%10
+#SBATCH --array=1-99%10
+#SBATCH --output=log/%A_%a.out
 
 source /etc/profile.d/modules.sh
 module load python3.8.0
