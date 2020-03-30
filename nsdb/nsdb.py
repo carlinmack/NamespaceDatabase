@@ -21,7 +21,7 @@ from typing import List
 
 import Database
 from mirrors import fastest
-from parse import parse
+import parse
 from splitwiki import split
 
 
@@ -113,7 +113,7 @@ def startJobs(namespaces: List[int], cursor):
     print(processes)
 
     for process in processes:
-        process.join()
+        process.join()    
 
     print("That took {} seconds".format(time.time() - starttime))
 
@@ -125,6 +125,15 @@ def outstandingJobs(cursor) -> int:
     numJobs = cursor.fetchone()[0]
 
     return numJobs
+
+
+def jobsDone(cursor) -> bool:
+    """Returns number of jobs with status 'todo' or 'failed'"""
+    query = "SELECT count(*) FROM partition WHERE status = 'running' OR status = 'todo'"
+    cursor.execute(query)
+    numJobs = cursor.fetchone()[0]
+
+    return numJobs == 0
 
 
 def markLongRunningJobsAsError(cursor):
@@ -163,7 +172,7 @@ def restartJobs(namespaces: List[int], cursor):
                 status = "restarted",
                 start_time_1 = %s
             WHERE file_name = %s;"""
-        cursor.execute(query, (currenttime, file))
+        # cursor.execute(query, (currenttime, file))
 
 
 def main():
@@ -174,6 +183,11 @@ def main():
     listOfDumps = "../dumps.txt"
     listOfPartitions = "../partitions.txt"
     namespaces = [1]
+    jobNumber = 1
+    numberOfPartitions = 98
+
+    queue = multiprocessing.Queue()
+    pool = multiprocessing.Pool(10, parse.multiprocess, (namespaces, queue))
 
     createDumpsFile(listOfDumps, wiki, dump)
 
@@ -183,23 +197,27 @@ def main():
 
         # if countLines(listOfDumps) > 0:
         if not os.path.exists("../dumps") or len(os.listdir("../partitions")) == 0:
-            print('download')
+            print("download")
             fileName = downloadFirstDump(listOfDumps)
 
             extractFile(fileName)
 
-            splitFile()
+            numberOfPartitions = splitFile()
 
             writeJobIds(listOfPartitions, cursor)
 
-            # add jobs to queue ?
-            # startJobs(namespaces)
-
-        startJobs(namespaces, cursor)
-
-        break
-
         jobsTodo = outstandingJobs(cursor)
+        jobsDone = jobsDone(cursor)
+
+        if (numberOfPartitions == 0 and jobsDone):
+            print('sleeping')
+            break
+
+        for i in range(jobNumber, jobNumber + numberOfPartitions):
+            queue.put(i)
+        
+        numberOfPartitions = 0
+        print(queue)
 
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
         while jobsTodo:
@@ -214,6 +232,8 @@ def main():
             # sleep
             time.sleep(30)
             jobsTodo = outstandingJobs(cursor)
+
+        # clean up Pool
 
         cursor.close()
         database.close()
