@@ -10,6 +10,7 @@ import subprocess
 import sys
 import traceback
 from datetime import datetime
+import time
 from typing import Tuple
 
 import mwreverts
@@ -19,6 +20,19 @@ from profanity import profanity
 
 import Database
 
+from multiprocessing import Queue
+
+
+def multiprocess(namespaces, queue, id):
+    """Wrapper around process to call parse correctly"""
+    while True:
+        i = queue.get()
+        id = str(id) + "_" + str(i)
+        time.sleep((i % 10) / 4) 
+
+        parse(namespaces, id)
+
+        time.sleep(10)
 
 def getDump(cursor):
     """Returns the next dump to be parsed from the database
@@ -62,7 +76,7 @@ def getDump(cursor):
     return dump, filename
 
 
-def parseNonTargetNamespace(page, title: str, namespace: str, cursor, parallel: bool):
+def parseNonTargetNamespace(page, title: str, namespace: str, cursor, parallel: str=""):
     """Counts the number of edits each user makes and inserts them to the database.
 
     Parameters
@@ -71,7 +85,7 @@ def parseNonTargetNamespace(page, title: str, namespace: str, cursor, parallel: 
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: Int - >0 if called from parallel, hides progress bars
+    parallel: str - id of process, hides progress bars if present
     """
     userDict = {}
 
@@ -123,7 +137,7 @@ def parseNonTargetNamespace(page, title: str, namespace: str, cursor, parallel: 
             cursor.execute(query, (key, namespace, editCount, namespace, editCount))
 
 
-def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: int):
+def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str):
     """Extracts features from each revision of a page into a database
 
     Ignores edits that have been deleted like:
@@ -135,7 +149,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: int
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: Int - id number of parallel slurm process, >0 if called from parallel, 
+    parallel: str - id name of parallel slurm process, present if called from parallel, 
       hides progress bars
     """
     blankText = re.compile(r"^\s+$")
@@ -434,7 +448,7 @@ def containsVulgarity(string: str) -> bool:
     return profanity.contains_profanity(string)
 
 
-def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
+def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
     """Returns the diff between two edits using wdiff
 
     Parameters
@@ -446,10 +460,10 @@ def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     -------
     added: str - all the text that is exclusively in the new revision
     deleted: str - all the text that is exclusively in the old revision
-    parallel: int - id of the parallel process, 0 if not
+    parallel: str - id of the parallel process, 0 if not
     """
-    oldrevision = "revision/old" + str(parallel) + ".txt"
-    newrevision = "revision/new" + str(parallel) + ".txt"
+    oldrevision = "revision/old" + parallel + ".txt"
+    newrevision = "revision/new" + parallel + ".txt"
 
     with open(newrevision, "w") as newFile:
         newFile.writelines(new)
@@ -475,12 +489,12 @@ def getDiff(old: str, new: str, parallel: int) -> Tuple[str, str]:
     deleted = lineSeperators.sub("", deleted)
 
     os.rename(newrevision, oldrevision)
-    open("revision/new" + str(parallel) + ".txt", "w").close()
+    open("revision/new" + parallel + ".txt", "w").close()
 
     return added, deleted
 
 
-def parse(namespaces=[1], parallel=0):
+def parse(namespaces=[1], parallel=""):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
 
@@ -491,12 +505,12 @@ def parse(namespaces=[1], parallel=0):
     Parameters
     ----------
     namespaces : list[int] - Wikipedia namespaces of interest.
-    parallel: Int - whether to parse with multiple cores
+    parallel: str - whether to parse with multiple cores
     """
     database, cursor = Database.connect()
 
-    open("revision/old" + str(parallel) + ".txt", "w").close()
-    open("revision/new" + str(parallel) + ".txt", "w").close()
+    open("revision/old" + parallel + ".txt", "w").close()
+    open("revision/new" + parallel + ".txt", "w").close()
 
     try:
         dump, filename = getDump(cursor)
@@ -509,13 +523,13 @@ def parse(namespaces=[1], parallel=0):
         # for development, disable namespace check
         # filename = "../test.xml"
         # dump = mwxml.Dump.from_page_xml(open(filename))
-        
-        if not os.path.exists('revision'):
-            os.mkdir('revision')
+
+        if not os.path.exists("revision"):
+            os.mkdir("revision")
 
         for page in dump:
-            open("revision/old" + str(parallel) + ".txt", "w").close()
-            open("revision/new" + str(parallel) + ".txt", "w").close()
+            open("revision/old" + parallel + ".txt", "w").close()
+            open("revision/new" + parallel + ".txt", "w").close()
 
             namespace = page.namespace
             title = page.title
@@ -541,17 +555,17 @@ def parse(namespaces=[1], parallel=0):
         err = str(sys.exc_info()[1])
 
         currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            
+
         if not parallel:
             print(err)
 
-        if not os.path.exists('error'):
-            os.mkdir('error')
+        if not os.path.exists("error"):
+            os.mkdir("error")
 
         with open("error/" + filename, "a") as file:
             file.write(currenttime + "\n\n")
             file.write(str(e) + "\n\n")
-            file.write(traceback.format_exc())
+            file.write(traceback.format_exc() + "\n\n")
 
         query = """UPDATE partition
             SET
@@ -564,8 +578,8 @@ def parse(namespaces=[1], parallel=0):
 
         raise
 
-    os.remove("revision/old" + str(parallel) + ".txt")
-    os.remove("revision/new" + str(parallel) + ".txt")
+    os.remove("revision/old" + parallel + ".txt")
+    os.remove("revision/new" + parallel + ".txt")
 
     cursor.close()
     database.close()

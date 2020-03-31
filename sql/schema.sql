@@ -10,7 +10,7 @@ DROP TABLE IF EXISTS user;
 CREATE TABLE user (
     id int unsigned NOT NULL AUTO_INCREMENT,
     user_id int DEFAULT NULL,
-    username varchar(85) DEFAULT NULL,
+    username varchar(255) binary DEFAULT NULL,
     ip_address varbinary(16) DEFAULT NULL,
     confirmed tinyint(1) DEFAULT NULL,
     user_special tinyint(1) DEFAULT NULL,

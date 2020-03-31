@@ -29,18 +29,23 @@ def countLines(file) -> int:
 #     "-d", "--deletedump", default=False, is_flag=True,
 # )
 def split(
-    number=40, inputFolder="../dumps", outputFolder="../partitions", deleteDump=True
+    number=40, inputFolder="../dumps", outputFolder="../partitions", deleteDump=True, fileName=""
 ):
     """Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
     """
-    files = glob.glob(inputFolder + "/*.xml*")
-    file = files[0]
-    fileName = file[9:]
+    if not fileName:
+        files = glob.glob(inputFolder + "/*.xml*")
+        file = files[0]
+        fileName = file[9:]
+    else:
+        file = "../dumps/" + fileName
 
     lines = countLines(file)
 
     chunkSize = lines / number * 0.75
+
+    numberOfPartitions = 0
 
     header = """<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -99,6 +104,7 @@ def split(
 
         for index in trange(number, desc=fileName, unit=" partition"):
             if not moreFile:
+                numberOfPartitions = index
                 break
 
             partitionName = fileName + "." + str(index)
@@ -116,21 +122,22 @@ def split(
                 for line in inFile:
                     moreFile = False
 
-                    if line == "  <page>\n":
-                        inPage = True
                     if inPage:
                         i = i + 1
                         outFile.write(line)
-                    if i > chunkSize:
-                        if line == "  </page>\n":
+                        if i > chunkSize and line == "  </page>\n":
                             i = 0
                             moreFile = True
                             break
+                    elif line == "  <page>\n":
+                        inPage = True
 
                 outFile.write(footer)
 
     if deleteDump:
         os.remove(file)
+
+    return numberOfPartitions
 
 
 if __name__ == "__main__":

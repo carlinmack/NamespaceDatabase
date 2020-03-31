@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH --cpus-per-task 1
-#SBATCH --time 1:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=5
+#SBATCH --time=1:00:00
 #SBATCH --mem=200
 #SBATCH --requeue
 #SBATCH --job-name="parsewiki"
-#SBATCH --ntasks=1
-#SBATCH --array=1-99%10
+#SBATCH --array=1-4
 #SBATCH --output=log/%A_%a.out
 
 source /etc/profile.d/modules.sh
@@ -16,13 +16,11 @@ module load python3.8.0
 hostname
 # cd to the directory
 cd /p/wikiactors/nsdb
-# Run programs
-# the environment variable SLURM_ARRAY_TASK_ID contains
-# the index corresponding to the current job step
-sleep $((SLURM_ARRAY_TASK_ID % 10))
+
+sleep $SLURM_ARRAY_TASK_ID
 python --version
 date
-python slurm-parse.py $SLURM_JOB_ID$SLURM_ARRAY_TASK_ID
+srun --cpus-per-task 5 python nsdb.py $SLURM_JOB_ID
 
 # source:
 #   -  https://rcc.uchicago.edu/docs/tutorials/kicp-tutorials/running-jobs.html

@@ -14,6 +14,7 @@ import multiprocessing
 import os
 import re
 import subprocess
+from sys import argv
 import time
 from datetime import datetime
 from glob import glob
@@ -70,30 +71,25 @@ def extractFile(fileName: str):
     else:
         # delete archive
         os.remove("../archives/" + fileName)
+        return fileName[:-3]
 
 
-def splitFile():
+def splitFile(fileName):
     """Split first dump into 40 partitions"""
     try:
-        split()
+        numberOfPartitions = split(fileName=fileName)
     except:
         raise
     else:
-        # delete dump
-        files = glob("../dumps/*.xml*")
-        file = files[0]
-        os.remove(file)
+        return numberOfPartitions
 
 
-def writeJobIds(listOfPartitions: str, cursor):
-    """Write list of partitions to database, clears partitions.txt"""
-    with open(listOfPartitions) as file:
-        for line in file:
-            query = "INSERT INTO partition (file_name) VALUES (%s)"
-            cursor.execute(query, (line.strip(),))
-
-    # clear partitions.txt
-    open(listOfPartitions, "w").close()
+def writeJobIds(fileName, numberOfPartitions: str, cursor):
+    """Write list of partitions to database"""
+    for index in range(numberOfPartitions):
+        partitionName = fileName + "." + str(index)
+        query = "INSERT INTO partition (file_name) VALUES (%s)"
+        cursor.execute(query, (partitionName,))
 
 
 def startJobs(namespaces: List[int], cursor):
@@ -118,11 +114,18 @@ def startJobs(namespaces: List[int], cursor):
     print("That took {} seconds".format(time.time() - starttime))
 
 
+def noDiskSpace():    
+    path = '../.'
+    return int(subprocess.check_output(['du','-s', path]).split()[0].decode('utf-8')) > 500000000
+
+
 def outstandingJobs(cursor) -> int:
     """Returns number of jobs with status 'todo' or 'failed'"""
     query = "SELECT count(*) FROM partition WHERE status = 'todo' OR status = 'failed'"
     cursor.execute(query)
     numJobs = cursor.fetchone()[0]
+
+    numJobs = max(numJobs - 25, 0)
 
     return numJobs
 
@@ -151,8 +154,9 @@ def removeDoneJobs(cursor):
     output = cursor.fetchall()
 
     for file in output:
-        # os.remove("../partitions/" + file[0])
-        pass
+        fileName = "../partitions/" + file[0]
+        if os.path.exists(fileName):  
+            os.remove(fileName)
 
 
 def restartJobs(namespaces: List[int], cursor):
@@ -175,19 +179,20 @@ def restartJobs(namespaces: List[int], cursor):
         # cursor.execute(query, (currenttime, file))
 
 
-def main():
+def main(parallel=0):
     """Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads"""
     wiki = "enwiki/"
     dump = "20200101/"
     listOfDumps = "../dumps.txt"
-    listOfPartitions = "../partitions.txt"
     namespaces = [1]
     jobNumber = 1
-    numberOfPartitions = 98
+
+    print('main')
+    print(multiprocessing.cpu_count())
 
     queue = multiprocessing.Queue()
-    pool = multiprocessing.Pool(10, parse.multiprocess, (namespaces, queue))
+    pool = multiprocessing.Pool(5, parse.multiprocess, (namespaces, queue, parallel))
 
     createDumpsFile(listOfDumps, wiki, dump)
 
@@ -196,20 +201,27 @@ def main():
         database, cursor = Database.connect()
 
         # if countLines(listOfDumps) > 0:
-        if not os.path.exists("../dumps") or len(os.listdir("../partitions")) == 0:
+        if not os.path.exists("../dumps") or len(os.listdir("../dumps")) < 4:
             print("download")
+            tick = time.time()
             fileName = downloadFirstDump(listOfDumps)
+            print("--- %s seconds ---" % (time.time() - tick))
 
-            extractFile(fileName)
+            tick = time.time()
+            fileName = extractFile(fileName)
+            print("--- %s seconds ---" % (time.time() - tick))
 
-            numberOfPartitions = splitFile()
+            tick = time.time()
+            numberOfPartitions = splitFile(fileName)
+            print("--- %s seconds ---" % (time.time() - tick))
 
-            writeJobIds(listOfPartitions, cursor)
+            tick = time.time()
+            writeJobIds(fileName, numberOfPartitions, cursor)
+            print("--- %s seconds ---" % (time.time() - tick))
 
         jobsTodo = outstandingJobs(cursor)
-        jobsDone = jobsDone(cursor)
 
-        if (numberOfPartitions == 0 and jobsDone):
+        if (numberOfPartitions == 0 and jobsDone(cursor)):
             print('sleeping')
             break
 
@@ -220,7 +232,7 @@ def main():
         print(queue)
 
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
-        while jobsTodo:
+        while jobsTodo or noDiskSpace():
 
             # Mark jobs as error if taken too long
             markLongRunningJobsAsError(cursor)
@@ -240,4 +252,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(argv) > 1:
+        id = argv[1]
+        main(id)
+    else:
+        main()
