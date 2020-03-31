@@ -51,13 +51,13 @@ def downloadFirstDump(listOfDumps) -> str:
 
         data = file.read().splitlines(True)
 
-    fastestMirror = fastest()
-
-    subprocess.run(["wget", "-P", "../archives/", fastestMirror + firstLine])
-
     # delete first line
     with open(listOfDumps, "w") as file:
         file.writelines(data)
+
+    fastestMirror = fastest()
+
+    subprocess.run(["wget", "-P", "../archives/", fastestMirror + firstLine])
 
     return fileName
 
@@ -74,14 +74,14 @@ def extractFile(fileName: str):
         return fileName[:-3]
 
 
-def splitFile(fileName):
+def splitFile(fileName, queue, cursor):
     """Split first dump into 40 partitions"""
     try:
-        numberOfPartitions = split(fileName=fileName)
+        split(fileName=fileName, queue=queue, cursor=cursor)
     except:
         raise
     else:
-        return numberOfPartitions
+        pass
 
 
 def writeJobIds(fileName, numberOfPartitions: str, cursor):
@@ -96,7 +96,7 @@ def startJobs(namespaces: List[int], cursor):
     """Start 40 concurrent jobs with python's multiprocessing"""
     starttime = time.time()
     processes = []
-    
+
     for i in range(1, 99):
         process = multiprocessing.Process(target=parse, args=(namespaces, i))
         processes.append(process)
@@ -109,14 +109,22 @@ def startJobs(namespaces: List[int], cursor):
     print(processes)
 
     for process in processes:
-        process.join()    
+        process.join()
 
     print("That took {} seconds".format(time.time() - starttime))
 
 
-def noDiskSpace():    
-    path = '../.'
-    return int(subprocess.check_output(['du','-s', path]).split()[0].decode('utf-8')) > 500000000
+def noDiskSpace():
+    """Returns True if the folder is more than 50GB in size"""
+    path = "../."
+    try:
+        space = int(
+            subprocess.check_output(["du", "-s", path]).split()[0].decode("utf-8")
+        )
+    except:
+        space = 99999999
+
+    return space > 50000000
 
 
 def outstandingJobs(cursor) -> int:
@@ -155,7 +163,7 @@ def removeDoneJobs(cursor):
 
     for file in output:
         fileName = "../partitions/" + file[0]
-        if os.path.exists(fileName):  
+        if os.path.exists(fileName):
             os.remove(fileName)
 
 
@@ -188,11 +196,11 @@ def main(parallel=0):
     namespaces = [1]
     jobNumber = 1
 
-    print('main')
+    print("main")
     print(multiprocessing.cpu_count())
 
     queue = multiprocessing.Queue()
-    pool = multiprocessing.Pool(5, parse.multiprocess, (namespaces, queue, parallel))
+    pool = multiprocessing.Pool(10, parse.multiprocess, (namespaces, queue, parallel))
 
     createDumpsFile(listOfDumps, wiki, dump)
 
@@ -201,6 +209,7 @@ def main(parallel=0):
         database, cursor = Database.connect()
 
         # if countLines(listOfDumps) > 0:
+        print("before")
         if not os.path.exists("../dumps") or len(os.listdir("../dumps")) < 4:
             print("download")
             tick = time.time()
@@ -212,23 +221,15 @@ def main(parallel=0):
             print("--- %s seconds ---" % (time.time() - tick))
 
             tick = time.time()
-            numberOfPartitions = splitFile(fileName)
-            print("--- %s seconds ---" % (time.time() - tick))
-
-            tick = time.time()
-            writeJobIds(fileName, numberOfPartitions, cursor)
+            splitter = multiprocessing.Pool(1, splitFile, (fileName, queue, cursor))
             print("--- %s seconds ---" % (time.time() - tick))
 
         jobsTodo = outstandingJobs(cursor)
 
-        if (numberOfPartitions == 0 and jobsDone(cursor)):
-            print('sleeping')
-            break
+        if jobsDone(cursor):
+            print("sleeping")
+        #     break
 
-        for i in range(jobNumber, jobNumber + numberOfPartitions):
-            queue.put(i)
-        
-        numberOfPartitions = 0
         print(queue)
 
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)

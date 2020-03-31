@@ -27,12 +27,15 @@ def multiprocess(namespaces, queue, id):
     """Wrapper around process to call parse correctly"""
     while True:
         i = queue.get()
-        id = str(id) + "_" + str(i)
-        time.sleep((i % 10) / 4) 
 
+        delay = int(i[-1:])
+        time.sleep(delay / 3)
+
+        id = str(id) + "_" + str(i)
         parse(namespaces, id)
 
         time.sleep(10)
+
 
 def getDump(cursor):
     """Returns the next dump to be parsed from the database
@@ -76,7 +79,9 @@ def getDump(cursor):
     return dump, filename
 
 
-def parseNonTargetNamespace(page, title: str, namespace: str, cursor, parallel: str=""):
+def parseNonTargetNamespace(
+    page, title: str, namespace: str, cursor, parallel: str = ""
+):
     """Counts the number of edits each user makes and inserts them to the database.
 
     Parameters
@@ -509,6 +514,9 @@ def parse(namespaces=[1], parallel=""):
     """
     database, cursor = Database.connect()
 
+    if not os.path.exists("revision"):
+        os.mkdir("revision")
+
     open("revision/old" + parallel + ".txt", "w").close()
     open("revision/new" + parallel + ".txt", "w").close()
 
@@ -523,9 +531,6 @@ def parse(namespaces=[1], parallel=""):
         # for development, disable namespace check
         # filename = "../test.xml"
         # dump = mwxml.Dump.from_page_xml(open(filename))
-
-        if not os.path.exists("revision"):
-            os.mkdir("revision")
 
         for page in dump:
             open("revision/old" + parallel + ".txt", "w").close()
@@ -551,6 +556,13 @@ def parse(namespaces=[1], parallel=""):
             WHERE file_name = %s;"""
         cursor.execute(query, (currenttime, filename))
 
+    except OSError as e:
+        err = str(sys.exc_info()[1])
+
+        if not parallel:
+            print(err)
+
+        raise
     except Exception as e:
         err = str(sys.exc_info()[1])
 

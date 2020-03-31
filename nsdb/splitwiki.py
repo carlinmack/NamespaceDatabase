@@ -18,6 +18,15 @@ def countLines(file) -> int:
     return lines
 
 
+def addJobToDB(cursor, partitionName):
+    query = "INSERT INTO partition (file_name) VALUES (%s)"
+    cursor.execute(query, (partitionName,))
+
+
+def addJobToQueue(queue, id):
+    queue.put(id)
+
+
 # @click.command()
 # @click.option(
 #     "-n", "--number", default=40,
@@ -29,10 +38,26 @@ def countLines(file) -> int:
 #     "-d", "--deletedump", default=False, is_flag=True,
 # )
 def split(
-    number=40, inputFolder="../dumps", outputFolder="../partitions", deleteDump=True, fileName=""
+    number=40,
+    inputFolder="../dumps",
+    outputFolder="../partitions",
+    deleteDump=True,
+    fileName="",
+    queue=0,
+    cursor=0,
 ):
     """Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
+
+    The lower the number of partitions, the lower the total size of the partitions
+    and the lower the running time to generate them. For this reason, it is recommended
+    to set the number to a multiple of the number of processes running splitwiki.
+
+    For example, splitting one dump:
+    100 partitions - 5046 seconds - 39.2 GB
+     50 partitions - 5002 seconds - 39.2 GB
+     10 partitions - 4826 seconds - 37.2 GB
+      5 partitions - 3820 seconds - 36   GB
     """
     if not fileName:
         files = glob.glob(inputFolder + "/*.xml*")
@@ -44,8 +69,6 @@ def split(
     lines = countLines(file)
 
     chunkSize = lines / number * 0.75
-
-    numberOfPartitions = 0
 
     header = """<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -104,16 +127,16 @@ def split(
 
         for index in trange(number, desc=fileName, unit=" partition"):
             if not moreFile:
-                numberOfPartitions = index
                 break
 
             partitionName = fileName + "." + str(index)
             outputFileName = os.path.join(outputFolder, partitionName)
 
-            with open("../partitions.txt", "a+") as partitions:
-                partitions.write(partitionName + "\n")
-
-            if not os.path.exists(outputFolder):
+            if index > 0 and cursor and queue:
+                prevPartitionName = partitionName = fileName + "." + str(index - 1)
+                addJobToDB(cursor, prevPartitionName)
+                addJobToQueue(queue, str(lines) + "_" + str(index - 1))
+            elif not os.path.exists(outputFolder):
                 os.mkdir(outputFolder)
 
             with open(outputFileName, "w+") as outFile:
@@ -131,13 +154,13 @@ def split(
                             break
                     elif line == "  <page>\n":
                         inPage = True
+                        i = i + 1
+                        outFile.write(line)
 
                 outFile.write(footer)
 
     if deleteDump:
         os.remove(file)
-
-    return numberOfPartitions
 
 
 if __name__ == "__main__":
