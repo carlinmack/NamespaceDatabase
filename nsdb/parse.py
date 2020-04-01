@@ -23,7 +23,7 @@ import Database
 from multiprocessing import Queue
 
 
-def multiprocess(namespaces, queue, id):
+def multiprocess(partitionsDir, namespaces, queue, id):
     """Wrapper around process to call parse correctly"""
     while True:
         i = queue.get()
@@ -32,12 +32,12 @@ def multiprocess(namespaces, queue, id):
         time.sleep(delay / 3)
 
         id = str(id) + "_" + str(i)
-        parse(namespaces, id)
+        parse(partitionsDir, namespaces, id)
 
         time.sleep(10)
 
 
-def getDump(cursor):
+def getDump(partitionsDir, cursor):
     """Returns the next dump to be parsed from the database
 
     Parameters
@@ -59,7 +59,7 @@ def getDump(cursor):
         return None, None
 
     filename = todofile[0]
-    path = "../partitions/" + filename
+    path = partitionsDir + filename
 
     if not os.path.exists(path):
         raise IOError("file not found on disk")
@@ -499,7 +499,7 @@ def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
     return added, deleted
 
 
-def parse(namespaces=[1], parallel=""):
+def parse(partitionsDir:str="../partitions/", namespaces=[1], parallel=""):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
 
@@ -521,7 +521,7 @@ def parse(namespaces=[1], parallel=""):
     open("revision/new" + parallel + ".txt", "w").close()
 
     try:
-        dump, filename = getDump(cursor)
+        dump, filename = getDump(partitionsDir, cursor)
 
         if dump is None:
             cursor.close()

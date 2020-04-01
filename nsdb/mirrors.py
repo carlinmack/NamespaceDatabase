@@ -10,7 +10,9 @@ import requests
 
 def fastest() -> str:
     """Gets a list of the fastest mirrors, downloads a single file from each
-    and returns the fastest one
+    and returns the fastest one.
+
+    Execution takes 5-10 seconds as a guideline
 
     Returns
     -------

@@ -39,8 +39,8 @@ def addJobToQueue(queue, id):
 # )
 def split(
     number=40,
-    inputFolder="../dumps",
-    outputFolder="../partitions",
+    inputFolder="../dumps/",
+    outputFolder="../partitions/",
     deleteDump=True,
     fileName="",
     queue=0,
@@ -64,7 +64,7 @@ def split(
         file = files[0]
         fileName = file[9:]
     else:
-        file = "../dumps/" + fileName
+        file = inputFolder + fileName
 
     lines = countLines(file)
 
