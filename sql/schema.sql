@@ -30,6 +30,8 @@ CREATE TABLE user (
     UNIQUE KEY username_UNIQUE (username),
     UNIQUE KEY ip_address_UNIQUE (ip_address)
 );
+/* create index */
+CREATE INDEX userid_idx ON user (user_id);
 
 /* check and trigger ? */
 CREATE TABLE page (
@@ -39,6 +41,8 @@ CREATE TABLE page (
     file_name varchar(85) NOT NULL,
     PRIMARY KEY (page_id)
 );
+/* create index */
+CREATE INDEX title_idx ON page (title);
 
 CREATE TABLE edit (
     id int unsigned NOT NULL AUTO_INCREMENT,
@@ -81,6 +85,9 @@ CREATE TABLE edit (
     CONSTRAINT page FOREIGN KEY (page_id) REFERENCES page (page_id),
     CONSTRAINT user FOREIGN KEY (user_table_id) REFERENCES user (id)
 );
+/* create index */
+CREATE INDEX editid_idx ON edit (edit_id);
+CREATE INDEX editdate_idx ON edit (edit_date);
 
 CREATE TABLE partition (
     id int unsigned NOT NULL AUTO_INCREMENT,
