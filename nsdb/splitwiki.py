@@ -5,6 +5,7 @@ partitions by default. This can be changed by adjusting the parameters to split(
 import glob
 import os
 import subprocess
+import time
 
 # import click
 from tqdm import trange
@@ -135,6 +136,7 @@ def split(
             if index > 0 and cursor and queue:
                 prevPartitionName = partitionName = fileName + "." + str(index - 1)
                 addJobToDB(cursor, prevPartitionName)
+                time.sleep(0.5)
                 addJobToQueue(queue, str(lines) + "_" + str(index - 1))
             elif not os.path.exists(outputFolder):
                 os.mkdir(outputFolder)
