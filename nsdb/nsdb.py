@@ -120,7 +120,7 @@ def noDiskSpace(dataDir):
     """Returns True if the folder is more than 100GB in size"""    
     try:
         space = int(
-            subprocess.check_output(["du", "-s", dataDir]).split()[0].decode("utf-8")
+            subprocess.check_output(["du", "-s", dataDir], stderr=subprocess.STDOUT).split()[0].decode("utf-8")
         )
     except:
         space = 999999999
@@ -165,7 +165,10 @@ def removeDoneJobs(cursor, partitionsDir):
     for file in output:
         fileName = partitionsDir + file[0]
         if os.path.exists(fileName):
-            os.remove(fileName)
+            try:
+                os.remove(fileName)
+            except FileNotFoundError:
+                pass
 
 
 def restartJobs(namespaces: List[int], cursor):
