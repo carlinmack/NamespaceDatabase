@@ -251,6 +251,13 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
         else:
             blanking = True
 
+            added = "NULL"
+            deleted = "NULL"
+
+            addedLength = 0
+            deletedLength = 0
+            delWords = 0
+
             insInternalLink = "NULL"
             insExternalLink = "NULL"
             insLongestInsertedWord = "NULL"
@@ -258,6 +265,9 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
             insCapitalization = "NULL"
             insDigits = "NULL"
             insSpecialChars = "NULL"
+            insWhitespace = "NULL"
+            insPronouns = "NULL"
+            insVulgarity = "NULL"
 
         if revision.comment:
             comment = revision.comment.lower()
