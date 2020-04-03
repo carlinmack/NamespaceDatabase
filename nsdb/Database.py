@@ -1,12 +1,13 @@
 """
 This module creates a database connection for other scripts to use.
 
-The connection is configured in the private.cnf function. See public.cnf for an 
+The connection is configured in the private.cnf function. See public.cnf for an
 example configuration.
 """
 
 import mysql.connector as sql
 from mysql.connector import errorcode
+
 
 def connect():
     """Connect to MySQL database using password stored in options file

@@ -8,9 +8,9 @@ import os
 import re
 import subprocess
 import sys
+import time
 import traceback
 from datetime import datetime
-import time
 from typing import Tuple
 
 import mwreverts
@@ -20,10 +20,8 @@ from profanity import profanity
 
 import Database
 
-from multiprocessing import Queue
 
-
-def multiprocess(partitionsDir, namespaces, queue, id):
+def multiprocess(partitionsDir, namespaces, queue, jobId):
     """Wrapper around process to call parse correctly"""
     while True:
         i = queue.get()
@@ -31,8 +29,8 @@ def multiprocess(partitionsDir, namespaces, queue, id):
         delay = int(i[-1:])
         time.sleep(delay / 3)
 
-        id = str(id) + "_" + str(i)
-        parse(partitionsDir, namespaces, id)
+        jobId = str(jobId) + "_" + str(i)
+        parse(partitionsDir, namespaces, jobId)
 
         time.sleep(10)
 
@@ -154,7 +152,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: str - id name of parallel slurm process, present if called from parallel, 
+    parallel: str - id name of parallel slurm process, present if called from parallel,
       hides progress bars
     """
     blankText = re.compile(r"^\s+$")
@@ -385,9 +383,9 @@ def longestWord(string: str) -> int:
     string = cleanString(string)
     arr = string.split()
     if len(arr) > 0:
-        longestWord = max(arr, key=len)
+        maxLength = max(arr, key=len)
         # print(longestWord)
-        return len(longestWord)
+        return len(maxLength)
     else:
         return 0
 
@@ -509,7 +507,9 @@ def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
     return added, deleted
 
 
-def parse(partitionsDir:str="/bigtemp/ckm8gz/partitions/", namespaces=[1], parallel=""):
+def parse(
+    partitionsDir: str = "/bigtemp/ckm8gz/partitions/", namespaces=[1], parallel=""
+):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
 
@@ -566,7 +566,7 @@ def parse(partitionsDir:str="/bigtemp/ckm8gz/partitions/", namespaces=[1], paral
             WHERE file_name = %s;"""
         cursor.execute(query, (currenttime, filename))
 
-    except OSError as e:
+    except OSError:
         err = str(sys.exc_info()[1])
 
         if not parallel:

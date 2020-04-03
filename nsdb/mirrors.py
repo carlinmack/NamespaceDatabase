@@ -4,8 +4,8 @@ This script finds the fastest mirror to download Wikipedia dumps from
 import re
 import time
 
-from tqdm import tqdm
 import requests
+from tqdm import tqdm
 
 
 def fastest() -> str:

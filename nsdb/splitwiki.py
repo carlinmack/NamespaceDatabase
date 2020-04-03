@@ -24,8 +24,8 @@ def addJobToDatabase(cursor, partitionName):
     cursor.execute(query, (partitionName,))
 
 
-def addJobToQueue(queue, id):
-    queue.put(id)
+def addJobToQueue(queue, jobId):
+    queue.put(jobId)
 
 
 # @click.command()
@@ -63,7 +63,7 @@ def split(
     if not fileName:
         files = glob.glob(inputFolder + "/*.xml*")
         file = files[0]
-        fileName = file[len(inputFolder):]
+        fileName = file[len(inputFolder) :]
     else:
         file = inputFolder + fileName
 
