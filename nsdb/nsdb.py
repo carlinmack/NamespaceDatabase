@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import time
+import traceback
 from datetime import datetime
 from sys import argv
 from typing import List
@@ -23,6 +24,20 @@ import Database
 import parse
 from mirrors import fastest
 from splitwiki import split
+
+
+def asyncReturn(argument):
+    with open('error/asyncReturn.txt', 'a+') as outFile:
+        outFile.writelines(argument)
+
+
+def asyncError(error):
+    currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with open('error/asyncError.txt', 'a+') as outFile:
+        outFile.write(currenttime + "\n\n")
+        outFile.write(str(error) + "\n\n")
+        outFile.write(traceback.format_exc() + "\n\n")
 
 
 def createDumpsFile(listOfDumps: str, wiki: str, dump: str):
@@ -240,10 +255,13 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
     numOfPartitions = 3 * numOfCores
 
     pool = multiprocessing.Pool(numOfCores)
+   
     for _ in range(numOfCores):
         pool.apply_async(
             parse.multiprocess,
-            (partitionsDir, namespaces, queue, parallel, time.time()),
+            (partitionsDir, namespaces, queue, parallel), 
+            callback=asyncReturn, 
+            error_callback=asyncError
         )
 
     createDumpsFile(listOfDumps, wiki, dump)
