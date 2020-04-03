@@ -57,7 +57,7 @@ def downloadFirstDump(listOfDumps, archivesDir) -> str:
 
     fastestMirror = fastest()
 
-    subprocess.run(["wget", "-nc", "-P", archivesDir, fastestMirror + firstLine])
+    subprocess.run(["wget", "-nc", "-nv", "-P", archivesDir, fastestMirror + firstLine])
 
     return fileName
 
@@ -76,10 +76,10 @@ def extractFile(fileName: str, archivesDir, dumpsDir):
         return fileName[:-3]
 
 
-def splitFile(fileName, queue, cursor, dumps, partitionsDir, numOfPartitions):
+def splitFile(fileName, queue, cursor, dumpsDir, partitionsDir, numOfPartitions):
     """Split first dump into 40 partitions"""
     try:
-        split(fileName=fileName, queue=queue, cursor=cursor, inputFolder=dumps, outputFolder=partitionsDir,number=numOfPartitions,)
+        split(fileName=fileName, queue=queue, cursor=cursor, inputFolder=dumpsDir, outputFolder=partitionsDir,number=numOfPartitions,)
     except:
         raise
     else:
@@ -130,11 +130,14 @@ def noDiskSpace(dataDir):
 
 def outstandingJobs(cursor) -> int:
     """Returns number of jobs with status 'todo' or 'failed'"""
-    query = "SELECT count(*) FROM partition WHERE status = 'todo' OR status = 'failed'"
-    cursor.execute(query)
-    numJobs = cursor.fetchone()[0]
+    query = "SELECT count(*) FROM partition WHERE status = 'todo' OR status = 'failed';"
+    try:
+        cursor.execute(query)
+        numJobs = cursor.fetchone()[0]
 
-    numJobs = max(numJobs - 25, 0)
+        numJobs = max(numJobs - 15, 0)
+    except BrokenPipeError:
+        numJobs = 1
 
     return numJobs
 
@@ -152,14 +155,21 @@ def markLongRunningJobsAsError(cursor):
     """Marks jobs that take over 20 minutes as error.
 
     This doesn't halt execution but does allow the job to be requeued."""
-    query = "UPDATE partition SET status = 'failed' WHERE TIMESTAMPDIFF(MINUTE,start_time_1,end_time_1) > 15;"
-    cursor.execute(query)
+    query = """UPDATE partition 
+               SET status = 'failed' 
+               WHERE TIMESTAMPDIFF(MINUTE,start_time_1,end_time_1) > 15;"""
+    # unsure why multi has to be true here but it does ¯\_(ツ)_/¯
+    cursor.execute(query, multi=True)
 
 
 def removeDoneJobs(cursor, partitionsDir):
     """Remove partitions that are completed"""
     query = "SELECT file_name FROM partition WHERE status = 'done'"
-    cursor.execute(query)
+    try:
+        cursor.execute(query)
+    except BrokenPipeError:
+        return
+        
     output = cursor.fetchall()
 
     for file in output:
@@ -214,14 +224,16 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
     print("main")
     cores = multiprocessing.cpu_count()
 
-    queue = multiprocessing.Queue()
+    queue = multiprocessing.Manager().Queue()
 
-    # cores - 2 as 1 thread to run nsdb.py and 1 to run splitwiki
+    # cores - 3 as 1 thread to run nsdb.py and 2 to run splitwiki
     # min, max ensures that it is within 1 and 10
-    numOfCores = min(max(cores-2, 1), 10)
+    numOfCores = min(max(cores-3, 1), 10)
     numOfPartitions = 3 * numOfCores
 
-    pool = multiprocessing.Pool(numOfCores, parse.multiprocess, (partitionsDir,namespaces, queue, parallel))
+    pool = multiprocessing.Pool(numOfCores)
+    for i in range(numOfCores):
+        pool.apply_async(parse.multiprocess, (partitionsDir,namespaces, queue, parallel, time.time()))
     
     createDumpsFile(listOfDumps, wiki, dump)
     
@@ -242,7 +254,8 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
             print("--- Extracting %s took %s seconds ---" % (fileName, time.time() - tick))
 
             tick = time.time()
-            splitter = multiprocessing.Pool(1, splitFile, (fileName, queue, cursor, dumpsDir, partitionsDir, numOfPartitions))
+            splitter = multiprocessing.Pool(1)
+            splitter.apply_async(splitFile, (fileName, queue, cursor, dumpsDir, partitionsDir, numOfPartitions))
             print("--- Partitioning %s took %s seconds ---" % (fileName, time.time() - tick))
 
         jobsTodo = outstandingJobs(cursor)
@@ -270,7 +283,7 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
         time.sleep(5)
 
     # clean up Pool
-
+    print("=== EXIT ===")
     cursor.close()
     database.close()
 
