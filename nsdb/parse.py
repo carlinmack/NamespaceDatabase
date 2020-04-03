@@ -62,7 +62,7 @@ def getDump(partitionsDir, cursor):
     path = partitionsDir + filename
 
     if not os.path.exists(path):
-        raise IOError("file not found on disk")
+        raise IOError("file " + path + " not found on disk")
 
     print(path)
     dump = mwxml.Dump.from_file(open(path))
@@ -509,7 +509,7 @@ def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
     return added, deleted
 
 
-def parse(partitionsDir:str="../partitions/", namespaces=[1], parallel=""):
+def parse(partitionsDir:str="/bigtemp/ckm8gz/partitions/", namespaces=[1], parallel=""):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
 
