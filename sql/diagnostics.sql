@@ -85,15 +85,3 @@ FROM user
 where ip_address is not null 
 order by reverted_edits desc 
 limit 5;
-
--- Connecting blocked users to edits
---      What do the blocked users edits look like?  (number words/chars, mostly adds, mostly deletes,...)
---          How does that compare to non-blocked users?
--- ASk general questions: list of users with the top 10% of edit length or bottom 10% of edit length, compare against blocked users?
---      Different ways to get “good” users or “bad” users (look for trends)
---          Look for trends
---          Compare with manual blocked users list
---      % (and users) of users whose additions are deleted
---          Did the users who had their (or all their, or x% of their) additions deleted end up being blocked?
---          Did the users who had their (or all their, or x% of their) changes reverted/undid end up being blocked?
--- Intersection of blocked users and talk-page users - only blocked users who also edited talk pages.

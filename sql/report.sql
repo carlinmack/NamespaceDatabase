@@ -25,6 +25,13 @@ FROM (
         (SELECT count(page_id) FROM page WHERE namespace = 0) AS main,
         (SELECT count(page_id) FROM page WHERE namespace = 1) AS talk
     ) AS proportion; 
+        /* - ip users that edit talkpages */
+SELECT CONCAT(FORMAT(IF(population=0,0,(target*100.0)/population),2),'%') AS '- talkpage edits with profanity:' 
+FROM (
+    SELECT 
+        (SELECT count(page_id) FROM edit) AS population,
+        (SELECT count(page_id) FROM edit WHERE ins_vulgarity = 1) AS target
+    ) AS proportion; 
 
 SELECT '- partitions that are done vs error:' AS '';
 SELECT status AS 'job status', count(id) AS 'count' FROM partition GROUP BY status;
@@ -77,6 +84,15 @@ where bot is True
 order by number_of_edits desc 
 limit 5;
 
+
+
+SELECT 'bots with most talkpage edits:' AS '';
+SELECT username, talkpage_number_of_edits AS 'talkpage edits' 
+FROM user
+where bot is True
+order by talkpage_number_of_edits desc 
+limit 5;
+
 SELECT 'users with most talkpage edits:' AS '';
 SELECT username, talkpage_number_of_edits AS 'talkpage edits' 
 FROM user 
@@ -105,6 +121,8 @@ FROM user
 where ip_address is not null 
 order by reverted_edits desc 
 limit 5;
+
+select * from user where username = 'carlinmack' \G;
 
 -- Connecting blocked users to edits
 --      What do the blocked users edits look like?  (number words/chars, mostly adds, mostly deletes,...)
