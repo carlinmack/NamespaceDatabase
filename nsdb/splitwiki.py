@@ -19,7 +19,7 @@ def countLines(file) -> int:
     return lines
 
 
-def addJobToDB(cursor, partitionName):
+def addJobToDatabase(cursor, partitionName):
     query = "INSERT INTO partition (file_name) VALUES (%s)"
     cursor.execute(query, (partitionName,))
 
@@ -40,8 +40,8 @@ def addJobToQueue(queue, id):
 # )
 def split(
     number=40,
-    inputFolder="../dumps/",
-    outputFolder="../partitions/",
+    inputFolder="/bigtemp/ckm8gz/dumps/",
+    outputFolder="/bigtemp/ckm8gz/partitions/",
     deleteDump=True,
     fileName="",
     queue=0,
@@ -63,7 +63,7 @@ def split(
     if not fileName:
         files = glob.glob(inputFolder + "/*.xml*")
         file = files[0]
-        fileName = file[9:]
+        fileName = file[len(inputFolder):]
     else:
         file = inputFolder + fileName
 
@@ -135,7 +135,7 @@ def split(
 
             if index > 0 and cursor and queue:
                 prevPartitionName = partitionName = fileName + "." + str(index - 1)
-                addJobToDB(cursor, prevPartitionName)
+                addJobToDatabase(cursor, prevPartitionName)
                 time.sleep(0.5)
                 addJobToQueue(queue, str(lines) + "_" + str(index - 1))
             elif not os.path.exists(outputFolder):
