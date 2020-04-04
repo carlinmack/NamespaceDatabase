@@ -29,8 +29,8 @@ def multiprocess(partitionsDir, namespaces, queue, jobId):
         delay = int(i[-1:])
         time.sleep(delay / 3)
 
-        jobId = str(jobId) + "_" + str(i)
-        parse(partitionsDir, namespaces, jobId)
+        parseId = str(jobId) + "_" + str(i)
+        parse(partitionsDir, namespaces, parseId)
 
         time.sleep(10)
 
