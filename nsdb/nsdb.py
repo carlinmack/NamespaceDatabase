@@ -172,15 +172,15 @@ def jobsDone() -> bool:
 
 
 def markLongRunningJobsAsError():
-    """Marks jobs that take over 20 minutes as error.
+    """Marks jobs that take over 15 minutes as error.
 
     This doesn't halt execution but does allow the job to be requeued."""
     query = """UPDATE partition
                SET status = 'failed' 
                WHERE TIMESTAMPDIFF(MINUTE,start_time_1,end_time_1) > 15;"""
-    # unsure why multi has to be true here but it does ¯\_(ツ)_/¯
     database, cursor = Database.connect()
     try:
+        # unsure why multi has to be true here but it does ¯\_(ツ)_/¯
         cursor.execute(query, multi=True)
     except BrokenPipeError:
         database.close()
@@ -214,8 +214,8 @@ def removeDoneJobs(partitionsDir):
     database.close()
 
 
-def restartJobs(namespaces: List[int]):
-    """Restart jobs labelled failed, mark them as restarted"""
+def restartJobs():
+    """NOT IMPLEMENTED - Restart jobs labelled failed, mark them as restarted"""
     return
     query = "SELECT file_name FROM partition WHERE status = 'failed'"
     database, cursor = Database.connect()
@@ -238,13 +238,13 @@ def restartJobs(namespaces: List[int]):
                 status = "restarted",
                 start_time_1 = %s
             WHERE file_name = %s;"""
-        # cursor.execute(query, (currenttime, file))
+        cursor.execute(query, (currenttime, file))
 
     cursor.close()
     database.close()
 
 
-def main(parallel=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
+def main(parallelID=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
     """Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
 
@@ -282,7 +282,7 @@ def main(parallel=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
     for _ in range(numCores):
         pool.apply_async(
             parse.multiprocess,
-            (partitionsDir, namespaces, queue, parallel),
+            (partitionsDir, namespaces, queue, parallelID),
             error_callback=parseError,
         )
 
@@ -336,7 +336,7 @@ def main(parallel=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
 
             removeDoneJobs(partitionsDir)
 
-            restartJobs(namespaces)
+            # restartJobs()
 
             time.sleep(30)
             numJobs = outstandingJobs()

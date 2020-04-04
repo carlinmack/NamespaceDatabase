@@ -22,7 +22,7 @@ import Database
 
 
 def multiprocess(partitionsDir, namespaces, queue, jobId):
-    """Wrapper around process to call parse correctly"""
+    """Wrapper around process to call parse in a multiprocessing pool"""
     while True:
         i = queue.get()
 
@@ -519,6 +519,7 @@ def parse(
 
     Parameters
     ----------
+    partitionsDir: str - where the partitions are stored
     namespaces : list[int] - Wikipedia namespaces of interest.
     parallel: str - whether to parse with multiple cores
     """

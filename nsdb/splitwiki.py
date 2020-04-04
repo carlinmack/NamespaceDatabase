@@ -20,11 +20,13 @@ def countLines(file) -> int:
 
 
 def addJobToDatabase(cursor, partitionName):
+    """Inserts partition into the database"""
     query = "INSERT INTO partition (file_name) VALUES (%s)"
     cursor.execute(query, (partitionName,))
 
 
 def addJobToQueue(queue, jobId):
+    """Adds partition to the multiprocessing queue"""
     queue.put(jobId)
 
 
