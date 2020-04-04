@@ -110,19 +110,14 @@ def extractFile(fileName: str, archivesDir, dumpsDir):
 
 def splitFile(fileName, queue, cursor, dumpsDir, partitionsDir, numOfPartitions):
     """Split first dump into 40 partitions"""
-    try:
-        split(
-            fileName=fileName,
-            queue=queue,
-            cursor=cursor,
-            inputFolder=dumpsDir,
-            outputFolder=partitionsDir,
-            number=numOfPartitions,
-        )
-    except:
-        raise
-    else:
-        pass
+    split(
+        fileName=fileName,
+        queue=queue,
+        cursor=cursor,
+        inputFolder=dumpsDir,
+        outputFolder=partitionsDir,
+        number=numOfPartitions,
+    )
 
 
 def checkDiskSpace(dataDir):
