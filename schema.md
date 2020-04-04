@@ -3,8 +3,8 @@
 | Field                          | Type             | Null | Key | Default | Extra          |
 |--------------------------------|------------------|------|-----|---------|----------------|
 | id                             | int(10) unsigned | NO   | PRI | NULL    | auto_increment |
-| edit_id                        | int(11)          | YES  |     | NULL    |                |
-| edit_date                      | datetime         | NO   |     | NULL    |                |
+| edit_id                        | int(11)          | YES  | MUL | NULL    |                |
+| edit_date                      | datetime         | NO   | MUL | NULL    |                |
 | page_id                        | int(11)          | YES  | MUL | NULL    |                |
 | user_table_id                  | int(10) unsigned | NO   | MUL | NULL    |                |
 | added                          | text             | YES  |     | NULL    |                |
@@ -25,6 +25,7 @@
 | ins_longest_inserted_word      | smallint(6)      | YES  |     | NULL    |                |
 | ins_pronouns                   | decimal(4,4)     | YES  |     | NULL    |                |
 | ins_special_chars              | decimal(4,4)     | YES  |     | NULL    |                |
+| ins_vulgarity                  | tinyint(1)       | YES  |     | NULL    |                |
 | ins_whitespace                 | decimal(4,4)     | YES  |     | NULL    |                |
 | reverted                       | tinyint(1)       | YES  |     | 0       |                |
 
@@ -32,12 +33,12 @@
 
 # Tabel page 
 
-| Field     | Type        | Null | Key | Default | Extra |
-|-----------|-------------|------|-----|---------|-------|
-| page_id   | int(11)     | NO   | PRI | NULL    |       |
-| namespace | smallint(6) | NO   |     | NULL    |       |
-| title     | text        | YES  |     | NULL    |       |
-| file_name | varchar(85) | NO   |     | NULL    |       |
+| Field     | Type         | Null | Key | Default | Extra |
+|-----------|--------------|------|-----|---------|-------|
+| page_id   | int(11)      | NO   | PRI | NULL    |       |
+| namespace | smallint(6)  | NO   |     | NULL    |       |
+| title     | varchar(255) | NO   | MUL | NULL    |       |
+| file_name | varchar(85)  | NO   |     | NULL    |       |
 
 ----------------------------------------------------------------------
 
@@ -61,8 +62,8 @@
 | Field                    | Type                                                                                                                                                                                     | Null | Key | Default | Extra          |
 |--------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------|-----|---------|----------------|
 | id                       | int(10) unsigned                                                                                                                                                                         | NO   | PRI | NULL    | auto_increment |
-| user_id                  | int(11)                                                                                                                                                                                  | YES  |     | NULL    |                |
-| username                 | varchar(85)                                                                                                                                                                              | YES  | UNI | NULL    |                |
+| user_id                  | int(11)                                                                                                                                                                                  | YES  | MUL | NULL    |                |
+| username                 | varchar(255)                                                                                                                                                                             | YES  | UNI | NULL    |                |
 | ip_address               | varbinary(16)                                                                                                                                                                            | YES  | UNI | NULL    |                |
 | confirmed                | tinyint(1)                                                                                                                                                                               | YES  |     | NULL    |                |
 | user_special             | tinyint(1)                                                                                                                                                                               | YES  |     | NULL    |                |

@@ -14,6 +14,10 @@ Functions
 ---------
 
     
+`checkDiskSpace(dataDir)`
+:   Returns the size of the data directory
+
+    
 `countLines(file)`
 :   Returns the number of lines in a file using wc from bash
 
@@ -22,47 +26,60 @@ Functions
 :   Creates dumps.txt if it doesn't exist
 
     
-`downloadFirstDump(listOfDumps)`
-:   Downloads the first dump in dumps.txt
+`downloadFirstDump(listOfDumps, archivesDir, dumpsDir)`
+:   Downloads the first dump in dumps.txt if it is not already present
+    in the dumps directory
 
     
-`extractFile(fileName)`
-:   Unzip and delete if successful
+`extractFile(fileName, archivesDir, dumpsDir)`
+:   Unzip if not already extracted, delete if extracted
+    
+    Execution takes 5-15 minutes as a guideline
 
     
-`main()`
+`jobsDone()`
+:   Returns True if all jobs are done
+
+    
+`main(parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/')`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
+    
+    Parameters
+    ----------
+    dataDir: str - directory where the dumps, partitions etc will be stored. If you
+        are using this on a personal computer, I recommend using '../'. The current
+        default is the large storage area at the University of Virginia.
 
     
-`markLongRunningJobsAsError(cursor)`
-:   Marks jobs that take over 20 minutes as error.
+`markLongRunningJobsAsError()`
+:   Marks jobs that take over 15 minutes as error.
     
     This doesn't halt execution but does allow the job to be requeued.
 
     
-`outstandingJobs(cursor)`
+`outstandingJobs()`
 :   Returns number of jobs with status 'todo' or 'failed'
 
     
-`removeDoneJobs(cursor)`
+`parseError(error)`
+:   Logs errors from parse processes to a file
+
+    
+`removeDoneJobs(partitionsDir)`
 :   Remove partitions that are completed
 
     
-`restartJobs(namespaces, cursor)`
-:   Restart jobs labelled failed, mark them as restarted
+`restartJobs()`
+:   NOT IMPLEMENTED - Restart jobs labelled failed, mark them as restarted
 
     
-`splitFile()`
-:   Split first dump into 40 partitions
+`splitError(error)`
+:   Logs errors from split processes to a file
 
     
-`startJobs(namespaces, cursor)`
-:   Start 40 concurrent jobs with python's multiprocessing
-
-    
-`writeJobIds(listOfPartitions, cursor)`
-:   Write list of partitions to database, clears partitions.txt
+`splitFile(fileName, queue, dumpsDir, partitionsDir, numPartitions)`
+:   Split a dump into a number of partitions
 
 -----
 
@@ -98,10 +115,10 @@ Functions
     -------
     added: str - all the text that is exclusively in the new revision
     deleted: str - all the text that is exclusively in the old revision
-    parallel: int - id of the parallel process, 0 if not
+    parallel: str - id of the parallel process, 0 if not
 
     
-`getDump(cursor)`
+`getDump(partitionsDir, cursor)`
 :   Returns the next dump to be parsed from the database
     
     Parameters
@@ -122,7 +139,11 @@ Functions
 :   Returns the length of the longest word in text
 
     
-`parse(namespaces=[1], parallel=0)`
+`multiprocess(partitionsDir, namespaces, queue, jobId)`
+:   Wrapper around process to call parse in a multiprocessing pool
+
+    
+`parse(partitionsDir='/bigtemp/ckm8gz/partitions/', namespaces=[1], parallel='')`
 :   Selects the next dump from the database, extracts the features and
     imports them into several database tables.
     
@@ -132,11 +153,12 @@ Functions
     
     Parameters
     ----------
+    partitionsDir: str - where the partitions are stored
     namespaces : list[int] - Wikipedia namespaces of interest.
-    parallel: Int - whether to parse with multiple cores
+    parallel: str - whether to parse with multiple cores
 
     
-`parseNonTargetNamespace(page, title, namespace, cursor, parallel)`
+`parseNonTargetNamespace(page, title, namespace, cursor, parallel='')`
 :   Counts the number of edits each user makes and inserts them to the database.
     
     Parameters
@@ -145,7 +167,7 @@ Functions
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: Int - >0 if called from parallel, hides progress bars
+    parallel: str - id of process, hides progress bars if present
 
     
 `parseTargetNamespace(page, title, namespace, cursor, parallel)`
@@ -160,7 +182,7 @@ Functions
     title: str - Title of the page
     namespace: str - Namespace of the page
     cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: Int - id number of parallel slurm process, >0 if called from parallel, 
+    parallel: str - id name of parallel slurm process, present if called from parallel,
       hides progress bars
 
     
@@ -195,13 +217,31 @@ Functions
 ---------
 
     
+`addJobToDatabase(cursor, partitionName)`
+:   Inserts partition into the database
+
+    
+`addJobToQueue(queue, jobId)`
+:   Adds partition to the multiprocessing queue
+
+    
 `countLines(file)`
 :   Returns the estimated number of lines in a dump using wcle.sh
 
     
-`split(number=40, inputFolder='../dumps', outputFolder='../partitions', deleteDump=True)`
+`split(number=40, inputFolder='/bigtemp/ckm8gz/dumps/', outputFolder='/bigtemp/ckm8gz/partitions/', deleteDump=True, fileName='', queue=0, cursor=0)`
 :   Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
+    
+    The lower the number of partitions, the lower the total size of the partitions
+    and the lower the running time to generate them. For this reason, it is recommended
+    to set the number to a multiple of the number of processes running splitwiki.
+    
+    For example, splitting one dump:
+    100 partitions - 5046 seconds - 39.2 GB
+     50 partitions - 5002 seconds - 39.2 GB
+     10 partitions - 4826 seconds - 37.2 GB
+      5 partitions - 3820 seconds - 36   GB
 
 -----
 
@@ -216,7 +256,9 @@ Functions
     
 `fastest()`
 :   Gets a list of the fastest mirrors, downloads a single file from each
-    and returns the fastest one
+    and returns the fastest one.
+    
+    Execution takes 5-10 seconds as a guideline
     
     Returns
     -------
@@ -229,7 +271,7 @@ Module [Database](nsdb/Database.py)
 ===============
 This module creates a database connection for other scripts to use.
 
-The connection is configured in the private.cnf function. See public.cnf for an 
+The connection is configured in the private.cnf function. See public.cnf for an
 example configuration.
 
 Functions
