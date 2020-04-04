@@ -125,36 +125,6 @@ def splitFile(fileName, queue, cursor, dumpsDir, partitionsDir, numOfPartitions)
         pass
 
 
-def writeJobIds(fileName, numberOfPartitions: str, cursor):
-    """Write list of partitions to database"""
-    for index in range(numberOfPartitions):
-        partitionName = fileName + "." + str(index)
-        query = "INSERT INTO partition (file_name) VALUES (%s)"
-        cursor.execute(query, (partitionName,))
-
-
-def startJobs(namespaces: List[int], cursor):
-    """Start 40 concurrent jobs with python's multiprocessing"""
-    starttime = time.time()
-    processes = []
-
-    for i in range(1, 99):
-        process = multiprocessing.Process(target=parse, args=(namespaces, i))
-        processes.append(process)
-
-    for process in processes:
-        time.sleep(1)
-        process.start()
-
-    # for i in range(10):
-    print(processes)
-
-    for process in processes:
-        process.join()
-
-    print("That took {} seconds".format(time.time() - starttime))
-
-
 def checkDiskSpace(dataDir):
     """Returns True if the folder is more than 100GB in size"""
     try:
