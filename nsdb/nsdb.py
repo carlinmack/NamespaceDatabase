@@ -76,9 +76,7 @@ def downloadFirstDump(listOfDumps, archivesDir, dumpsDir) -> str:
     with open(listOfDumps, "w") as file:
         file.writelines(data)
 
-    print("=== === ===")
-    print(dumpsDir + firstLine, flush=True)
-    if not os.path.exists(dumpsDir + firstLine):
+    if not os.path.exists(dumpsDir + fileName[:-3]):
         fastestMirror = fastest()
 
         subprocess.run(
@@ -92,7 +90,7 @@ def extractFile(fileName: str, archivesDir, dumpsDir):
     """Unzip if not already extracted, delete if extracted
 
     Execution takes 5-15 minutes as a guideline"""
-    if not os.path.exists(dumpsDir + fileName):
+    if not os.path.exists(dumpsDir + fileName[:-3]):
         subprocess.run(["7z", "e", archivesDir + fileName, "-o" + dumpsDir, "-aos"])
 
     if os.path.exists(archivesDir + fileName):
@@ -272,15 +270,19 @@ def main(parallelID=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
     if cores > 4:
         # cores - 3 as 1 thread to run nsdb.py and 2 to run splitwiki
         # min, max ensures that it is within 1 and 10
-        numCores = min(max(cores - 3, 1), 8)
+        numParseCores = min(max(cores - 3, 1), 10)
     else:
-        numCores = max(cores - 2, 1)
-    numPartitions = 3 * numCores
+        numParseCores = max(cores - 2, 1)
 
-    pool = multiprocessing.Pool(numCores)
+    numSplitCores = max(cores - 1 - numParseCores , 1)
 
-    for _ in range(numCores):
-        pool.apply_async(
+    numPartitions = 8 * numParseCores
+
+    parser = multiprocessing.Pool(numParseCores)
+    splitter = multiprocessing.Pool(numSplitCores)
+
+    for _ in range(numParseCores):
+        parser.apply_async(
             parse.multiprocess,
             (partitionsDir, namespaces, queue, parallelID),
             error_callback=parseError,
@@ -291,10 +293,10 @@ def main(parallelID=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
     database, cursor = Database.connect()
 
     # while (things-to-do or jobs still running)
-    while countLines(listOfDumps) > 0:
+    while countLines(listOfDumps) > 0 or jobsDone():
         # if countLines(listOfDumps) > 0:
         print("before")
-        if not os.path.exists(dumpsDir) or len(os.listdir(dumpsDir)) < numParallel * 3:
+        if not os.path.exists(dumpsDir) or len(os.listdir(dumpsDir)) < numParallel * 3 or len(splitter._cache) < numSplitCores:
             print("download")
             tick = time.time()
             fileName = downloadFirstDump(listOfDumps, archivesDir, dumpsDir)
@@ -308,18 +310,11 @@ def main(parallelID=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
             print(
                 "--- Extracting %s took %s seconds ---" % (fileName, time.time() - tick)
             )
-
-            tick = time.time()
-            splitter = multiprocessing.Pool(1)
+            
             splitter.apply_async(
                 splitFile,
                 (fileName, queue, dumpsDir, partitionsDir, numPartitions),
                 error_callback=splitError,
-            )
-            print(
-                "--- Partitioning %s took %s seconds ---"
-                % (fileName, time.time() - tick),
-                flush=True,
             )
 
         numJobs = outstandingJobs()
