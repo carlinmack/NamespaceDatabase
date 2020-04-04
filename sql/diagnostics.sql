@@ -6,7 +6,7 @@ FROM user;
 SELECT count(*) AS '- pages:' 
 FROM page;
 
-SELECT count(*) AS '- edits:' 
+SELECT count(*) AS '- talkpage edits:' 
 FROM edit;
 SELECT '' AS '';
 
@@ -15,11 +15,11 @@ SELECT status AS 'job status', count(id) AS 'count' FROM partition GROUP BY stat
 SELECT '' AS ''; 
 SELECT file_name, error from partition where error is not null; 
 
-SELECT AVG(TIMESTAMPDIFF(SECOND,start_time_1,end_time_1)) AS 'Average time to parse dump (secs):' FROM partition WHERE status = 'done';
+SELECT AVG(TIMESTAMPDIFF(SECOND,start_time_1,end_time_1)) AS 'Average time to parse partition (secs):' FROM partition WHERE status = 'done';
 
 SELECT TIMESTAMPDIFF(Minute,Min(start_time_1),Max(end_time_1)) AS 'Total time parsing dumps (mins):' FROM partition WHERE status = 'done';
 
-SELECT FORMAT(IF(population=0,0,target/population),2) AS 'Dumps per minute:' 
+SELECT FORMAT(IF(population=0,0,target/population),2) AS 'Partitions per minute:' 
 FROM (
     SELECT 
         (SELECT count(*) FROM partition where status = 'done') AS target,
