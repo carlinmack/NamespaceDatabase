@@ -26,15 +26,29 @@ from mirrors import fastest
 from splitwiki import split
 
 
-def asyncReturn(argument):
-    with open('error/asyncReturn.txt', 'a+') as outFile:
-        outFile.writelines(argument)
+def parseReturn(value):
+    with open('error/parseReturn.txt', 'a+') as outFile:
+        outFile.writelines(str(value))
 
 
-def asyncError(error):
+def parseError(error):
     currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    with open('error/asyncError.txt', 'a+') as outFile:
+    with open('error/parseError.txt', 'a+') as outFile:
+        outFile.write(currenttime + "\n\n")
+        outFile.write(str(error) + "\n\n")
+        outFile.write(traceback.format_exc() + "\n\n")
+
+
+def splitReturn(value):
+    with open('error/splitReturn.txt', 'a+') as outFile:
+        outFile.writelines(str(value))
+
+
+def splitError(error):
+    currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with open('error/splitError.txt', 'a+') as outFile:
         outFile.write(currenttime + "\n\n")
         outFile.write(str(error) + "\n\n")
         outFile.write(traceback.format_exc() + "\n\n")
@@ -55,7 +69,7 @@ def countLines(file) -> int:
     return lines
 
 
-def downloadFirstDump(listOfDumps, archivesDir) -> str:
+def downloadFirstDump(listOfDumps, archivesDir, dumpsDir) -> str:
     """Downloads the first dump in dumps.txt"""
 
     with open(listOfDumps) as file:
@@ -68,10 +82,13 @@ def downloadFirstDump(listOfDumps, archivesDir) -> str:
     # delete first line
     with open(listOfDumps, "w") as file:
         file.writelines(data)
+    
+    print('=== === ===')
+    print(dumpsDir + firstLine, flush=True)
+    if not os.path.exists(dumpsDir + firstLine):
+        fastestMirror = fastest()
 
-    fastestMirror = fastest()
-
-    subprocess.run(["wget", "-nc", "-nv", "-P", archivesDir, fastestMirror + firstLine])
+        subprocess.run(["wget", "-nc", "-nv", "-P", archivesDir, fastestMirror + firstLine])
 
     return fileName
 
@@ -80,14 +97,15 @@ def extractFile(fileName: str, archivesDir, dumpsDir):
     """Unzip and delete if successful
 
     Excecution takes 5-15 minutes as a guideline"""
-    try:
-        subprocess.run(["7z", "e", archivesDir + fileName, "-o" + dumpsDir, "-aos"])
-    except:
-        raise
-    else:
-        # delete archive
-        os.remove(archivesDir + fileName)
-        return fileName[:-3]
+    if not os.path.exists(dumpsDir + firstLine):
+        try:
+            subprocess.run(["7z", "e", archivesDir + fileName, "-o" + dumpsDir, "-aos"])
+        except:
+            raise
+        else:
+            # delete archive
+            os.remove(archivesDir + fileName)
+    return fileName[:-3]
 
 
 def splitFile(fileName, queue, cursor, dumpsDir, partitionsDir, numOfPartitions):
@@ -137,7 +155,7 @@ def startJobs(namespaces: List[int], cursor):
     print("That took {} seconds".format(time.time() - starttime))
 
 
-def noDiskSpace(dataDir):
+def checkDiskSpace(dataDir):
     """Returns True if the folder is more than 100GB in size"""
     try:
         space = int(
@@ -148,33 +166,46 @@ def noDiskSpace(dataDir):
     except:
         space = 999999999
 
-    return space > 150000000
+    return space
 
 
-def outstandingJobs(cursor) -> int:
+def outstandingJobs() -> int:
     """Returns number of jobs with status 'todo' or 'failed'"""
     query = "SELECT count(*) FROM partition WHERE status = 'todo' OR status = 'failed';"
+    database, cursor = Database.connect()
     try:
         cursor.execute(query)
+    except BrokenPipeError:
+        numJobs = 0
+    except Exception as e: 
+        print('fuck', flush=True)
+        print(str(e), flush=True)
+    else:
         numJobs = cursor.fetchone()[0]
 
-        numJobs = max(numJobs - 15, 0)
-    except BrokenPipeError:
-        numJobs = 1
-
+        cursor.close()
+        database.close()
     return numJobs
 
 
-def jobsDone(cursor) -> bool:
+def jobsDone() -> bool:
     """Returns number of jobs with status 'todo' or 'failed'"""
     query = "SELECT count(*) FROM partition WHERE status = 'running' OR status = 'todo'"
-    cursor.execute(query)
-    numJobs = cursor.fetchone()[0]
+    database, cursor = Database.connect()
+    try:
+        cursor.execute(query)
+    except BrokenPipeError:
+        numJobs = 1
+    else:
+        numJobs = cursor.fetchone()[0]
+
+        cursor.close()
+        database.close()
 
     return numJobs == 0
 
 
-def markLongRunningJobsAsError(cursor):
+def markLongRunningJobsAsError():
     """Marks jobs that take over 20 minutes as error.
 
     This doesn't halt execution but does allow the job to be requeued."""
@@ -182,12 +213,17 @@ def markLongRunningJobsAsError(cursor):
                SET status = 'failed' 
                WHERE TIMESTAMPDIFF(MINUTE,start_time_1,end_time_1) > 15;"""
     # unsure why multi has to be true here but it does ¯\_(ツ)_/¯
-    cursor.execute(query, multi=True)
+    database, cursor = Database.connect()
+    try:
+        cursor.execute(query, multi=True)
+    except BrokenPipeError:
+        return
 
 
-def removeDoneJobs(cursor, partitionsDir):
+def removeDoneJobs(partitionsDir):
     """Remove partitions that are completed"""
     query = "SELECT file_name FROM partition WHERE status = 'done'"
+    database, cursor = Database.connect()
     try:
         cursor.execute(query)
     except BrokenPipeError:
@@ -204,10 +240,16 @@ def removeDoneJobs(cursor, partitionsDir):
                 pass
 
 
-def restartJobs(namespaces: List[int], cursor):
+def restartJobs(namespaces: List[int]):
     """Restart jobs labelled failed, mark them as restarted"""
+    return
     query = "SELECT file_name FROM partition WHERE status = 'failed'"
-    cursor.execute(query)
+    database, cursor = Database.connect()
+    try:
+        cursor.execute(query)
+    except BrokenPipeError:
+        return
+    
     output = cursor.fetchall()
 
     for file in output:
@@ -224,7 +266,7 @@ def restartJobs(namespaces: List[int], cursor):
         # cursor.execute(query, (currenttime, file))
 
 
-def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
+def main(parallel=0, numOfParallel=1, dataDir="/bigtemp/ckm8gz/"):
     """Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
 
@@ -249,9 +291,12 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
 
     queue = multiprocessing.Manager().Queue()
 
-    # cores - 3 as 1 thread to run nsdb.py and 2 to run splitwiki
-    # min, max ensures that it is within 1 and 10
-    numOfCores = min(max(cores - 3, 1), 10)
+    if cores > 4:
+        # cores - 3 as 1 thread to run nsdb.py and 2 to run splitwiki
+        # min, max ensures that it is within 1 and 10
+        numOfCores = min(max(cores - 3, 1), 8)
+    else:
+        numOfCores = max(cores - 2, 1)
     numOfPartitions = 3 * numOfCores
 
     pool = multiprocessing.Pool(numOfCores)
@@ -260,8 +305,8 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
         pool.apply_async(
             parse.multiprocess,
             (partitionsDir, namespaces, queue, parallel), 
-            callback=asyncReturn, 
-            error_callback=asyncError
+            callback=parseReturn, 
+            error_callback=parseError
         )
 
     createDumpsFile(listOfDumps, wiki, dump)
@@ -272,10 +317,10 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
     while countLines(listOfDumps) > 0:
         # if countLines(listOfDumps) > 0:
         print("before")
-        if not os.path.exists(dumpsDir) or len(os.listdir(dumpsDir)) < 8:
+        if not os.path.exists(dumpsDir) or len(os.listdir(dumpsDir)) < numOfParallel*3:
             print("download")
             tick = time.time()
-            fileName = downloadFirstDump(listOfDumps, archivesDir)
+            fileName = downloadFirstDump(listOfDumps, archivesDir, dumpsDir)
             print(
                 "--- Downloading %s took %s seconds ---"
                 % (fileName, time.time() - tick)
@@ -292,33 +337,33 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
             splitter.apply_async(
                 splitFile,
                 (fileName, queue, cursor, dumpsDir, partitionsDir, numOfPartitions),
+                callback=splitReturn, 
+                error_callback=splitError
             )
             print(
                 "--- Partitioning %s took %s seconds ---"
-                % (fileName, time.time() - tick)
+                % (fileName, time.time() - tick), flush=True
             )
 
-        jobsTodo = outstandingJobs(cursor)
+        numJobs = outstandingJobs()
+        diskSpace = checkDiskSpace(dataDir)
 
-        if jobsDone(cursor):
-            print("sleeping")
+        if jobsDone():
+            print("sleeping", flush=True)
         #     break
 
-        print(queue)
-
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
-        while jobsTodo or noDiskSpace(dataDir):
+        while numJobs > 10 or diskSpace > 600000000:
 
-            # Mark jobs as error if taken too long
-            markLongRunningJobsAsError(cursor)
+            markLongRunningJobsAsError()
 
-            removeDoneJobs(cursor, partitionsDir)
+            removeDoneJobs(partitionsDir)
 
-            restartJobs(namespaces, cursor)
+            restartJobs(namespaces)
 
-            # sleep
             time.sleep(30)
-            jobsTodo = outstandingJobs(cursor)
+            numJobs = outstandingJobs()
+            diskSpace = checkDiskSpace(dataDir)
 
         time.sleep(5)
 
@@ -331,6 +376,7 @@ def main(parallel=0, dataDir="/bigtemp/ckm8gz/"):
 if __name__ == "__main__":
     if len(argv) > 1:
         jobId = argv[1]
-        main(jobId)
+        numJobs = int(argv[2])
+        main(jobId, numJobs)
     else:
         main()
