@@ -26,29 +26,19 @@ from mirrors import fastest
 from splitwiki import split
 
 
-def parseReturn(value):
-    with open('error/parseReturn.txt', 'a+') as outFile:
-        outFile.writelines(str(value))
-
-
 def parseError(error):
     currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    with open('error/parseError.txt', 'a+') as outFile:
+    with open("error/parseError.txt", "a+") as outFile:
         outFile.write(currenttime + "\n\n")
         outFile.write(str(error) + "\n\n")
         outFile.write(traceback.format_exc() + "\n\n")
 
 
-def splitReturn(value):
-    with open('error/splitReturn.txt', 'a+') as outFile:
-        outFile.writelines(str(value))
-
-
 def splitError(error):
     currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    with open('error/splitError.txt', 'a+') as outFile:
+    with open("error/splitError.txt", "a+") as outFile:
         outFile.write(currenttime + "\n\n")
         outFile.write(str(error) + "\n\n")
         outFile.write(traceback.format_exc() + "\n\n")
@@ -82,13 +72,15 @@ def downloadFirstDump(listOfDumps, archivesDir, dumpsDir) -> str:
     # delete first line
     with open(listOfDumps, "w") as file:
         file.writelines(data)
-    
-    print('=== === ===')
+
+    print("=== === ===")
     print(dumpsDir + firstLine, flush=True)
     if not os.path.exists(dumpsDir + firstLine):
         fastestMirror = fastest()
 
-        subprocess.run(["wget", "-nc", "-nv", "-P", archivesDir, fastestMirror + firstLine])
+        subprocess.run(
+            ["wget", "-nc", "-nv", "-P", archivesDir, fastestMirror + firstLine]
+        )
 
     return fileName
 
@@ -142,8 +134,8 @@ def outstandingJobs() -> int:
         cursor.execute(query)
     except BrokenPipeError:
         numJobs = 0
-    except Exception as e: 
-        print('fuck', flush=True)
+    except Exception as e:
+        print("fuck", flush=True)
         print(str(e), flush=True)
     else:
         numJobs = cursor.fetchone()[0]
@@ -214,7 +206,7 @@ def restartJobs(namespaces: List[int]):
         cursor.execute(query)
     except BrokenPipeError:
         return
-    
+
     output = cursor.fetchall()
 
     for file in output:
@@ -265,13 +257,12 @@ def main(parallel=0, numOfParallel=1, dataDir="/bigtemp/ckm8gz/"):
     numOfPartitions = 3 * numOfCores
 
     pool = multiprocessing.Pool(numOfCores)
-   
+
     for _ in range(numOfCores):
         pool.apply_async(
             parse.multiprocess,
-            (partitionsDir, namespaces, queue, parallel), 
-            callback=parseReturn, 
-            error_callback=parseError
+            (partitionsDir, namespaces, queue, parallel),
+            error_callback=parseError,
         )
 
     createDumpsFile(listOfDumps, wiki, dump)
@@ -282,7 +273,10 @@ def main(parallel=0, numOfParallel=1, dataDir="/bigtemp/ckm8gz/"):
     while countLines(listOfDumps) > 0:
         # if countLines(listOfDumps) > 0:
         print("before")
-        if not os.path.exists(dumpsDir) or len(os.listdir(dumpsDir)) < numOfParallel*3:
+        if (
+            not os.path.exists(dumpsDir)
+            or len(os.listdir(dumpsDir)) < numOfParallel * 3
+        ):
             print("download")
             tick = time.time()
             fileName = downloadFirstDump(listOfDumps, archivesDir, dumpsDir)
@@ -302,12 +296,12 @@ def main(parallel=0, numOfParallel=1, dataDir="/bigtemp/ckm8gz/"):
             splitter.apply_async(
                 splitFile,
                 (fileName, queue, cursor, dumpsDir, partitionsDir, numOfPartitions),
-                callback=splitReturn, 
-                error_callback=splitError
+                error_callback=splitError,
             )
             print(
                 "--- Partitioning %s took %s seconds ---"
-                % (fileName, time.time() - tick), flush=True
+                % (fileName, time.time() - tick),
+                flush=True,
             )
 
         numJobs = outstandingJobs()
