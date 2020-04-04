@@ -2,7 +2,7 @@
 
 👉 [Wikipedia Research Page](https://meta.wikimedia.org/wiki/Research:Classifying_Actors_on_Talk_Pages#Goals)
 
-> If there is a feature you'd like or a roadblock to you using this, please [create an issue!](https://github.com/carlinmack/NamespaceDatabase/issues/new)
+> If there is a feature you'd like, or a roadblock to you using this, please [create an issue!](https://github.com/carlinmack/NamespaceDatabase/issues/new)
 
 ## Contents
 
@@ -20,8 +20,7 @@ This project is a collection of scripts that creates a database of edits for a  
 
 This is challenging as Wikipedia serves its dumps in ~200MB archives
 which extract to ~40GB XML files. For this reason, the aim is for the
-scripts to parallelise and to remove as much unnecessary information as
-possible before importing to the database.
+scripts to parallelise and to only import necessary information to the database.
 
 Another aim of this project is to create documentation to promote research into Wikipedia which can be performed in a variety of areas:
 |                |                                                                                                                                                                                                                                                                                                                                       |
@@ -38,16 +37,15 @@ Another aim of this project is to create documentation to promote research into 
 This project currently:
 
 * Downloads dumps from the fastest mirror
-* Splits them into 40 partitions for parallel processing
-* Parses, extracts and imports features into a MySQL database. If there are errors, they are logged to it.
+* Splits them into partitions for parallel processing
+* Parses, extracts and imports features in parallel into a MySQL database. Errors are logged to a log file unless it stops the parsing of the partition in which it is logged to the database.
 
 In the future I aim to add:
 
-* Stable parallel processing
-* Allow selection via arguments of wiki, namespace, dump
+* Allow selection of wiki, namespace, dump
 * Allow users to provide their own option files for the database so they don't have to edit code.
 * Allow users to pass in a filename directly to splitwiki or parse. 
-* Allow users to be able to direct output to somewhere other than a database.
+* Allow users to be able to direct output to somewhere other than a database. I would love to hear what people would prefer.
 
 ## Requirements and installation
 
@@ -63,14 +61,19 @@ The resulting database has at least 100x reduction in size from the extracted du
 
 ## Usage
 
-To create a list of dumps, download the first, partition it and add the partition names to a database run.
+Firstly, test the connection to the database by editing and running
+
+```
+python Database.py
+```
+
+Once this returns the database and cursor succesfully, nsdb will create a list of dumps then in parallel, download and insert the features into the database.
 
 ```
 python nsdb.py
 ```
-> Make sure to edit the database connection first so that it can connect to the database
 
-To parse the next dump and add it's features to the database run:
+If dumps are extracted, they can also be parsed manually and it's features can be added to the database with:
 
 ```
 python parse.py
@@ -82,7 +85,7 @@ To split the first dump in the `dumps/` folder into ~40 partitions in the `parti
 python splitwiki.py
 ```
 
-👉 [Documentation of all available modules ](DOCUMENTATION.md)
+👉 [Documentation of all available modules](DOCUMENTATION.md)
 
 👉 [Schema of the database](schema.md)
 

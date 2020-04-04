@@ -39,3 +39,7 @@ def connect():
         raise
     else:
         return database, cursor
+
+
+if __name__ == "__main__":
+    connect()
