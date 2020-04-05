@@ -274,7 +274,10 @@ def main(parallelID=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
     else:
         numParseCores = max(cores - 2, 1)
 
-    numSplitCores = max(cores - 1 - numParseCores , 1)
+    if numParallel > 1:
+        numSplitCores = min(max(cores - 1 - numParseCores, 1), 3)
+    else:
+        numSplitCores = max(cores - 1 - numParseCores, 1)
 
     numPartitions = 8 * numParseCores
 
@@ -296,7 +299,11 @@ def main(parallelID=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
     while countLines(listOfDumps) > 0 or jobsDone():
         # if countLines(listOfDumps) > 0:
         print("before")
-        if not os.path.exists(dumpsDir) or len(os.listdir(dumpsDir)) < numParallel * 3 or len(splitter._cache) < numSplitCores:
+        if (
+            not os.path.exists(dumpsDir)
+            or len(os.listdir(dumpsDir)) < numParallel * 3
+            or len(splitter._cache) < numSplitCores
+        ):
             print("download")
             tick = time.time()
             fileName = downloadFirstDump(listOfDumps, archivesDir, dumpsDir)
@@ -310,7 +317,7 @@ def main(parallelID=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
             print(
                 "--- Extracting %s took %s seconds ---" % (fileName, time.time() - tick)
             )
-            
+
             splitter.apply_async(
                 splitFile,
                 (fileName, queue, dumpsDir, partitionsDir, numPartitions),
