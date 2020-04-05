@@ -41,7 +41,7 @@ def addJobToQueue(queue, jobId):
 #     "-d", "--deletedump", default=False, is_flag=True,
 # )
 def split(
-    number=40,
+    number=10,
     inputFolder="/bigtemp/ckm8gz/dumps/",
     outputFolder="/bigtemp/ckm8gz/partitions/",
     deleteDump=True,
@@ -71,7 +71,7 @@ def split(
 
     lines = countLines(file)
 
-    chunkSize = lines / number * 0.75
+    chunkSize = lines / number * 0.4
 
     header = """<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -123,20 +123,24 @@ def split(
 
     footer = "\n</mediawiki>\n"
 
+    i = 0
+    inPage = False
+    moreFile = True
+    
+    t = tqdm(total=number, desc=fileName, unit=" partition") # Initialise
+    index = 0
+        
     with open(file) as inFile:
-        i = 0
-        inPage = False
-        moreFile = True
-
-        for index in trange(number, desc=fileName, unit=" partition"):
+        while True:
             if not moreFile:
+                t.close()
                 break
 
             partitionName = fileName + "." + str(index)
             outputFileName = os.path.join(outputFolder, partitionName)
 
             if index > 0 and cursor and queue:
-                prevPartitionName = partitionName = fileName + "." + str(index - 1)
+                prevPartitionName = fileName + "." + str(index - 1)
                 addJobToDatabase(cursor, prevPartitionName)
                 time.sleep(0.5)
                 addJobToQueue(queue, str(lines) + "_" + str(index - 1))
@@ -155,13 +159,17 @@ def split(
                         if i > chunkSize and line == "  </page>\n":
                             i = 0
                             moreFile = True
+
+                            index = index + 1
+                            t.update()
                             break
                     elif line == "  <page>\n":
                         inPage = True
                         i = i + 1
                         outFile.write(line)
 
-                outFile.write(footer)
+                if moreFile:
+                    outFile.write(footer)
 
     if deleteDump:
         os.remove(file)
