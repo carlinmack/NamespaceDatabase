@@ -92,6 +92,10 @@ def parseNonTargetNamespace(
     """
     userDict = {}
 
+    undidRevision = re.compile(r"^Undid revision (\d+) by.*?\|(.*?)\]")
+
+    detector = mwreverts.Detector()
+
     for revision in tqdm.tqdm(
         page, desc=title, unit=" edits", smoothing=0, disable=parallel
     ):
@@ -104,7 +108,7 @@ def parseNonTargetNamespace(
             username = revision.user.text
 
             if not username in userDict:
-                userDict[username] = [1, userId]
+                userDict[username] = [1, 0, userId]
             else:
                 userDict[username][0] += 1
 
@@ -112,32 +116,64 @@ def parseNonTargetNamespace(
             ipAddress = revision.user.text
 
             if not ipAddress in userDict:
-                userDict[ipAddress] = [1, -1]
+                userDict[ipAddress] = [1, 0, -1]
             else:
                 userDict[ipAddress][0] += 1
 
+        users = checkReverted(detector, revision, cursor, undidRevision, False)
+
+        if users:
+            for user in users:
+                userDict[user][1] += 1
+
     for key, value in userDict.items():
         editCount = value[0]
-        userId = value[1]
+        revertedCount = value[1]
+        userId = value[2]
 
         if userId > -1:
-            query = """INSERT INTO user (user_id, username, namespaces, number_of_edits)
+            query = """INSERT INTO user 
+            (user_id, username, namespaces, number_of_edits, reverted_edits)
             VALUES (%s, %s, %s, %s) ON DUPLICATE KEY
             UPDATE
                 namespaces = CONCAT_WS(',', namespaces, %s),
-                number_of_edits = number_of_edits + %s;"""
+                number_of_edits = number_of_edits + %s,
+                reverted_edits = reverted_edits + %s;"""
 
             cursor.execute(
-                query, (userId, key, namespace, editCount, namespace, editCount),
+                query,
+                (
+                    userId,
+                    key,
+                    namespace,
+                    editCount,
+                    revertedCount,
+                    namespace,
+                    editCount,
+                    revertedCount,
+                ),
             )
         else:
-            query = """INSERT INTO user (ip_address, namespaces, number_of_edits)
+            query = """INSERT INTO user 
+            (ip_address, namespaces, number_of_edits, reverted_edits)
             VALUES (%s, %s, %s) ON DUPLICATE KEY
             UPDATE
                 namespaces = CONCAT_WS(',', namespaces, %s),
-                number_of_edits = number_of_edits + %s;"""
+                number_of_edits = number_of_edits + %s,
+                reverted_edits = reverted_edits + %s;"""
 
-            cursor.execute(query, (key, namespace, editCount, namespace, editCount))
+            cursor.execute(
+                query,
+                (
+                    key,
+                    namespace,
+                    editCount,
+                    revertedCount,
+                    namespace,
+                    editCount,
+                    revertedCount,
+                ),
+            )
 
 
 def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str):
@@ -279,46 +315,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
             commentLength = "NULL"
             commentSpecialChars = "NULL"
 
-        reverted = detector.process(
-            revision.sha1, [{"revisionId": editId, "user": revision.user.text}]
-        )
-
-        # check with mwreverts first as it is a source of truth, comments may lie
-        # however check the comment anyway as they may make additional edits that
-        # will bypass mwreverts
-        if reverted:
-            # usually performs 1 loop, not really O(n^2)
-            for reversion in reverted.reverteds:
-                for revert in reversion:
-                    revisionId = revert["revisionId"]
-                    user = revert["user"]
-
-                    query = """UPDATE edit
-                        SET reverted = True
-                        WHERE edit_id = %s;"""
-                    cursor.execute(query, (revisionId,))
-
-                    query = """UPDATE user
-                        SET reverted_edits = reverted_edits + 1
-                        WHERE username = %s or ip_address = %s;"""
-                    cursor.execute(query, (user, user))
-
-        elif revision.comment:
-            reverted = undidRevision.match(revision.comment)
-
-            if reverted:
-                revisionId = reverted.groups(0)[0]
-                user = reverted.groups(0)[1]
-
-                query = """UPDATE edit
-                    SET reverted = True
-                    WHERE edit_id = %s;"""
-                cursor.execute(query, (revisionId,))
-
-                query = """UPDATE user
-                    SET reverted_edits = reverted_edits + 1
-                    WHERE username = %s or ip_address = %s;"""
-                cursor.execute(query, (user, user))
+        checkReverted(detector, revision, cursor, undidRevision, True)
 
         query = """
         INSERT INTO edit (added, deleted, added_length, deleted_length, edit_date, 
@@ -368,6 +365,104 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
 
         ## Insert page features into database
         cursor.execute(query, editTuple)
+
+
+def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
+    """Returns the diff between two edits using wdiff
+
+    Parameters
+    ----------
+    old : str - old revision
+    new : str - new revision
+
+    Returns
+    -------
+    added: str - all the text that is exclusively in the new revision
+    deleted: str - all the text that is exclusively in the old revision
+    parallel: str - id of the parallel process, 0 if not
+    """
+    oldrevision = "revision/old" + parallel + ".txt"
+    newrevision = "revision/new" + parallel + ".txt"
+
+    with open(newrevision, "w") as newFile:
+        newFile.writelines(new)
+
+    lineSeperators = re.compile(
+        r"======================================================================"
+    )
+
+    added = (
+        subprocess.run(["wdiff", "-13", oldrevision, newrevision], capture_output=True)
+        .stdout.decode("utf-8")
+        .strip()
+    )
+
+    added = lineSeperators.sub("", added)
+
+    deleted = (
+        subprocess.run(["wdiff", "-23", oldrevision, newrevision], capture_output=True)
+        .stdout.decode("utf-8")
+        .strip()
+    )
+
+    deleted = lineSeperators.sub("", deleted)
+
+    os.rename(newrevision, oldrevision)
+    open("revision/new" + parallel + ".txt", "w").close()
+
+    return added, deleted
+
+
+def checkReverted(detector, revision, cursor, undidRevision, target):
+    """Inserts reverted edits into the database for target namespace, otherwise 
+    returns the user that was reverted"""
+    reverted = detector.process(
+        revision.sha1, [{"revisionId": revision.id, "user": revision.user.text}]
+    )
+
+    # check with mwreverts first as it is a source of truth, comments may lie
+    # however check the comment anyway as they may make additional edits that
+    # will bypass mwreverts
+    if reverted:
+        users = []
+        # usually performs 1 loop, not really O(n^2)
+        for reversion in reverted.reverteds:
+            for revert in reversion:
+                revisionId = revert["revisionId"]
+                user = revert["user"]
+
+                if target:
+                    query = """UPDATE edit
+                        SET reverted = True
+                        WHERE edit_id = %s;"""
+                    cursor.execute(query, (revisionId,))
+
+                    query = """UPDATE user
+                        SET reverted_edits = reverted_edits + 1
+                        WHERE username = %s or ip_address = %s;"""
+                    cursor.execute(query, (user, user))
+                else:
+                    users.append(user)
+        return users
+    elif revision.comment:
+        reverted = undidRevision.match(revision.comment)
+
+        if reverted:
+            revisionId = reverted.groups(0)[0]
+            user = reverted.groups(0)[1]
+
+            if target:
+                query = """UPDATE edit
+                    SET reverted = True
+                    WHERE edit_id = %s;"""
+                cursor.execute(query, (revisionId,))
+
+                query = """UPDATE user
+                    SET reverted_edits = reverted_edits + 1
+                    WHERE username = %s or ip_address = %s;"""
+                cursor.execute(query, (user, user))
+            else:
+                return [user]
 
 
 ##  FUNCTIONS TO EXTRACT FEATURES
@@ -459,52 +554,6 @@ def ratioPronouns(string: str) -> int:
 def containsVulgarity(string: str) -> bool:
     """Returns whether text contains profanity based on a simple wordlist approach"""
     return profanity.contains_profanity(string)
-
-
-def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
-    """Returns the diff between two edits using wdiff
-
-    Parameters
-    ----------
-    old : str - old revision
-    new : str - new revision
-
-    Returns
-    -------
-    added: str - all the text that is exclusively in the new revision
-    deleted: str - all the text that is exclusively in the old revision
-    parallel: str - id of the parallel process, 0 if not
-    """
-    oldrevision = "revision/old" + parallel + ".txt"
-    newrevision = "revision/new" + parallel + ".txt"
-
-    with open(newrevision, "w") as newFile:
-        newFile.writelines(new)
-
-    lineSeperators = re.compile(
-        r"======================================================================"
-    )
-
-    added = (
-        subprocess.run(["wdiff", "-13", oldrevision, newrevision], capture_output=True)
-        .stdout.decode("utf-8")
-        .strip()
-    )
-
-    added = lineSeperators.sub("", added)
-
-    deleted = (
-        subprocess.run(["wdiff", "-23", oldrevision, newrevision], capture_output=True)
-        .stdout.decode("utf-8")
-        .strip()
-    )
-
-    deleted = lineSeperators.sub("", deleted)
-
-    os.rename(newrevision, oldrevision)
-    open("revision/new" + parallel + ".txt", "w").close()
-
-    return added, deleted
 
 
 def parse(
