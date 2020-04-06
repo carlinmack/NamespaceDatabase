@@ -42,6 +42,7 @@ CREATE TABLE page (
     namespace smallint NOT NULL,
     title varchar(255) binary NOT NULL,
     file_name varchar(85) NOT NULL,
+    number_of_edits int unsigned NOT NULL DEFAULT '0',
     PRIMARY KEY (page_id)
 );
 

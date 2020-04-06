@@ -96,11 +96,15 @@ def parseNonTargetNamespace(
 
     detector = mwreverts.Detector()
 
+    pageEdits = 0
+
     for revision in tqdm.tqdm(
         page, desc=title, unit=" edits", smoothing=0, disable=parallel
     ):
         if not revision.user:
             continue
+
+        pageEdits = pageEdits + 1
 
         # Check if not None as there is a user 0, Larry Sanger
         if revision.user.id is not None:
@@ -175,6 +179,11 @@ def parseNonTargetNamespace(
                 ),
             )
 
+    
+    query = """UPDATE page (number_of_edits)
+                VALUES (%s) 
+                WHERE title=%s;"""
+    cursor.execute(query, (pageEdits, title))
 
 def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str):
     """Extracts features from each revision of a page into a database
@@ -200,12 +209,16 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
 
     detector = mwreverts.Detector()
 
+    pageEdits = 0
+
     ## Extract page features from each revision
     for revision in tqdm.tqdm(
         page, desc=title, unit=" edits", smoothing=0, disable=parallel
     ):
         if not revision.user:
             continue
+
+        pageEdits = pageEdits + 1
 
         # Check if not None as there is a user 0, Larry Sanger
         if revision.user.id is not None:
@@ -365,6 +378,11 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
 
         ## Insert page features into database
         cursor.execute(query, editTuple)
+
+    query = """UPDATE page (number_of_edits)
+                VALUES (%s) 
+                WHERE title=%s;"""
+    cursor.execute(query, (pageEdits, title))
 
 
 def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
