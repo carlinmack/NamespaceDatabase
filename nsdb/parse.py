@@ -11,7 +11,7 @@ import sys
 import time
 import traceback
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, List
 
 import mwreverts
 import mwxml
@@ -21,7 +21,7 @@ from profanity import profanity
 import Database
 
 
-def multiprocess(partitionsDir, namespaces, queue, jobId):
+def multiprocess(partitionsDir: str, namespaces: List[int], queue, jobId: str):
     """Wrapper around process to call parse in a multiprocessing pool"""
     while True:
         i = queue.get()
@@ -35,7 +35,7 @@ def multiprocess(partitionsDir, namespaces, queue, jobId):
         time.sleep(10)
 
 
-def getDump(partitionsDir, cursor):
+def getDump(partitionsDir: str, cursor):
     """Returns the next dump to be parsed from the database
 
     Parameters
@@ -179,11 +179,11 @@ def parseNonTargetNamespace(
                 ),
             )
 
-    
     query = """UPDATE page (number_of_edits)
                 VALUES (%s) 
                 WHERE title=%s;"""
     cursor.execute(query, (pageEdits, title))
+
 
 def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str):
     """Extracts features from each revision of a page into a database
@@ -431,7 +431,7 @@ def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
     return added, deleted
 
 
-def checkReverted(detector, revision, cursor, undidRevision, target):
+def checkReverted(detector, revision, cursor, undidRevision, target: bool):
     """Inserts reverted edits into the database for target namespace, otherwise 
     returns the user that was reverted"""
     reverted = detector.process(
@@ -575,7 +575,9 @@ def containsVulgarity(string: str) -> bool:
 
 
 def parse(
-    partitionsDir: str = "/bigtemp/ckm8gz/partitions/", namespaces=[1], parallel=""
+    partitionsDir: str = "/bigtemp/ckm8gz/partitions/",
+    namespaces: List[int] = [1],
+    parallel: str = "",
 ):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.

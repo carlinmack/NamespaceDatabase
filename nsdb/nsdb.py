@@ -53,7 +53,7 @@ def createDumpsFile(listOfDumps: str, wiki: str, dump: str):
         subprocess.run(["./download.sh", "https://dumps.wikimedia.org/", wiki, dump])
 
 
-def countLines(file) -> int:
+def countLines(file: str) -> int:
     """Returns the number of lines in a file using wc from bash"""
     wordCount = subprocess.check_output(["wc", "-l", file]).decode("utf-8")
     lines = int(wordCount.split(" ")[0])
@@ -61,7 +61,7 @@ def countLines(file) -> int:
     return lines
 
 
-def downloadFirstDump(listOfDumps, archivesDir, dumpsDir) -> str:
+def downloadFirstDump(listOfDumps: str, archivesDir: str, dumpsDir: str) -> str:
     """Downloads the first dump in dumps.txt if it is not already present
     in the dumps directory"""
 
@@ -86,7 +86,7 @@ def downloadFirstDump(listOfDumps, archivesDir, dumpsDir) -> str:
     return fileName
 
 
-def extractFile(fileName: str, archivesDir, dumpsDir):
+def extractFile(fileName: str, archivesDir: str, dumpsDir: str):
     """Unzip if not already extracted, delete if extracted
 
     Execution takes 5-15 minutes as a guideline"""
@@ -99,7 +99,9 @@ def extractFile(fileName: str, archivesDir, dumpsDir):
     return fileName[:-3]
 
 
-def splitFile(fileName, queue, dumpsDir, partitionsDir, numPartitions):
+def splitFile(
+    fileName: str, queue, dumpsDir: str, partitionsDir: str, numPartitions: int
+):
     """Split a dump into a number of partitions"""
     database, cursor = Database.connect()
 
@@ -116,7 +118,7 @@ def splitFile(fileName, queue, dumpsDir, partitionsDir, numPartitions):
     database.close()
 
 
-def checkDiskSpace(dataDir):
+def checkDiskSpace(dataDir: str) -> int:
     """Returns the size of the data directory"""
     try:
         space = int(
@@ -188,7 +190,7 @@ def markLongRunningJobsAsError():
     database.close()
 
 
-def removeDoneJobs(partitionsDir):
+def removeDoneJobs(partitionsDir: str):
     """Remove partitions that are completed"""
     query = "SELECT file_name FROM partition WHERE status = 'done'"
     database, cursor = Database.connect()
@@ -242,7 +244,7 @@ def restartJobs():
     database.close()
 
 
-def main(parallelID=0, numParallel=1, dataDir="/bigtemp/ckm8gz/"):
+def main(parallelID: str = 0, numParallel: int = 1, dataDir: str = "/bigtemp/ckm8gz/"):
     """Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
 

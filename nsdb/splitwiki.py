@@ -11,7 +11,7 @@ import time
 from tqdm import trange
 
 
-def countLines(file) -> int:
+def countLines(file: str) -> int:
     """Returns the estimated number of lines in a dump using wcle.sh"""
     print("counting lines: ", file)
     lines = int(subprocess.check_output(["./wcle.sh", file]))
@@ -19,13 +19,13 @@ def countLines(file) -> int:
     return lines
 
 
-def addJobToDatabase(cursor, partitionName):
+def addJobToDatabase(cursor, partitionName: str):
     """Inserts partition into the database"""
     query = "INSERT INTO partition (file_name) VALUES (%s)"
     cursor.execute(query, (partitionName,))
 
 
-def addJobToQueue(queue, jobId):
+def addJobToQueue(queue, jobId: str):
     """Adds partition to the multiprocessing queue"""
     queue.put(jobId)
 
@@ -41,11 +41,11 @@ def addJobToQueue(queue, jobId):
 #     "-d", "--deletedump", default=False, is_flag=True,
 # )
 def split(
-    number=10,
-    inputFolder="/bigtemp/ckm8gz/dumps/",
-    outputFolder="/bigtemp/ckm8gz/partitions/",
-    deleteDump=True,
-    fileName="",
+    number: int = 10,
+    inputFolder: str = "/bigtemp/ckm8gz/dumps/",
+    outputFolder: str = "/bigtemp/ckm8gz/partitions/",
+    deleteDump: bool = True,
+    fileName: str = "",
     queue=0,
     cursor=0,
 ):
@@ -126,10 +126,10 @@ def split(
     i = 0
     inPage = False
     moreFile = True
-    
-    t = tqdm(total=number, desc=fileName, unit=" partition") # Initialise
+
+    t = tqdm(total=number, desc=fileName, unit=" partition")  # Initialise
     index = 0
-        
+
     with open(file) as inFile:
         while True:
             if not moreFile:
