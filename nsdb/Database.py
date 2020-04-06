@@ -6,7 +6,6 @@ example configuration.
 """
 
 import mysql.connector as sql
-from mysql.connector import errorcode
 
 
 def connect():
@@ -30,9 +29,9 @@ def connect():
         cursor = database.cursor()
 
     except sql.Error as err:
-        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+        if err.errno == sql.errorcode.ER_ACCESS_DENIED_ERROR:
             print("Something is wrong with your user name or password")
-        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+        elif err.errno == sql.errorcode.ER_BAD_DB_ERROR:
             print("Database does not exist")
         else:
             print(err)
