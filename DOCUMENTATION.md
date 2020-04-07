@@ -95,6 +95,11 @@ Functions
 ---------
 
     
+`checkReverted(detector, revision, cursor, undidRevision, target)`
+:   Inserts reverted edits into the database for target namespace, otherwise 
+    returns the user that was reverted
+
+    
 `cleanString(string)`
 :   Removes special characters and unnecessary whitespace from text
 
@@ -229,7 +234,7 @@ Functions
 :   Returns the estimated number of lines in a dump using wcle.sh
 
     
-`split(number=40, inputFolder='/bigtemp/ckm8gz/dumps/', outputFolder='/bigtemp/ckm8gz/partitions/', deleteDump=True, fileName='', queue=0, cursor=0)`
+`split(number=10, inputFolder='/bigtemp/ckm8gz/dumps/', outputFolder='/bigtemp/ckm8gz/partitions/', deleteDump=True, fileName='', queue=0, cursor=0)`
 :   Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
     
