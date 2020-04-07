@@ -295,8 +295,6 @@ def main(parallelID: str = 0, numParallel: int = 1, dataDir: str = "/bigtemp/ckm
 
     createDumpsFile(listOfDumps, wiki, dump)
 
-    database, cursor = Database.connect()
-
     # while (things-to-do or jobs still running)
     while countLines(listOfDumps) > 0 or jobsDone():
         # if countLines(listOfDumps) > 0:
@@ -350,8 +348,6 @@ def main(parallelID: str = 0, numParallel: int = 1, dataDir: str = "/bigtemp/ckm
 
     # clean up Pool
     print("=== EXIT ===")
-    cursor.close()
-    database.close()
 
 
 if __name__ == "__main__":
