@@ -17,7 +17,7 @@ hostname
 # cd to the directory
 cd /p/wikiactors/nsdb
 
-sleep $(((SLURM_ARRAY_TASK_ID-1)*15))
+sleep $(((SLURM_ARRAY_TASK_ID-1)*5))
 python --version
 date
 srun --cpus-per-task 12 python nsdb.py $SLURM_JOB_ID $SLURM_ARRAY_TASK_COUNT

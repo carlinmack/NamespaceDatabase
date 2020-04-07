@@ -142,7 +142,7 @@ def split(
             if index > 0 and cursor and queue:
                 prevPartitionName = fileName + "." + str(index - 1)
                 addJobToDatabase(cursor, prevPartitionName)
-                time.sleep(0.5)
+                time.sleep(0.1)
                 addJobToQueue(queue, str(lines) + "_" + str(index - 1))
             elif not os.path.exists(outputFolder):
                 os.mkdir(outputFolder)

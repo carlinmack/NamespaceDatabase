@@ -8,7 +8,6 @@ import os
 import re
 import subprocess
 import sys
-import time
 import traceback
 from datetime import datetime
 from typing import Tuple, List
@@ -26,13 +25,8 @@ def multiprocess(partitionsDir: str, namespaces: List[int], queue, jobId: str):
     while True:
         i = queue.get()
 
-        delay = int(i[-1:])
-        time.sleep(delay / 3)
-
         parseId = str(jobId) + "_" + str(i)
         parse(partitionsDir, namespaces, parseId)
-
-        time.sleep(10)
 
 
 def getDump(partitionsDir: str, cursor):
