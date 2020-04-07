@@ -8,7 +8,7 @@ import subprocess
 import time
 
 # import click
-from tqdm import trange
+from tqdm import tqdm
 
 
 def countLines(file: str) -> int:
