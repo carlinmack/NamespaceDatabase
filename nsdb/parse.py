@@ -82,13 +82,13 @@ def parseNonTargetNamespace(
 ):
     """Counts the number of edits each user makes and inserts them to the database.
 
-    Parameters
-    ----------
-    page: mwtypes.Page
-    title: str - Title of the page
-    namespace: str - Namespace of the page
-    cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
-    parallel: str - id of process, hides progress bars if present
+        Parameters
+        ----------
+        page: mwtypes.Page
+        title: str - Title of the page
+        namespace: str - Namespace of the page
+        cursor: MySQLCursor - cursor allowing CRUD actions on the DB connections
+        parallel: str - id of process, hides progress bars if present
     """
     userDict = {}
 
@@ -97,6 +97,8 @@ def parseNonTargetNamespace(
     detector = mwreverts.Detector()
 
     pageEdits = 0
+
+    editIdToUserId = {}
 
     for revision in tqdm.tqdm(
         page, desc=title, unit=" edits", smoothing=0, disable=parallel
@@ -111,6 +113,8 @@ def parseNonTargetNamespace(
             userId = revision.user.id
             username = revision.user.text
 
+            editIdToUserId[revision.id] = userId
+
             if not username in userDict:
                 userDict[username] = [1, 0, userId]
             else:
@@ -124,11 +128,29 @@ def parseNonTargetNamespace(
             else:
                 userDict[ipAddress][0] += 1
 
-        users = checkReverted(detector, revision, cursor, undidRevision, False)
+        revertedUsers = checkReverted(
+            detector, revision, cursor, undidRevision, False, editIdToUserId
+        )
 
-        if users:
-            for user in users:
-                userDict[user][1] += 1
+        if revertedUsers:
+            for user in revertedUsers:
+                # it's naive to assume that the user will already be in userDict as
+                # they could've been renamed or vanished
+                if "userId" in user:
+                    userId = user["userId"]
+                    username = user["user"]
+
+                    if not username in userDict:
+                        userDict[username] = [0, 1, userId]
+                    else:
+                        userDict[username][1] += 1
+                else:
+                    ipAddress = user["user"]
+
+                    if not ipAddress in userDict:
+                        userDict[ipAddress] = [0, 1, -1]
+                    else:
+                        userDict[ipAddress][1] += 1
 
     for key, value in userDict.items():
         editCount = value[0]
@@ -138,7 +160,7 @@ def parseNonTargetNamespace(
         if userId > -1:
             query = """INSERT INTO user 
             (user_id, username, namespaces, number_of_edits, reverted_edits)
-            VALUES (%s, %s, %s, %s) ON DUPLICATE KEY
+            VALUES (%s, %s, %s, %s, %s) ON DUPLICATE KEY
             UPDATE
                 namespaces = CONCAT_WS(',', namespaces, %s),
                 number_of_edits = number_of_edits + %s,
@@ -160,7 +182,7 @@ def parseNonTargetNamespace(
         else:
             query = """INSERT INTO user 
             (ip_address, namespaces, number_of_edits, reverted_edits)
-            VALUES (%s, %s, %s) ON DUPLICATE KEY
+            VALUES (%s, %s, %s, %s) ON DUPLICATE KEY
             UPDATE
                 namespaces = CONCAT_WS(',', namespaces, %s),
                 number_of_edits = number_of_edits + %s,
@@ -179,8 +201,8 @@ def parseNonTargetNamespace(
                 ),
             )
 
-    query = """UPDATE page (number_of_edits)
-                VALUES (%s) 
+    query = """UPDATE page
+                SET number_of_edits = %s 
                 WHERE title=%s;"""
     cursor.execute(query, (pageEdits, title))
 
@@ -211,6 +233,8 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
 
     pageEdits = 0
 
+    editIdToUserId = {}
+
     ## Extract page features from each revision
     for revision in tqdm.tqdm(
         page, desc=title, unit=" edits", smoothing=0, disable=parallel
@@ -224,6 +248,8 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
         if revision.user.id is not None:
             userId = revision.user.id
             username = revision.user.text
+
+            editIdToUserId[revision.id] = userId
 
             query = """INSERT INTO user (user_id, username, namespaces, talkpage_number_of_edits)
                 VALUES (%s, %s, %s, 1) ON DUPLICATE KEY
@@ -328,7 +354,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
             commentLength = "NULL"
             commentSpecialChars = "NULL"
 
-        checkReverted(detector, revision, cursor, undidRevision, True)
+        checkReverted(detector, revision, cursor, undidRevision, True, editIdToUserId)
 
         query = """
         INSERT INTO edit (added, deleted, added_length, deleted_length, edit_date, 
@@ -379,8 +405,8 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
         ## Insert page features into database
         cursor.execute(query, editTuple)
 
-    query = """UPDATE page (number_of_edits)
-                VALUES (%s) 
+    query = """UPDATE page
+                SET number_of_edits = %s 
                 WHERE title=%s;"""
     cursor.execute(query, (pageEdits, title))
 
@@ -431,11 +457,20 @@ def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
     return added, deleted
 
 
-def checkReverted(detector, revision, cursor, undidRevision, target: bool):
+def checkReverted(
+    detector, revision, cursor, undidRevision, target: bool, editIdToUserId
+):
     """Inserts reverted edits into the database for target namespace, otherwise 
     returns the user that was reverted"""
     reverted = detector.process(
-        revision.sha1, [{"revisionId": revision.id, "user": revision.user.text}]
+        revision.sha1,
+        [
+            {
+                "revisionId": revision.id,
+                "user": revision.user.text,
+                "userId": revision.user.id,
+            }
+        ],
     )
 
     # check with mwreverts first as it is a source of truth, comments may lie
@@ -448,6 +483,10 @@ def checkReverted(detector, revision, cursor, undidRevision, target: bool):
             for revert in reversion:
                 revisionId = revert["revisionId"]
                 user = revert["user"]
+                if revert["userId"] is None:
+                    userId = -1
+                else:
+                    userId = revert["userId"]
 
                 if target:
                     query = """UPDATE edit
@@ -455,32 +494,59 @@ def checkReverted(detector, revision, cursor, undidRevision, target: bool):
                         WHERE edit_id = %s;"""
                     cursor.execute(query, (revisionId,))
 
-                    query = """UPDATE user
-                        SET reverted_edits = reverted_edits + 1
-                        WHERE username = %s or ip_address = %s;"""
-                    cursor.execute(query, (user, user))
+                    if userId != -1:
+                        query = """
+                        INSERT INTO user (user_id, username, talkpage_reverted_edits)
+                            VALUES (%s, %s, 1) ON DUPLICATE KEY
+                            UPDATE
+                                talkpage_reverted_edits = talkpage_reverted_edits + 1;"""
+                        cursor.execute(query, (userId, user))
+                    else:
+                        query = """INSERT INTO user (ip_address, talkpage_reverted_edits)
+                            VALUES (%s, 1) ON DUPLICATE KEY
+                            UPDATE
+                                talkpage_reverted_edits = talkpage_reverted_edits + 1;"""
+                        cursor.execute(query, (user,))
+
                 else:
+                    user = {"user": user, "userId": userId}
                     users.append(user)
         return users
     elif revision.comment:
         reverted = undidRevision.match(revision.comment)
 
         if reverted:
-            revisionId = reverted.groups(0)[0]
+            revisionId = int(reverted.groups(0)[0])
             user = reverted.groups(0)[1]
+
+            if revisionId in editIdToUserId:
+                userId = editIdToUserId[revisionId]
+            else:
+                userId = -1
 
             if target:
                 query = """UPDATE edit
-                    SET reverted = True
-                    WHERE edit_id = %s;"""
+                        SET reverted = True
+                        WHERE edit_id = %s;"""
                 cursor.execute(query, (revisionId,))
 
-                query = """UPDATE user
-                    SET reverted_edits = reverted_edits + 1
-                    WHERE username = %s or ip_address = %s;"""
-                cursor.execute(query, (user, user))
+                if userId != -1:
+                    query = """INSERT INTO user
+                        (user_id, username, talkpage_reverted_edits)
+                        VALUES (%s, %s, 1) ON DUPLICATE KEY
+                        UPDATE
+                            talkpage_reverted_edits = talkpage_reverted_edits + 1;"""
+                    cursor.execute(query, (userId, user))
+                else:
+                    query = """INSERT INTO user
+                        (ip_address, talkpage_reverted_edits)
+                        VALUES (%s, 1) ON DUPLICATE KEY
+                        UPDATE
+                            talkpage_reverted_edits = talkpage_reverted_edits + 1;"""
+                    cursor.execute(query, (user,))
+
             else:
-                return [user]
+                return [{"user": user, "userId": userId}]
 
 
 ##  FUNCTIONS TO EXTRACT FEATURES
