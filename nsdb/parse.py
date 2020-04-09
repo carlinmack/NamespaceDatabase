@@ -11,6 +11,7 @@ import sys
 import traceback
 from datetime import datetime
 from typing import Tuple, List
+from sys import argv
 
 import mwreverts
 import mwxml
@@ -27,6 +28,8 @@ def multiprocess(partitionsDir: str, namespaces: List[int], queue, jobId: str):
 
         parseId = str(jobId) + "_" + str(i)
         parse(partitionsDir, namespaces, parseId)
+
+    print("EXIT", flush=True)
 
 
 def getDump(partitionsDir: str, cursor):
@@ -197,8 +200,9 @@ def parseNonTargetNamespace(
 
     query = """UPDATE page
                 SET number_of_edits = %s 
-                WHERE title=%s;"""
-    cursor.execute(query, (pageEdits, title))
+                WHERE title=%s
+                AND namespace = %s;"""
+    cursor.execute(query, (pageEdits, title, namespace))
 
 
 def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str):
@@ -401,8 +405,9 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
 
     query = """UPDATE page
                 SET number_of_edits = %s 
-                WHERE title=%s;"""
-    cursor.execute(query, (pageEdits, title))
+                WHERE title=%s
+                AND namespace = %s;"""
+    cursor.execute(query, (pageEdits, title, namespace))
 
 
 def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
@@ -738,4 +743,9 @@ def parse(
 
 
 if __name__ == "__main__":
-    parse()
+    if len(argv) > 1:
+        jobId = argv[1]
+        parse(parallel=jobId)
+    else:
+        parse()
+    
