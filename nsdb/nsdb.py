@@ -176,8 +176,9 @@ def markLongRunningJobsAsError():
 
     This doesn't halt execution but does allow the job to be requeued."""
     query = """UPDATE partition
-               SET status = 'failed' 
-               WHERE TIMESTAMPDIFF(MINUTE,start_time_1,end_time_1) > 15;"""
+               SET status = 'failed', error = 'Timed out' 
+               WHERE status = 'running'
+               AND TIMESTAMPDIFF(MINUTE,start_time_1,NOW()) > 15;"""
     database, cursor = Database.connect()
     try:
         # unsure why multi has to be true here but it does ¯\_(ツ)_/¯
@@ -332,7 +333,7 @@ def main(parallelID: str = 0, numParallel: int = 1, dataDir: str = "/bigtemp/ckm
         #     break
 
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
-        while numJobs > 10 or diskSpace > 600000000:
+        while numJobs > 10 * numParallel or diskSpace > 600000000:
 
             markLongRunningJobsAsError()
 
