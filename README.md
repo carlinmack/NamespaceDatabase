@@ -1,26 +1,24 @@
-# Classifying Actors on Wikipedia Talk Pages
+## Namespace Database
 
-👉 [Wikipedia Research Page](https://meta.wikimedia.org/wiki/Research:Classifying_Actors_on_Talk_Pages#Goals)
+This project is a collection of scripts that creates a database of edits for a  Wikipedia namespace.
+
+👉 Wikipedia Research Page - [Classifying Actors on Wikipedia Talk Pages](https://meta.wikimedia.org/wiki/Research:Classifying_Actors_on_Talk_Pages#Goals)
+
+This is challenging as Wikipedia serves its dumps in ~200MB archives
+which extract to ~40GB XML files. For this reason, the aim is for the
+scripts to parallelise and to only import necessary information to the database.
 
 > If there is a feature you'd like, or a roadblock to you using this, please [create an issue!](https://github.com/carlinmack/NamespaceDatabase/issues/new)
 
+
 ## Contents
 
-* [Introduction](#Introduction)
   * [Current Status](#Current-Status)
 * [Requirements and installation](#Requirements-and-installation)
   * [Software](#Software)
   * [Hardware](#Hardware)
 * [Usage](#Usage)
 * [Contributions](#Contributions)
-   
-## Introduction
-
-This project is a collection of scripts that creates a database of edits for a  Wikipedia namespace.
-
-This is challenging as Wikipedia serves its dumps in ~200MB archives
-which extract to ~40GB XML files. For this reason, the aim is for the
-scripts to parallelise and to only import necessary information to the database.
 
 Another aim of this project is to create documentation to promote research into Wikipedia which can be performed in a variety of areas:
 |                |                                                                                                                                                                                                                                                                                                                                       |
