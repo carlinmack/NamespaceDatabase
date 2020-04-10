@@ -13,7 +13,9 @@ SELECT '' AS '';
 SELECT '- partitions that are done vs error:' AS '';
 SELECT status AS 'job status', count(id) AS 'count' FROM partition GROUP BY status;
 SELECT '' AS ''; 
-SELECT file_name, error from partition where error is not null; 
+SELECT file_name, error from partition where status = 'failed' and error is not null; 
+
+SELECT TIMESTAMPDIFF(MINUTE,start_time_1,CONVERT_TZ(NOW(),'+00:00','-4:00')) as "running times" FROM partition WHERE status = 'running';
 
 SELECT AVG(TIMESTAMPDIFF(SECOND,start_time_1,end_time_1)) AS 'Average time to parse partition (secs):' FROM partition WHERE status = 'done';
 
