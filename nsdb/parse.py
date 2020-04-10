@@ -32,6 +32,16 @@ def multiprocess(partitionsDir: str, namespaces: List[int], queue, jobId: str):
     print("EXIT", flush=True)
 
 
+def markAsNotFound(fileName):
+    query = """update partition 
+        set status = 'failed', error = 'Not found' 
+        where file_name = %s;"""
+    
+    database, cursor = Database.connect()
+    cursor.execute(query, (fileName,))
+    cursor.close()
+    database.close()
+
 def getDump(partitionsDir: str, cursor):
     """Returns the next dump to be parsed from the database
 
@@ -42,7 +52,7 @@ def getDump(partitionsDir: str, cursor):
     Returns
     -------
     dump: class 'mwxml.iteration.dump.Dump' - dump file iterator
-    filename: str - filename of dump
+    fileName: str - fileName of dump
     """
     ## Read dump from database
     query = "SELECT file_name FROM partition WHERE status = 'todo' LIMIT 1"
@@ -53,25 +63,26 @@ def getDump(partitionsDir: str, cursor):
         ## no files to run, close database connections and finish
         return None, None
 
-    filename = todofile[0]
-    path = partitionsDir + filename
+    fileName = todofile[0]
+    path = partitionsDir + fileName
 
     if not os.path.exists(path):
+        markAsNotFound(fileName)
         raise IOError("file " + path + " not found on disk")
 
     print(path)
     dump = mwxml.Dump.from_file(open(path))
 
     ## Change status of dump
-    currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     query = """UPDATE partition
         SET
             status = "running",
             start_time_1 = %s
         WHERE file_name = %s;"""
-    cursor.execute(query, (currenttime, filename))
+    cursor.execute(query, (currentTime, fileName))
 
-    return dump, filename
+    return dump, fileName
 
 
 def parseNonTargetNamespace(
@@ -205,7 +216,7 @@ def parseNonTargetNamespace(
     cursor.execute(query, (pageEdits, title, namespace))
 
 
-def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str):
+def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str, partitionsDir):
     """Extracts features from each revision of a page into a database
 
     Ignores edits that have been deleted like:
@@ -275,7 +286,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
         # if revision has text and the text isn't whitespace
         if revision.text and not blankText.search(revision.text):
             blanking = False
-            (added, deleted) = getDiff(oldText, revision.text, parallel)
+            (added, deleted) = getDiff(oldText, revision.text, parallel, partitionsDir)
             blankAddition = blankText.search(added)
 
             addedLength = len(added)
@@ -410,7 +421,7 @@ def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str
     cursor.execute(query, (pageEdits, title, namespace))
 
 
-def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
+def getDiff(old: str, new: str, parallel: str, partitionsDir) -> Tuple[str, str]:
     """Returns the diff between two edits using wdiff
 
     Parameters
@@ -451,7 +462,7 @@ def getDiff(old: str, new: str, parallel: str) -> Tuple[str, str]:
     deleted = lineSeperators.sub("", deleted)
 
     os.rename(newrevision, oldrevision)
-    open("revision/new" + parallel + ".txt", "w").close()
+    open(partitionsDir + "revision/new" + parallel + ".txt", "w").close()
 
     return added, deleted
 
@@ -659,14 +670,14 @@ def parse(
     """
     database, cursor = Database.connect()
 
-    if not os.path.exists("revision"):
-        os.mkdir("revision")
+    if not os.path.exists(partitionsDir + "revision"):
+        os.mkdir(partitionsDir + "revision")
 
-    open("revision/old" + parallel + ".txt", "w").close()
-    open("revision/new" + parallel + ".txt", "w").close()
+    open(partitionsDir + "revision/old" + parallel + ".txt", "w").close()
+    open(partitionsDir + "revision/new" + parallel + ".txt", "w").close()
 
     try:
-        dump, filename = getDump(partitionsDir, cursor)
+        dump, fileName = getDump(partitionsDir, cursor)
 
         if dump is None:
             cursor.close()
@@ -674,32 +685,32 @@ def parse(
             return
 
         # for development, disable namespace check
-        # filename = "../test.xml"
-        # dump = mwxml.Dump.from_page_xml(open(filename))
+        # fileName = "../test.xml"
+        # dump = mwxml.Dump.from_page_xml(open(fileName))
 
         for page in dump:
-            open("revision/old" + parallel + ".txt", "w").close()
-            open("revision/new" + parallel + ".txt", "w").close()
+            open(partitionsDir + "revision/old" + parallel + ".txt", "w").close()
+            open(partitionsDir + "revision/new" + parallel + ".txt", "w").close()
 
             namespace = page.namespace
             title = page.title
             query = """INSERT IGNORE INTO page (page_id, namespace, title, file_name)
                 VALUES (%s, %s, %s, %s)"""
-            cursor.execute(query, (page.id, namespace, title, filename))
+            cursor.execute(query, (page.id, namespace, title, fileName))
 
             if namespace not in namespaces:
                 parseNonTargetNamespace(page, title, str(namespace), cursor, parallel)
 
                 continue
 
-            parseTargetNamespace(page, title, str(namespace), cursor, parallel)
+            parseTargetNamespace(page, title, str(namespace), cursor, parallel, partitionsDir)
 
         ## Change status of dump
-        currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         query = """UPDATE partition
             SET status = "done", end_time_1 = %s 
             WHERE file_name = %s;"""
-        cursor.execute(query, (currenttime, filename))
+        cursor.execute(query, (currentTime, fileName))
 
     except OSError:
         err = str(sys.exc_info()[1])
@@ -711,7 +722,7 @@ def parse(
     except Exception as e:
         err = str(sys.exc_info()[1])
 
-        currenttime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         if not parallel:
             print(err)
@@ -719,8 +730,8 @@ def parse(
         if not os.path.exists("error"):
             os.mkdir("error")
 
-        with open("error/" + filename, "a") as file:
-            file.write(currenttime + "\n\n")
+        with open("error/" + fileName, "a") as file:
+            file.write(currentTime + "\n\n")
             file.write(str(e) + "\n\n")
             file.write(traceback.format_exc() + "\n\n")
 
@@ -731,12 +742,12 @@ def parse(
                 error = %s
             WHERE
                 file_name = %s;"""
-        cursor.execute(query, (currenttime, err, filename))
+        cursor.execute(query, (currentTime, err, fileName))
 
         raise
 
-    os.remove("revision/old" + parallel + ".txt")
-    os.remove("revision/new" + parallel + ".txt")
+    os.remove(partitionsDir + "revision/old" + parallel + ".txt")
+    os.remove(partitionsDir + "revision/new" + parallel + ".txt")
 
     cursor.close()
     database.close()
