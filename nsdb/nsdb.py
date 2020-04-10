@@ -134,7 +134,7 @@ def checkDiskSpace(dataDir: str) -> int:
 
 def outstandingJobs() -> int:
     """Returns number of jobs with status 'todo' or 'failed'"""
-    query = "SELECT count(*) FROM partition WHERE status = 'todo' OR status = 'failed';"
+    query = "SELECT count(*) FROM partition WHERE status = 'todo';"
     database, cursor = Database.connect()
     try:
         cursor.execute(query)
@@ -178,7 +178,7 @@ def markLongRunningJobsAsError():
     query = """UPDATE partition
                SET status = 'failed', error = 'Timed out' 
                WHERE status = 'running'
-               AND TIMESTAMPDIFF(MINUTE,start_time_1,NOW()) > 15;"""
+               AND TIMESTAMPDIFF(MINUTE,start_time_1,CONVERT_TZ(NOW(),'+00:00','-4:00')) > 15;"""
     database, cursor = Database.connect()
     try:
         # unsure why multi has to be true here but it does ¯\_(ツ)_/¯
@@ -333,7 +333,7 @@ def main(parallelID: str = 0, numParallel: int = 1, dataDir: str = "/bigtemp/ckm
         #     break
 
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
-        while numJobs > 10 * numParallel or diskSpace > 600000000:
+        while numJobs > 30 * numParallel or diskSpace > 600000000:
 
             markLongRunningJobsAsError()
 
