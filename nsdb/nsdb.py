@@ -245,15 +245,28 @@ def restartJobs():
     database.close()
 
 
-def main(parallelID: str = 0, numParallel: int = 1, dataDir: str = "/bigtemp/ckm8gz/"):
+def main(
+    parallelID: str = 0,
+    numParallel: int = 1,
+    dataDir: str = "/bigtemp/ckm8gz/",
+    maxSpace: int = 600,
+    freeCores: int = 0,
+):
     """Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
 
     Parameters
     ----------
+    parallelID: str - set when called from the slurm script. Slurm is used for running 
+        this tool in a distributed fashion.
+    numParallel: int - set when called from the slurm script.
     dataDir: str - directory where the dumps, partitions etc will be stored. If you
-        are using this on a personal computer, I recommend using '../'. The current
-        default is the large storage area at the University of Virginia."""
+        are using this on a personal computer, I recommend using '../'. If external
+        storage is available you should enter the path here.
+    maxSpace: int - maximum number of gigabytes that you would like the program to use.
+        At minimum this should be 50gB.
+    freeCores: int - the number of cores you don't want to be used. For best results 
+        set this to zero."""
     wiki = "enwiki/"
     dump = "20200101/"
 
@@ -266,7 +279,7 @@ def main(parallelID: str = 0, numParallel: int = 1, dataDir: str = "/bigtemp/ckm
     namespaces = [1]
 
     print("main")
-    cores = multiprocessing.cpu_count()
+    cores = multiprocessing.cpu_count() - freeCores
 
     queue = multiprocessing.Manager().Queue()
 
@@ -333,7 +346,7 @@ def main(parallelID: str = 0, numParallel: int = 1, dataDir: str = "/bigtemp/ckm
         #     break
 
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
-        while numJobs > 30 * numParallel or diskSpace > 600000000:
+        while numJobs > 30 * numParallel or diskSpace > ((maxSpace - 50) * 1000000):
 
             markLongRunningJobsAsError()
 

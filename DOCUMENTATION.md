@@ -41,15 +41,22 @@ Functions
 :   Returns True if all jobs are done
 
     
-`main(parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/')`
+`main(parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0)`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
     
     Parameters
     ----------
+    parallelID: str - set when called from the slurm script. Slurm is used for running 
+        this tool in a distributed fashion.
+    numParallel: int - set when called from the slurm script.
     dataDir: str - directory where the dumps, partitions etc will be stored. If you
-        are using this on a personal computer, I recommend using '../'. The current
-        default is the large storage area at the University of Virginia.
+        are using this on a personal computer, I recommend using '../'. If external
+        storage is available you should enter the path here.
+    maxSpace: int - maximum number of gigabytes that you would like the program to use.
+        At minimum this should be 50gB.
+    freeCores: int - the number of cores you don't want to be used. For best results 
+        set this to zero.
 
     
 `markLongRunningJobsAsError()`
@@ -95,7 +102,7 @@ Functions
 ---------
 
     
-`checkReverted(detector, revision, cursor, undidRevision, target)`
+`checkReverted(detector, revision, cursor, undidRevision, target, editIdToUserId)`
 :   Inserts reverted edits into the database for target namespace, otherwise 
     returns the user that was reverted
 
