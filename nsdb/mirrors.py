@@ -8,7 +8,7 @@ import requests
 from tqdm import tqdm
 
 
-def fastest() -> str:
+def fastest(dump: str = "20200401/", wiki:str = "enwiki/") -> str:
     """Gets a list of the fastest mirrors, downloads a single file from each
     and returns the fastest one.
 
@@ -29,11 +29,7 @@ def fastest() -> str:
     # Add main site
     mirrors.append("https://dumps.wikimedia.org/")
 
-    # find the requisite wiki dump
-    wiki = "enwiki/"
-    dump = "20200101/"
-
-    firstfile = "enwiki-20200101-pages-meta-history2.xml-p40221p40268.7z"
+    firstfile = "enwiki-20200401-pages-meta-history5.xml-p564843p565313.7z"
     print("Finding fastest mirror")
     for index, mirror in enumerate(tqdm(mirrors, unit=" mirror")):
         url = mirror + wiki + dump + firstfile
@@ -65,6 +61,8 @@ def fastest() -> str:
 
     # print(mirrorDownloadTime)
     # print("Fastest mirror is " + mirrors[index])
+    if all(time == 1000 for time in mirrorDownloadTime):
+        raise RuntimeError("Dump " + dump + " is no longer hosted on any mirror")
 
     return mirrors[index]
 

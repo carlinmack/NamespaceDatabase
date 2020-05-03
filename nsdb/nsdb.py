@@ -61,7 +61,7 @@ def countLines(file: str) -> int:
     return lines
 
 
-def downloadFirstDump(listOfDumps: str, archivesDir: str, dumpsDir: str) -> str:
+def downloadFirstDump(dump: str, listOfDumps: str, archivesDir: str, dumpsDir: str) -> str:
     """Downloads the first dump in dumps.txt if it is not already present
     in the dumps directory"""
 
@@ -77,7 +77,7 @@ def downloadFirstDump(listOfDumps: str, archivesDir: str, dumpsDir: str) -> str:
         file.writelines(data)
 
     if not os.path.exists(dumpsDir + fileName[:-3]):
-        fastestMirror = fastest()
+        fastestMirror = fastest(dump)
 
         subprocess.run(
             ["wget", "-nc", "-nv", "-P", archivesDir, fastestMirror + firstLine]
@@ -268,7 +268,7 @@ def main(
     freeCores: int - the number of cores you don't want to be used. For best results 
         set this to zero."""
     wiki = "enwiki/"
-    dump = "20200101/"
+    dump = "20200401/"
 
     listOfDumps = "../dumps.txt"  # not stored in data dir as it stores state
 
@@ -279,8 +279,8 @@ def main(
     namespaces = [1]
 
     print("main")
-    cores = multiprocessing.cpu_count() - freeCores
-
+    cores = max(multiprocessing.cpu_count() - freeCores, 1)
+    print(cores)
     queue = multiprocessing.Manager().Queue()
 
     if cores > 4:
@@ -320,7 +320,7 @@ def main(
         ):
             print("download")
             tick = time.time()
-            fileName = downloadFirstDump(listOfDumps, archivesDir, dumpsDir)
+            fileName = downloadFirstDump(dump, listOfDumps, archivesDir, dumpsDir)
             print(
                 "--- Downloading %s took %s seconds ---"
                 % (fileName, time.time() - tick)
@@ -346,8 +346,8 @@ def main(
         #     break
 
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
-        while numJobs > 30 * numParallel or diskSpace > ((maxSpace - 50) * 1000000):
-
+        while numJobs > 30 * numParallel or diskSpace > (maxSpace * 1000000):
+            print('in')
             markLongRunningJobsAsError()
 
             removeDoneJobs(partitionsDir)
