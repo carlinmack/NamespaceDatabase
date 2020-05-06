@@ -9,9 +9,9 @@ file="../index.html"
 
 wget -O $file "$url"
 
-grep -oP '(?<=href=").*pages-meta-history.*7z(?=")' ../index.html > ../dumps.txt
+grep -oP '(?<=href=").*pages-meta-history.*7z(?=")' $file > ../dumps.txt
 
-rm ../index.html
+rm $file
 # while read line; do 
 #         wget "$mirror$line"; 
 #     done <dumps.txt
