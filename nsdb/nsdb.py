@@ -19,6 +19,7 @@ import traceback
 from datetime import datetime
 from sys import argv
 from typing import List
+from urllib import request
 
 import Database
 import parse
@@ -46,11 +47,23 @@ def splitError(error):
         outFile.write(traceback.format_exc() + "\n\n")
 
 
-def createDumpsFile(listOfDumps: str, wiki: str, dump: str):
+def createDumpsFile(listOfDumps: str, wiki: str = "enwiki", dump: str = "20200401"):
     """Creates dumps.txt if it doesn't exist"""
 
     if not os.path.isfile(listOfDumps):
-        subprocess.run(["./download.sh", "https://dumps.wikimedia.org/", wiki, dump])
+        mirror = "https://dumps.wikimedia.org/"
+
+        if dump == "":
+            # find latest
+            pass
+
+        url = mirror + wiki + "/" + dump
+        content = request.urlopen(url).read().decode("utf-8")
+        dumps = re.findall('(?<=href="/).*pages-meta-history.*7z(?=")', content)
+
+        with open(listOfDumps, "w") as file:
+            for d in dumps:
+                file.write(d + "\n")
 
 
 def countLines(file: str) -> int:
@@ -61,7 +74,9 @@ def countLines(file: str) -> int:
     return lines
 
 
-def downloadFirstDump(dump: str, listOfDumps: str, archivesDir: str, dumpsDir: str) -> str:
+def downloadFirstDump(
+    dump: str, listOfDumps: str, archivesDir: str, dumpsDir: str
+) -> str:
     """Downloads the first dump in dumps.txt if it is not already present
     in the dumps directory"""
 
@@ -347,7 +362,7 @@ def main(
 
         # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
         while numJobs > 30 * numParallel or diskSpace > (maxSpace * 1000000):
-            print('in')
+            print("in")
             markLongRunningJobsAsError()
 
             removeDoneJobs(partitionsDir)
