@@ -10,20 +10,23 @@ This tool uses a MySQL database.
 Please run pip install -r requirements.txt before running this script.
 """
 
+import http.client
 import multiprocessing
 import os
 import re
 import subprocess
 import time
 import traceback
+import urllib
+import urllib.request
 from datetime import datetime
 from sys import argv
 from typing import List
-from urllib import request
+
+from tqdm import tqdm
 
 import Database
 import parse
-from mirrors import fastest
 from splitwiki import split
 
 
@@ -58,7 +61,7 @@ def createDumpsFile(listOfDumps: str, wiki: str = "enwiki", dump: str = "2020040
             pass
 
         url = mirror + wiki + "/" + dump
-        content = request.urlopen(url).read().decode("utf-8")
+        content = urllib.request.urlopen(url).read().decode("utf-8")
         dumps = re.findall('(?<=href="/).*pages-meta-history.*7z(?=")', content)
 
         with open(listOfDumps, "w") as file:
@@ -74,11 +77,90 @@ def countLines(file: str) -> int:
     return lines
 
 
+def findFastestMirror(dump: str = "20200401/", wiki: str = "enwiki/") -> str:
+    """Gets a list of the fastest mirrors, downloads a single file from each
+    and returns the fastest one.
+
+    Execution takes 5-10 seconds as a guideline
+
+    Returns
+    -------
+    fastestMirror: str - the url of the fastest mirror
+    """
+
+    # find a list of mirrors
+    url = "https://dumps.wikimedia.org/mirrors.html"
+
+    html = urllib.request.urlopen(url).read().decode("utf-8")
+
+    # https is always going to be slower than http for download but check in case mirror
+    # is only available over https
+    mirrors = re.findall('href="(https?:.*)"', html)
+    mirrorDownloadTime = []
+
+    # Add main site
+    mirrors.append("https://dumps.wikimedia.org/")
+
+    firstfile = "enwiki-20200401-pages-meta-history5.xml-p564843p565313.7z"
+    print("Finding fastest mirror")
+    for index, mirror in enumerate(tqdm(mirrors, unit=" mirror")):
+        url = mirror + wiki + dump + firstfile
+
+        tick = time.time()
+        try:
+            urllib.request.urlopen(url)
+
+            # add the time to download
+            mirrorDownloadTime.append(time.time() - tick)
+        except urllib.error.HTTPError as err:
+            if str(err.code)[0] in ["4", "5"]:
+                # try other url scheme
+                url = mirror + "dumps/" + wiki + dump + firstfile
+
+                tick = time.time()
+                try:
+                    urllib.request.urlopen(url)
+
+                    mirrorDownloadTime.append(time.time() - tick)
+                except urllib.error.HTTPError as err:
+                    if str(err.code)[0] in ["4", "5"]:
+                        mirrorDownloadTime.append(1000)
+                    else:
+                        raise
+            else:
+                raise
+
+    # return fastest mirror
+    _, index = min((val, index) for (index, val) in enumerate(mirrorDownloadTime))
+
+    # for i in range(len(mirrors)):
+    #     print(mirrors[i], mirrorDownloadTime[i])
+    # print("Fastest mirror is " + mirrors[index])
+    if all(time == 1000 for time in mirrorDownloadTime):
+        raise RuntimeError("Dump " + dump + " is no longer hosted on any mirror")
+
+    return mirrors[index]
+
+
 def downloadFirstDump(
     dump: str, listOfDumps: str, archivesDir: str, dumpsDir: str
 ) -> str:
     """Downloads the first dump in dumps.txt if it is not already present
     in the dumps directory"""
+    # check internet connectivity
+    # source https://stackoverflow.com/a/29854274
+    conn = http.client.HTTPConnection("www.fast.com", timeout=5)
+    for _ in range(5):
+        try:
+            conn.request("HEAD", "/")
+        except:
+            conn.close()
+        else:
+            conn.close()
+            break
+    else:
+        print("Internet connection lost")
+        return ""
 
     with open(listOfDumps) as file:
         firstLine = file.readline().strip()
@@ -92,7 +174,7 @@ def downloadFirstDump(
         file.writelines(data)
 
     if not os.path.exists(dumpsDir + fileName[:-3]):
-        fastestMirror = fastest(dump)
+        fastestMirror = findFastestMirror(dump)
 
         subprocess.run(
             ["wget", "-nc", "-nv", "-P", archivesDir, fastestMirror + firstLine]
@@ -341,17 +423,19 @@ def main(
                 % (fileName, time.time() - tick)
             )
 
-            tick = time.time()
-            fileName = extractFile(fileName, archivesDir, dumpsDir)
-            print(
-                "--- Extracting %s took %s seconds ---" % (fileName, time.time() - tick)
-            )
+            if fileName != "":
+                tick = time.time()
+                fileName = extractFile(fileName, archivesDir, dumpsDir)
+                print(
+                    "--- Extracting %s took %s seconds ---"
+                    % (fileName, time.time() - tick)
+                )
 
-            splitter.apply_async(
-                splitFile,
-                (fileName, queue, dumpsDir, partitionsDir, numPartitions),
-                error_callback=splitError,
-            )
+                splitter.apply_async(
+                    splitFile,
+                    (fileName, queue, dumpsDir, partitionsDir, numPartitions),
+                    error_callback=splitError,
+                )
 
         numJobs = outstandingJobs()
         diskSpace = checkDiskSpace(dataDir)

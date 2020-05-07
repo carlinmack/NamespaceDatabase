@@ -41,6 +41,17 @@ Functions
     Execution takes 5-15 minutes as a guideline
 
     
+`findFastestMirror(dump='20200401/', wiki='enwiki/')`
+:   Gets a list of the fastest mirrors, downloads a single file from each
+    and returns the fastest one.
+    
+    Execution takes 5-10 seconds as a guideline
+    
+    Returns
+    -------
+    fastestMirror: str - the url of the fastest mirror
+
+    
 `jobsDone()`
 :   Returns True if all jobs are done
 
@@ -262,27 +273,6 @@ Functions
      50 partitions - 5002 seconds - 39.2 GB
      10 partitions - 4826 seconds - 37.2 GB
       5 partitions - 3820 seconds - 36   GB
-
------
-
-
-Module [mirrors](nsdb/mirrors.py)
-==============
-This script finds the fastest mirror to download Wikipedia dumps from
-
-Functions
----------
-
-    
-`fastest(dump='20200401/', wiki='enwiki/')`
-:   Gets a list of the fastest mirrors, downloads a single file from each
-    and returns the fastest one.
-    
-    Execution takes 5-10 seconds as a guideline
-    
-    Returns
-    -------
-    fastestMirror: str - the url of the fastest mirror
 
 -----
 
