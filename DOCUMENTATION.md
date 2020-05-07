@@ -1,3 +1,7 @@
+Program execution
+-----------------
+![program-flow-diagram](programflow.png)
+----
 Module [nsdb](nsdb/nsdb.py)
 ===========
 This script finds the fastest mirror, downloads and splits one Wikipedia
@@ -22,11 +26,11 @@ Functions
 :   Returns the number of lines in a file using wc from bash
 
     
-`createDumpsFile(listOfDumps, wiki, dump)`
+`createDumpsFile(listOfDumps, wiki='enwiki', dump='20200401')`
 :   Creates dumps.txt if it doesn't exist
 
     
-`downloadFirstDump(listOfDumps, archivesDir, dumpsDir)`
+`downloadFirstDump(dump, listOfDumps, archivesDir, dumpsDir)`
 :   Downloads the first dump in dumps.txt if it is not already present
     in the dumps directory
 
@@ -115,7 +119,7 @@ Functions
 :   Returns whether text contains profanity based on a simple wordlist approach
 
     
-`getDiff(old, new, parallel)`
+`getDiff(old, new, parallel, partitionsDir)`
 :   Returns the diff between two edits using wdiff
     
     Parameters
@@ -140,7 +144,7 @@ Functions
     Returns
     -------
     dump: class 'mwxml.iteration.dump.Dump' - dump file iterator
-    filename: str - filename of dump
+    fileName: str - fileName of dump
 
     
 `longestCharSequence(string)`
@@ -149,6 +153,10 @@ Functions
     
 `longestWord(string)`
 :   Returns the length of the longest word in text
+
+    
+`markAsNotFound(fileName)`
+:   
 
     
 `multiprocess(partitionsDir, namespaces, queue, jobId)`
@@ -182,7 +190,7 @@ Functions
     parallel: str - id of process, hides progress bars if present
 
     
-`parseTargetNamespace(page, title, namespace, cursor, parallel)`
+`parseTargetNamespace(page, title, namespace, cursor, parallel, partitionsDir)`
 :   Extracts features from each revision of a page into a database
     
     Ignores edits that have been deleted like:
@@ -266,7 +274,7 @@ Functions
 ---------
 
     
-`fastest()`
+`fastest(dump='20200401/', wiki='enwiki/')`
 :   Gets a list of the fastest mirrors, downloads a single file from each
     and returns the fastest one.
     
