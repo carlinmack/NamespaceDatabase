@@ -21,6 +21,30 @@ This tool uses a MySQL database.
 
 Please run pip install -r requirements.txt before running this script.
 
+**Usage:**
+```
+  nsdb.py [-h] [-w WIKI] [-d DUMP] [-c FREECORES] [-i PARALLELID] [-n NUMPARALLEL] [-D DATADIR] [-s MAXSPACE]
+```
+**Optional Arguments:**
+```
+  -h, --help
+      show this help message and exit
+  -w --wiki WIKI
+      The name of the wiki you want to use [default: enwiki]
+  -d --dump DUMP
+      Which dump you want to use, normally a date string YYYYMMDD [default: 20200401]
+  -c --freeCores FREECORES
+      The number of cores you don't want to be used [default: 0]
+  -i --parallelID PARALLELID
+      Set when called from the slurm script [default: 0]
+  -n --numParallel NUMPARALLEL
+      Set when called from the slurm script [default: 1]
+  -D --dataDir DATADIR
+      Directory where the dumps, partitions etc will be stored [default: ../]
+  -s --maxSpace MAXSPACE
+      Max gigabytes that you would like the program to use. Min 50gB [default: 150]
+```
+
 Functions
 ---------
 
@@ -35,6 +59,10 @@ Functions
     
 `createDumpsFile(listOfDumps, wiki='enwiki', dump='20200401')`
 :   Creates dumps.txt if it doesn't exist
+
+    
+`defineArgParser()`
+:   Creates parser for command line arguments
 
     
 `downloadFirstDump(dump, listOfDumps, archivesDir, dumpsDir)`

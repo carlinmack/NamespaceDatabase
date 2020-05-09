@@ -10,6 +10,7 @@ This tool uses a MySQL database.
 Please run pip install -r requirements.txt before running this script.
 """
 
+import argparse
 import http.client
 import multiprocessing
 import os
@@ -343,6 +344,8 @@ def restartJobs():
 
 
 def main(
+    wiki="enwiki/",
+    dump="20200401/",
     parallelID: str = 0,
     numParallel: int = 1,
     dataDir: str = "/bigtemp/ckm8gz/",
@@ -364,8 +367,6 @@ def main(
         At minimum this should be 50gB.
     freeCores: int - the number of cores you don't want to be used. For best results 
         set this to zero."""
-    wiki = "enwiki/"
-    dump = "20200401/"
 
     listOfDumps = "../dumps.txt"  # not stored in data dir as it stores state
 
@@ -463,10 +464,86 @@ def main(
     print("=== EXIT ===")
 
 
+def defineArgParser():
+    """Creates parser for command line arguments"""
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    # parser.add_argument(
+    #     "--dryrun", help="Don't use a database, no partitions will be deleted",
+    # )
+
+    parser.add_argument(
+        "-w",
+        "--wiki",
+        help="The name of the wiki you want to use [default: enwiki]",
+        default="enwiki",
+        type=str,
+    )
+
+    parser.add_argument(
+        "-d",
+        "--dump",
+        help="Which dump you want to use, normally a date string YYYYMMDD [default: 20200401]",
+        default="20200401",
+        type=str,
+    )
+
+    parser.add_argument(
+        "-c",
+        "--freeCores",
+        help="The number of cores you don't want to be used [default: 0]",
+        default=0,
+        type=int,
+    )
+
+    parser.add_argument(
+        "-i",
+        "--parallelID",
+        help="Set when called from the slurm script [default: 0]",
+        default=0,
+        type=int,
+    )
+
+    parser.add_argument(
+        "-n",
+        "--numParallel",
+        help="Set when called from the slurm script [default: 1]",
+        default=1,
+        type=int,
+    )
+
+    parser.add_argument(
+        "-D",
+        "--dataDir",
+        help="Directory where the dumps, partitions etc will be stored [default: ../]",
+        default="../",
+        type=str,
+    )
+
+    parser.add_argument(
+        "-s",
+        "--maxSpace",
+        help="Max gigabytes that you would like the program to use. Min 50gB [default: 150]",
+        default=150,
+        type=int,
+    )
+
+    return parser
+
+
 if __name__ == "__main__":
-    if len(argv) > 1:
-        jobId = argv[1]
-        numParallel = int(argv[2])
-        main(jobId, numParallel)
-    else:
-        main()
+
+    argParser = defineArgParser()
+    clArgs = argParser.parse_args()
+
+    main(
+        wiki=clArgs.wiki,
+        dump=clArgs.dump,
+        parallelID=clArgs.parallelID,
+        numParallel=clArgs.numParallel,
+        dataDir=clArgs.dataDir,
+        maxSpace=clArgs.maxSpace,
+        freeCores=clArgs.freeCores,
+    )
