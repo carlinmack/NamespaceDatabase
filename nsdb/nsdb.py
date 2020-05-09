@@ -470,6 +470,28 @@ def defineArgParser():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
+    def checkPositive(value):
+        try:
+            ivalue = int(value)
+        except:
+            raise argparse.ArgumentTypeError("invalid int value: '%s'" % value)
+        if ivalue <= 0:
+            raise argparse.ArgumentTypeError(
+                "%s is an invalid positive int value" % value
+            )
+        return ivalue
+
+    def checkStorageValue(value):
+        try:
+            ivalue = int(value)
+        except:
+            raise argparse.ArgumentTypeError("invalid int value: '%s'" % value)
+        if ivalue < 50:
+            raise argparse.ArgumentTypeError(
+                "Available storage value needs to be at least 50"
+            )
+        return ivalue
+
     # parser.add_argument(
     #     "--dryrun", help="Don't use a database, no partitions will be deleted",
     # )
@@ -485,7 +507,7 @@ def defineArgParser():
     parser.add_argument(
         "-d",
         "--dump",
-        help="Which dump you want to use, normally a date string YYYYMMDD [default: 20200401]",
+        help="Which dump you want to use, a date string in the format YYYYMMDD [default: 20200401]",
         default="20200401",
         type=str,
     )
@@ -495,7 +517,7 @@ def defineArgParser():
         "--freeCores",
         help="The number of cores you don't want to be used [default: 0]",
         default=0,
-        type=int,
+        type=checkPositive,
     )
 
     parser.add_argument(
@@ -511,7 +533,7 @@ def defineArgParser():
         "--numParallel",
         help="Set when called from the slurm script [default: 1]",
         default=1,
-        type=int,
+        type=checkPositive,
     )
 
     parser.add_argument(
@@ -527,7 +549,7 @@ def defineArgParser():
         "--maxSpace",
         help="Max gigabytes that you would like the program to use. Min 50gB [default: 150]",
         default=150,
-        type=int,
+        type=checkStorageValue,
     )
 
     return parser

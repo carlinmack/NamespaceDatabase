@@ -32,7 +32,7 @@ Please run pip install -r requirements.txt before running this script.
   -w --wiki WIKI
       The name of the wiki you want to use [default: enwiki]
   -d --dump DUMP
-      Which dump you want to use, normally a date string YYYYMMDD [default: 20200401]
+      Which dump you want to use, a date string in the format YYYYMMDD [default: 20200401]
   -c --freeCores FREECORES
       The number of cores you don't want to be used [default: 0]
   -i --parallelID PARALLELID
