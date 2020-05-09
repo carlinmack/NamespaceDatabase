@@ -1,3 +1,10 @@
+## Contents
+* [Program execution](#program-execution)
+* [nsdb.py](#module-nsdb)
+* [parse.py](#module-parse)
+* [splitwiki.py](#module-splitwiki)
+* [Database.py](#module-database)
+
 Program execution
 -----------------
 ![program-flow-diagram](programflow.png)
@@ -56,7 +63,7 @@ Functions
 :   Returns True if all jobs are done
 
     
-`main(parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0)`
+`main(wiki='enwiki/', dump='20200401/', parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0)`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
     
