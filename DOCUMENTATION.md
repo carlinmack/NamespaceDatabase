@@ -32,7 +32,8 @@ Please run pip install -r requirements.txt before running this script.
   -w --wiki WIKI
       The name of the wiki you want to use [default: enwiki]
   -d --dump DUMP
-      Which dump you want to use, a date string in the format YYYYMMDD [default: 20200401]
+      Which dump you want to use, a date string in the format YYYYMMDD. 
+      By default will use the dump before latest.
   -c --freeCores FREECORES
       The number of cores you don't want to be used [default: 0]
   -i --parallelID PARALLELID
@@ -57,7 +58,7 @@ Functions
 :   Returns the number of lines in a file using wc from bash
 
     
-`createDumpsFile(listOfDumps, wiki='enwiki', dump='20200401')`
+`createDumpsFile(listOfDumps, wiki='enwiki', dump='')`
 :   Creates dumps.txt if it doesn't exist
 
     
@@ -65,7 +66,7 @@ Functions
 :   Creates parser for command line arguments
 
     
-`downloadFirstDump(dump, listOfDumps, archivesDir, dumpsDir)`
+`downloadDump(dump, listOfDumps, archivesDir, dumpsDir)`
 :   Downloads the first dump in dumps.txt if it is not already present
     in the dumps directory
 
@@ -76,7 +77,7 @@ Functions
     Execution takes 5-15 minutes as a guideline
 
     
-`findFastestMirror(dump='20200401/', wiki='enwiki/')`
+`findFastestMirror(dump='20200401', wiki='enwiki/')`
 :   Gets a list of the fastest mirrors, downloads a single file from each
     and returns the fastest one.
     
@@ -91,13 +92,16 @@ Functions
 :   Returns True if all jobs are done
 
     
-`main(wiki='enwiki/', dump='20200401/', parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0)`
+`main(wiki='enwiki/', dump='', parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0)`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
     
     Parameters
     ----------
-    parallelID: str - set when called from the slurm script. Slurm is used for running 
+    wiki: str - The name of the wiki you want to use
+    dump: str - Which dump you want to use, a date string in the format YYYYMMDD. By
+        default will use the dump before latest.
+    parallelID: str - set when called from the slurm script. Slurm is used for running
         this tool in a distributed fashion.
     numParallel: int - set when called from the slurm script.
     dataDir: str - directory where the dumps, partitions etc will be stored. If you
@@ -105,7 +109,7 @@ Functions
         storage is available you should enter the path here.
     maxSpace: int - maximum number of gigabytes that you would like the program to use.
         At minimum this should be 50gB.
-    freeCores: int - the number of cores you don't want to be used. For best results 
+    freeCores: int - the number of cores you don't want to be used. For best results
         set this to zero.
 
     

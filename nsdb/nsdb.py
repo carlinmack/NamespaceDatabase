@@ -12,6 +12,7 @@ Please run pip install -r requirements.txt before running this script.
 
 import argparse
 import http.client
+import json
 import multiprocessing
 import os
 import re
@@ -21,8 +22,6 @@ import traceback
 import urllib
 import urllib.request
 from datetime import datetime
-from sys import argv
-from typing import List
 
 from tqdm import tqdm
 
@@ -51,7 +50,7 @@ def splitError(error):
         outFile.write(traceback.format_exc() + "\n\n")
 
 
-def createDumpsFile(listOfDumps: str, wiki: str = "enwiki", dump: str = "20200401"):
+def createDumpsFile(listOfDumps: str, wiki: str = "enwiki", dump: str = "") -> str:
     """Creates dumps.txt if it doesn't exist"""
 
     if not os.path.isfile(listOfDumps):
@@ -59,15 +58,37 @@ def createDumpsFile(listOfDumps: str, wiki: str = "enwiki", dump: str = "2020040
 
         if dump == "":
             # find latest
-            pass
+            url = mirror + wiki
+            content = urllib.request.urlopen(url).read().decode("utf-8")
+            dumps = re.findall(r"(?<=href=\")\d+(?=/\">)", content)
+
+            for i in reversed(dumps):
+                url = mirror + wiki + "/" + i + "/dumpstatus.json"
+                content = urllib.request.urlopen(url).read().decode("utf-8")
+                metaHistory7zStatus = json.loads(content)["jobs"]["metahistory7zdump"][
+                    "status"
+                ]
+                if metaHistory7zStatus == "done":
+                    dump = i
+                    break
+            else:
+                raise RuntimeError("7zip dumps not found at %s." % (mirror,))
 
         url = mirror + wiki + "/" + dump
-        content = urllib.request.urlopen(url).read().decode("utf-8")
-        dumps = re.findall('(?<=href="/).*pages-meta-history.*7z(?=")', content)
 
-        with open(listOfDumps, "w") as file:
-            for d in dumps:
-                file.write(d + "\n")
+        content = urllib.request.urlopen(url).read().decode("utf-8")
+        dumps = re.findall(r'(?<=href="/).*pages-meta-history.*7z(?=")', content)
+
+        if len(dumps) > 0:
+            with open(listOfDumps, "w") as file:
+                for i in dumps:
+                    file.write(i + "\n")
+    else:
+        with open(listOfDumps) as file:
+            firstLine = file.readline()
+            dump = re.search(r"(?<=\/)\d+(?=\/)", firstLine).group()
+
+    return dump
 
 
 def countLines(file: str) -> int:
@@ -78,7 +99,7 @@ def countLines(file: str) -> int:
     return lines
 
 
-def findFastestMirror(dump: str = "20200401/", wiki: str = "enwiki/") -> str:
+def findFastestMirror(dump: str = "20200401", wiki: str = "enwiki/") -> str:
     """Gets a list of the fastest mirrors, downloads a single file from each
     and returns the fastest one.
 
@@ -96,16 +117,17 @@ def findFastestMirror(dump: str = "20200401/", wiki: str = "enwiki/") -> str:
 
     # https is always going to be slower than http for download but check in case mirror
     # is only available over https
-    mirrors = re.findall('href="(https?:.*)"', html)
+    mirrors = re.findall(r'href="(https?:.*)"', html)
     mirrorDownloadTime = []
 
     # Add main site
     mirrors.append("https://dumps.wikimedia.org/")
 
-    firstfile = "enwiki-20200401-pages-meta-history5.xml-p564843p565313.7z"
+    firstFile = "enwiki-./0401-pages-meta-history5.xml-p564843p565313.7z"
+
     print("Finding fastest mirror")
     for index, mirror in enumerate(tqdm(mirrors, unit=" mirror")):
-        url = mirror + wiki + dump + firstfile
+        url = mirror + wiki + "/" + dump + "/" + firstFile
 
         tick = time.time()
         try:
@@ -116,7 +138,7 @@ def findFastestMirror(dump: str = "20200401/", wiki: str = "enwiki/") -> str:
         except urllib.error.HTTPError as err:
             if str(err.code)[0] in ["4", "5"]:
                 # try other url scheme
-                url = mirror + "dumps/" + wiki + dump + firstfile
+                url = mirror + "dumps/" + wiki + dump + firstFile
 
                 tick = time.time()
                 try:
@@ -143,9 +165,7 @@ def findFastestMirror(dump: str = "20200401/", wiki: str = "enwiki/") -> str:
     return mirrors[index]
 
 
-def downloadFirstDump(
-    dump: str, listOfDumps: str, archivesDir: str, dumpsDir: str
-) -> str:
+def downloadDump(dump: str, listOfDumps: str, archivesDir: str, dumpsDir: str) -> str:
     """Downloads the first dump in dumps.txt if it is not already present
     in the dumps directory"""
     # check internet connectivity
@@ -166,7 +186,7 @@ def downloadFirstDump(
     with open(listOfDumps) as file:
         firstLine = file.readline().strip()
         fileName = re.findall(r"\/([^\/]*)$", firstLine)[0]
-        print(fileName)
+        print("Downloading", fileName)
 
         data = file.read().splitlines(True)
 
@@ -178,7 +198,16 @@ def downloadFirstDump(
         fastestMirror = findFastestMirror(dump)
 
         subprocess.run(
-            ["wget", "-nc", "-nv", "-P", archivesDir, fastestMirror + firstLine]
+            [
+                "wget",
+                "-nc",
+                "-nv",
+                "--show-progress",
+                "-P",
+                archivesDir,
+                fastestMirror + firstLine,
+            ],
+            check=True,
         )
 
     return fileName
@@ -189,7 +218,9 @@ def extractFile(fileName: str, archivesDir: str, dumpsDir: str):
 
     Execution takes 5-15 minutes as a guideline"""
     if not os.path.exists(dumpsDir + fileName[:-3]):
-        subprocess.run(["7z", "e", archivesDir + fileName, "-o" + dumpsDir, "-aos"])
+        subprocess.run(
+            ["7z", "e", archivesDir + fileName, "-o" + dumpsDir, "-aos"], check=True
+        )
 
     if os.path.exists(archivesDir + fileName):
         os.remove(archivesDir + fileName)
@@ -240,7 +271,6 @@ def outstandingJobs() -> int:
         numJobs = 0
         database.close()
     except Exception as e:
-        print("fuck", flush=True)
         print(str(e), flush=True)
     else:
         numJobs = cursor.fetchone()[0]
@@ -344,8 +374,8 @@ def restartJobs():
 
 
 def main(
-    wiki="enwiki/",
-    dump="20200401/",
+    wiki: str = "enwiki/",
+    dump: str = "",
     parallelID: str = 0,
     numParallel: int = 1,
     dataDir: str = "/bigtemp/ckm8gz/",
@@ -357,7 +387,10 @@ def main(
 
     Parameters
     ----------
-    parallelID: str - set when called from the slurm script. Slurm is used for running 
+    wiki: str - The name of the wiki you want to use
+    dump: str - Which dump you want to use, a date string in the format YYYYMMDD. By
+        default will use the dump before latest.
+    parallelID: str - set when called from the slurm script. Slurm is used for running
         this tool in a distributed fashion.
     numParallel: int - set when called from the slurm script.
     dataDir: str - directory where the dumps, partitions etc will be stored. If you
@@ -365,7 +398,7 @@ def main(
         storage is available you should enter the path here.
     maxSpace: int - maximum number of gigabytes that you would like the program to use.
         At minimum this should be 50gB.
-    freeCores: int - the number of cores you don't want to be used. For best results 
+    freeCores: int - the number of cores you don't want to be used. For best results
         set this to zero."""
 
     listOfDumps = "../dumps.txt"  # not stored in data dir as it stores state
@@ -376,9 +409,7 @@ def main(
 
     namespaces = [1]
 
-    print("main")
     cores = max(multiprocessing.cpu_count() - freeCores, 1)
-    print(cores)
     queue = multiprocessing.Manager().Queue()
 
     if cores > 4:
@@ -405,20 +436,20 @@ def main(
             error_callback=parseError,
         )
 
-    createDumpsFile(listOfDumps, wiki, dump)
+    print("Number of cores available:", cores, " Using dump:", dump)
+
+    dump = createDumpsFile(listOfDumps, wiki, dump)
 
     # while (things-to-do or jobs still running)
     while countLines(listOfDumps) > 0 or jobsDone():
         # if countLines(listOfDumps) > 0:
-        print("before")
         if (
             not os.path.exists(dumpsDir)
             or len(os.listdir(dumpsDir)) < numParallel * 3
             or len(splitter._cache) < numSplitCores
         ):
-            print("download")
             tick = time.time()
-            fileName = downloadFirstDump(dump, listOfDumps, archivesDir, dumpsDir)
+            fileName = downloadDump(dump, listOfDumps, archivesDir, dumpsDir)
             print(
                 "--- Downloading %s took %s seconds ---"
                 % (fileName, time.time() - tick)
@@ -507,17 +538,10 @@ def defineArgParser():
     parser.add_argument(
         "-d",
         "--dump",
-        help="Which dump you want to use, a date string in the format YYYYMMDD [default: 20200401]",
-        default="20200401",
+        help="""Which dump you want to use, a date string in the format YYYYMMDD. By
+        default will use the dump before latest.""",
+        default="",
         type=str,
-    )
-
-    parser.add_argument(
-        "-c",
-        "--freeCores",
-        help="The number of cores you don't want to be used [default: 0]",
-        default=0,
-        type=checkPositive,
     )
 
     parser.add_argument(
@@ -525,7 +549,7 @@ def defineArgParser():
         "--parallelID",
         help="Set when called from the slurm script [default: 0]",
         default=0,
-        type=int,
+        type=str,
     )
 
     parser.add_argument(
@@ -550,6 +574,14 @@ def defineArgParser():
         help="Max gigabytes that you would like the program to use. Min 50gB [default: 150]",
         default=150,
         type=checkStorageValue,
+    )
+
+    parser.add_argument(
+        "-c",
+        "--freeCores",
+        help="The number of cores you don't want to be used [default: 0]",
+        default=0,
+        type=checkPositive,
     )
 
     return parser
