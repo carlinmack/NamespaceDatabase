@@ -50,7 +50,9 @@ def splitError(error):
         outFile.write(traceback.format_exc() + "\n\n")
 
 
-def createDumpsFile(listOfDumps: str, wiki: str = "enwiki", dump: str = "") -> str:
+def createDumpsFile(
+    listOfDumps: str = "../dumps.txt", wiki: str = "enwiki", dump: str = ""
+) -> str:
     """Creates dumps.txt if it doesn't exist"""
 
     if not os.path.isfile(listOfDumps):
@@ -65,10 +67,9 @@ def createDumpsFile(listOfDumps: str, wiki: str = "enwiki", dump: str = "") -> s
             for i in reversed(dumps):
                 url = mirror + wiki + "/" + i + "/dumpstatus.json"
                 content = urllib.request.urlopen(url).read().decode("utf-8")
-                metaHistory7zStatus = json.loads(content)["jobs"]["metahistory7zdump"][
-                    "status"
-                ]
-                if metaHistory7zStatus == "done":
+                metaHistory7z = json.loads(content)["jobs"]["metahistory7zdump"]
+
+                if metaHistory7z["status"] == "done":
                     dump = i
                     break
             else:
@@ -83,6 +84,10 @@ def createDumpsFile(listOfDumps: str, wiki: str = "enwiki", dump: str = "") -> s
             with open(listOfDumps, "w") as file:
                 for i in dumps:
                     file.write(i + "\n")
+        else:
+            with open(listOfDumps, "w") as file:
+                for i in metaHistory7z["files"]:
+                    file.write(metaHistory7z["files"][i]["url"] + "\n")
     else:
         with open(listOfDumps) as file:
             firstLine = file.readline()
