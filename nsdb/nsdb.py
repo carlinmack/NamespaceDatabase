@@ -124,15 +124,32 @@ def findFastestMirror(dump: str = "20200401", wiki: str = "enwiki/") -> str:
     # is only available over https
     mirrors = re.findall(r'href="(https?:.*)"', html)
     mirrorDownloadTime = []
+    dumps = []
+    sizes = []
 
     # Add main site
     mirrors.append("https://dumps.wikimedia.org/")
 
-    firstFile = "enwiki-./0401-pages-meta-history5.xml-p564843p565313.7z"
+    # find test file
+    url = "https://dumps.wikimedia.org/" + wiki + "/" + dump + "/dumpstatus.json"
+    content = urllib.request.urlopen(url).read().decode("utf-8")
+    metaHistory7z = json.loads(content)["jobs"]["metahistory7zdump"]
+
+    for i in metaHistory7z["files"]:
+        size = metaHistory7z["files"][i]["size"] / 1024 / 1024
+        if size > 4:
+            if size < 10:
+                testFile = i
+                break
+            dumps.append(i)
+            sizes.append(size)
+    else:
+        _, index = min((val, index) for (index, val) in enumerate(sizes))
+        testFile = dumps[index]
 
     print("Finding fastest mirror")
     for index, mirror in enumerate(tqdm(mirrors, unit=" mirror")):
-        url = mirror + wiki + "/" + dump + "/" + firstFile
+        url = mirror + wiki + "/" + dump + "/" + testFile
 
         tick = time.time()
         try:
@@ -143,7 +160,7 @@ def findFastestMirror(dump: str = "20200401", wiki: str = "enwiki/") -> str:
         except urllib.error.HTTPError as err:
             if str(err.code)[0] in ["4", "5"]:
                 # try other url scheme
-                url = mirror + "dumps/" + wiki + dump + firstFile
+                url = mirror + "dumps/" + wiki + dump + testFile
 
                 tick = time.time()
                 try:
@@ -158,14 +175,15 @@ def findFastestMirror(dump: str = "20200401", wiki: str = "enwiki/") -> str:
             else:
                 raise
 
-    # return fastest mirror
-    _, index = min((val, index) for (index, val) in enumerate(mirrorDownloadTime))
-
     # for i in range(len(mirrors)):
     #     print(mirrors[i], mirrorDownloadTime[i])
     # print("Fastest mirror is " + mirrors[index])
+
     if all(time == 1000 for time in mirrorDownloadTime):
         raise RuntimeError("Dump " + dump + " is no longer hosted on any mirror")
+
+    # return fastest mirror
+    _, index = min((val, index) for (index, val) in enumerate(mirrorDownloadTime))
 
     return mirrors[index]
 
