@@ -34,16 +34,16 @@ Another aim of this project is to create documentation to promote research into 
 
 This project currently:
 
+* Allow selection of wiki, namespace, dump, among other parameters 
 * Downloads dumps from the fastest mirror
 * Splits them into partitions for parallel processing
 * Parses, extracts and imports features in parallel into a MySQL database. Errors are logged to a log file unless it stops the parsing of the partition in which it is logged to the database.
+* Allow users to be able to direct output to text file.
 
 In the future I aim to add:
 
-* Allow selection of wiki, namespace, dump
 * Allow users to provide their own option files for the database so they don't have to edit code.
 * Allow users to pass in a filename directly to splitwiki or parse. 
-* Allow users to be able to direct output to somewhere other than a database — I would love to hear what people would prefer.
 
 ## Requirements and installation
 
@@ -65,21 +65,31 @@ Enter a command prompt in the top level of the directory, run:
 python -m pip install -r requirements.txt
 ```
 
-Edit the database connection in Database.py and test the connection:
+If a database is not set up, you can test the program with:
+
+```
+python nsdb.py --test --dryrun
+```
+
+This writes output to text files rather than the database. Due to the `test` parameter this will only download and parse one archive under 50MB. The output of this is currently not valid for creating a database as a dummy foreign key of -1 is used for user_table_id.
+
+If a database is set up, edit the database connection in Database.py and test the connection:
 
 ```
 python Database.py
 ```
 
-Once this returns the database and cursor succesfully, edit nsdb.py:
-* set the dataDir parameter in `main()` to where you would like the partitions to be stored. It's likely that you would want to set this to the path of external storage. If enough space is available on your computer set this to `../`.
-* set maxSpace to the free storage that you would like this to use
-* Set free cores to the number of cores you do not want the program to use.
+Once this returns the database and cursor succesfully, find out the values for the parameters to be passed to nsdb.py:
+* wiki is the name of the wiki, for example enwiki, frwiki, zhwiktionary, etc
+* dump is the date of the dump that you want to use. Leave this blank to use the most recent. If you are planning to run this to completion, set this parameter so that your database is consistent
+* dataDir parameter is where you would like the partitions to be stored. It's likely that you would want to set this to the path of external storage. If enough space is available on your computer set this to `../`.
+* maxSpace is the free storage that you would like this to use
+* freeCores to the number of cores you do not want the program to use
 
-To create a list of dumps then, in parallel, download and insert the features into the database:
+To create a list of dumps then, in parallel, download and insert the features into the database, include relevant parameters as follows:
 
 ```
-python nsdb.py
+python nsdb.py [-w WIKI] [-d DUMP] [-D DATADIR] [-s MAXSPACE] [-c FREECORES]
 ```
 
 If dumps are extracted, they can also be parsed manually and it's features can be added to the database with:
