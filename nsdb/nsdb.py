@@ -22,6 +22,7 @@ import traceback
 import urllib
 import urllib.request
 from datetime import datetime
+from typing import List
 
 from tqdm import tqdm
 
@@ -429,6 +430,7 @@ def restartJobs():
 def main(
     wiki: str = "enwiki/",
     dump: str = "",
+    namespaces: List[int] = [1],
     parallelID: str = 0,
     numParallel: int = 1,
     dataDir: str = "/bigtemp/ckm8gz/",
@@ -445,6 +447,7 @@ def main(
     wiki: str - The name of the wiki you want to use
     dump: str - Which dump you want to use, a date string in the format YYYYMMDD. By
         default will use the dump before latest.
+    namespaces: List[int] - Which namespace should be used.
     parallelID: str - set when called from the slurm script. Slurm is used for running
         this tool in a distributed fashion.
     numParallel: int - set when called from the slurm script.
@@ -464,8 +467,6 @@ def main(
     dumpsDir = os.path.join(dataDir, "dumps/")
     archivesDir = os.path.join(dataDir, "archives/")
     partitionsDir = os.path.join(dataDir, "partitions/")
-
-    namespaces = [1]
 
     cores = max(multiprocessing.cpu_count() - freeCores, 1)
     queue = multiprocessing.Manager().Queue()
@@ -611,6 +612,16 @@ def defineArgParser():
     )
 
     parser.add_argument(
+        "-n",
+        "--namespaces",
+        help="""Which namespaces you want to use, these are different for every wiki
+                [default: 1]""",
+        default=[1],
+        type=int,
+        nargs="+",
+    )
+
+    parser.add_argument(
         "-i",
         "--parallelID",
         help="Set when called from the slurm script [default: 0]",
@@ -619,7 +630,6 @@ def defineArgParser():
     )
 
     parser.add_argument(
-        "-n",
         "--numParallel",
         help="Set when called from the slurm script [default: 1]",
         default=1,
@@ -661,6 +671,7 @@ if __name__ == "__main__":
     main(
         wiki=clArgs.wiki,
         dump=clArgs.dump,
+        namespaces=clArgs.namespaces,
         parallelID=clArgs.parallelID,
         numParallel=clArgs.numParallel,
         dataDir=clArgs.dataDir,

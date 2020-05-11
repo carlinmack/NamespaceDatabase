@@ -23,8 +23,9 @@ Please run pip install -r requirements.txt before running this script.
 
 **Usage:**
 ```
-  nsdb.py [-h] [--test] [--dryrun] [-w WIKI] [-d DUMP] [-i PARALLELID] [-n NUMPARALLEL] 
-          [-D DATADIR] [-s MAXSPACE] [-c FREECORES]
+  nsdb.py [-h] [--test] [--dryrun] [-w WIKI] [-d DUMP] [-n NAMESPACES [NAMESPACES ...]] 
+          [-i PARALLELID] [--numParallel NUMPARALLEL] [-D DATADIR] [-s MAXSPACE] 
+          [-c FREECORES]
 ```
 **Optional Arguments:**
 ```
@@ -39,6 +40,8 @@ Please run pip install -r requirements.txt before running this script.
   -d --dump DUMP
       Which dump you want to use, a date string in the format YYYYMMDD. 
       By default will use the dump before latest.
+  -n --namespaces NAMESPACES [NAMESPACES ...]
+      Which namespaces you want to use, these are different for every wiki [default: 1]
   -i --parallelID PARALLELID
       Set when called from the slurm script [default: 0]
   -n --numParallel NUMPARALLEL
@@ -97,7 +100,7 @@ Functions
 :   Returns True if all jobs are done
 
     
-`main(wiki='enwiki/', dump='', parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0, dryRun=False, test=True)`
+`main(wiki='enwiki/', dump='', namespaces=[1], parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0, dryRun=False, test=True)`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
     
@@ -106,6 +109,7 @@ Functions
     wiki: str - The name of the wiki you want to use
     dump: str - Which dump you want to use, a date string in the format YYYYMMDD. By
         default will use the dump before latest.
+    namespaces: List[int] - Which namespace should be used.
     parallelID: str - set when called from the slurm script. Slurm is used for running
         this tool in a distributed fashion.
     numParallel: int - set when called from the slurm script.

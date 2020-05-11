@@ -82,6 +82,7 @@ python Database.py
 Once this returns the database and cursor succesfully, find out the values for the parameters to be passed to nsdb.py:
 * wiki is the name of the wiki, for example enwiki, frwiki, zhwiktionary, etc
 * dump is the date of the dump that you want to use. Leave this blank to use the most recent. If you are planning to run this to completion, set this parameter so that your database is consistent
+* namespaces is the list of namespaces which you would like to create a database for.
 * dataDir parameter is where you would like the partitions to be stored. It's likely that you would want to set this to the path of external storage. If enough space is available on your computer set this to `../`.
 * maxSpace is the free storage that you would like this to use
 * freeCores to the number of cores you do not want the program to use
@@ -89,7 +90,7 @@ Once this returns the database and cursor succesfully, find out the values for t
 To create a list of dumps then, in parallel, download and insert the features into the database, include relevant parameters as follows:
 
 ```
-python nsdb.py [-w WIKI] [-d DUMP] [-D DATADIR] [-s MAXSPACE] [-c FREECORES]
+python nsdb.py [-w WIKI] [-d DUMP] [-n NAMESPACES [NAMESPACES ...]] [-D DATADIR] [-s MAXSPACE] [-c FREECORES]
 ```
 
 If dumps are extracted, they can also be parsed manually and it's features can be added to the database with:
