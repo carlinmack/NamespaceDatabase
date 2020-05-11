@@ -51,11 +51,14 @@ def splitError(error):
 
 
 def createDumpsFile(
-    listOfDumps: str = "../dumps.txt", wiki: str = "enwiki", dump: str = ""
+    listOfDumps: str = "../dumps.txt",
+    wiki: str = "enwiki",
+    dump: str = "",
+    test: bool = False,
 ) -> str:
     """Creates dumps.txt if it doesn't exist"""
 
-    if not os.path.isfile(listOfDumps):
+    if test or not os.path.isfile(listOfDumps):
         mirror = "https://dumps.wikimedia.org/"
 
         if dump == "":
@@ -75,6 +78,18 @@ def createDumpsFile(
             else:
                 raise RuntimeError("7zip dumps not found at %s." % (mirror,))
 
+        if test:
+            url = mirror + wiki + "/" + dump + "/dumpstatus.json"
+            content = urllib.request.urlopen(url).read().decode("utf-8")
+            metaHistory7z = json.loads(content)["jobs"]["metahistory7zdump"]
+
+            for i in metaHistory7z["files"]:
+                size = metaHistory7z["files"][i]["size"] / 1024 / 1024
+                if 4 < size < 50:
+                    with open(listOfDumps, "w") as file:
+                        file.write(metaHistory7z["files"][i]["url"] + "\n")
+            return dump
+
         url = mirror + wiki + "/" + dump
 
         content = urllib.request.urlopen(url).read().decode("utf-8")
@@ -84,7 +99,7 @@ def createDumpsFile(
             with open(listOfDumps, "w") as file:
                 for i in dumps:
                     file.write(i + "\n")
-        else:
+        elif dump == "":
             with open(listOfDumps, "w") as file:
                 for i in metaHistory7z["files"]:
                     file.write(metaHistory7z["files"][i]["url"] + "\n")
@@ -252,22 +267,37 @@ def extractFile(fileName: str, archivesDir: str, dumpsDir: str):
 
 
 def splitFile(
-    fileName: str, queue, dumpsDir: str, partitionsDir: str, numPartitions: int
+    fileName: str,
+    queue,
+    dumpsDir: str,
+    partitionsDir: str,
+    numPartitions: int,
+    dryRun: bool,
 ):
     """Split a dump into a number of partitions"""
-    database, cursor = Database.connect()
+    if not dryRun:
+        database, cursor = Database.connect()
 
-    split(
-        fileName=fileName,
-        queue=queue,
-        cursor=cursor,
-        inputFolder=dumpsDir,
-        outputFolder=partitionsDir,
-        number=numPartitions,
-    )
+        split(
+            fileName=fileName,
+            queue=queue,
+            cursor=cursor,
+            inputFolder=dumpsDir,
+            outputFolder=partitionsDir,
+            number=numPartitions,
+        )
 
-    cursor.close()
-    database.close()
+        cursor.close()
+        database.close()
+    else:
+        split(
+            fileName=fileName,
+            queue=queue,
+            inputFolder=dumpsDir,
+            outputFolder=partitionsDir,
+            number=numPartitions,
+            dryRun=dryRun,
+        )
 
 
 def checkDiskSpace(dataDir: str) -> int:
@@ -404,6 +434,8 @@ def main(
     dataDir: str = "/bigtemp/ckm8gz/",
     maxSpace: int = 600,
     freeCores: int = 0,
+    dryRun: bool = False,
+    test: bool = True,
 ):
     """Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
@@ -424,7 +456,10 @@ def main(
     freeCores: int - the number of cores you don't want to be used. For best results
         set this to zero."""
 
-    listOfDumps = "../dumps.txt"  # not stored in data dir as it stores state
+    if test:
+        listOfDumps = "../test-dumps.txt"  # not stored in data dir as it stores state
+    else:
+        listOfDumps = "../dumps.txt"
 
     dumpsDir = os.path.join(dataDir, "dumps/")
     archivesDir = os.path.join(dataDir, "archives/")
@@ -455,18 +490,17 @@ def main(
     for _ in range(numParseCores):
         parser.apply_async(
             parse.multiprocess,
-            (partitionsDir, namespaces, queue, parallelID),
+            (partitionsDir, namespaces, queue, parallelID, dryRun),
             error_callback=parseError,
         )
 
+    dump = createDumpsFile(listOfDumps, wiki, dump, test)
+
     print("Number of cores available:", cores, " Using dump:", dump)
 
-    dump = createDumpsFile(listOfDumps, wiki, dump)
-
     # while (things-to-do or jobs still running)
-    while countLines(listOfDumps) > 0 or jobsDone():
-        # if countLines(listOfDumps) > 0:
-        if (
+    while countLines(listOfDumps) > 0 or dryRun or jobsDone():
+        if countLines(listOfDumps) > 0 and (
             not os.path.exists(dumpsDir)
             or len(os.listdir(dumpsDir)) < numParallel * 3
             or len(splitter._cache) < numSplitCores
@@ -488,18 +522,19 @@ def main(
 
                 splitter.apply_async(
                     splitFile,
-                    (fileName, queue, dumpsDir, partitionsDir, numPartitions),
+                    (fileName, queue, dumpsDir, partitionsDir, numPartitions, dryRun),
                     error_callback=splitError,
                 )
 
-        numJobs = outstandingJobs()
+        if not dryRun:
+            numJobs = outstandingJobs()
+            if jobsDone():
+                print("sleeping", flush=True)
+        else:
+            numJobs = 0
+
         diskSpace = checkDiskSpace(dataDir)
 
-        if jobsDone():
-            print("sleeping", flush=True)
-        #     break
-
-        # While (jobs labelled todo|error > threads or no-more-files or no-more-space)
         while numJobs > 30 * numParallel or diskSpace > (maxSpace * 1000000):
             print("in")
             markLongRunningJobsAsError()
@@ -546,9 +581,17 @@ def defineArgParser():
             )
         return ivalue
 
-    # parser.add_argument(
-    #     "--dryrun", help="Don't use a database, no partitions will be deleted",
-    # )
+    parser.add_argument(
+        "--test",
+        help="Only download one archive that is below 50MB in size",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--dryrun",
+        help="Don't use a database, no partitions will be deleted",
+        action="store_true",
+    )
 
     parser.add_argument(
         "-w",
@@ -623,4 +666,6 @@ if __name__ == "__main__":
         dataDir=clArgs.dataDir,
         maxSpace=clArgs.maxSpace,
         freeCores=clArgs.freeCores,
+        dryRun=clArgs.dryrun,
+        test=clArgs.test,
     )

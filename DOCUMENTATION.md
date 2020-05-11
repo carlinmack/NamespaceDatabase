@@ -23,19 +23,22 @@ Please run pip install -r requirements.txt before running this script.
 
 **Usage:**
 ```
-  nsdb.py [-h] [-w WIKI] [-d DUMP] [-c FREECORES] [-i PARALLELID] [-n NUMPARALLEL] [-D DATADIR] [-s MAXSPACE]
+  nsdb.py [-h] [--test] [--dryrun] [-w WIKI] [-d DUMP] [-i PARALLELID] [-n NUMPARALLEL] 
+          [-D DATADIR] [-s MAXSPACE] [-c FREECORES]
 ```
 **Optional Arguments:**
 ```
   -h, --help
       show this help message and exit
+  --test
+      Only download one archive that is below 50MB in size
+  --dryrun
+      Don't use a database, no partitions will be deleted
   -w --wiki WIKI
       The name of the wiki you want to use [default: enwiki]
   -d --dump DUMP
       Which dump you want to use, a date string in the format YYYYMMDD. 
       By default will use the dump before latest.
-  -c --freeCores FREECORES
-      The number of cores you don't want to be used [default: 0]
   -i --parallelID PARALLELID
       Set when called from the slurm script [default: 0]
   -n --numParallel NUMPARALLEL
@@ -44,6 +47,8 @@ Please run pip install -r requirements.txt before running this script.
       Directory where the dumps, partitions etc will be stored [default: ../]
   -s --maxSpace MAXSPACE
       Max gigabytes that you would like the program to use. Min 50gB [default: 150]
+  -c --freeCores FREECORES
+      The number of cores you don't want to be used [default: 0]
 ```
 
 Functions
@@ -58,7 +63,7 @@ Functions
 :   Returns the number of lines in a file using wc from bash
 
     
-`createDumpsFile(listOfDumps, wiki='enwiki', dump='')`
+`createDumpsFile(listOfDumps='../dumps.txt', wiki='enwiki', dump='', test=False)`
 :   Creates dumps.txt if it doesn't exist
 
     
@@ -92,7 +97,7 @@ Functions
 :   Returns True if all jobs are done
 
     
-`main(wiki='enwiki/', dump='', parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0)`
+`main(wiki='enwiki/', dump='', parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0, dryRun=False, test=True)`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
     
@@ -139,7 +144,7 @@ Functions
 :   Logs errors from split processes to a file
 
     
-`splitFile(fileName, queue, dumpsDir, partitionsDir, numPartitions)`
+`splitFile(fileName, queue, dumpsDir, partitionsDir, numPartitions, dryRun)`
 :   Split a dump into a number of partitions
 
 -----
@@ -184,7 +189,7 @@ Functions
     parallel: str - id of the parallel process, 0 if not
 
     
-`getDump(partitionsDir, cursor)`
+`getDump(partitionsDir, cursor=0, partitionName='')`
 :   Returns the next dump to be parsed from the database
     
     Parameters
@@ -209,11 +214,11 @@ Functions
 :   
 
     
-`multiprocess(partitionsDir, namespaces, queue, jobId)`
+`multiprocess(partitionsDir, namespaces, queue, jobId, dryRun=False)`
 :   Wrapper around process to call parse in a multiprocessing pool
 
     
-`parse(partitionsDir='/bigtemp/ckm8gz/partitions/', namespaces=[1], parallel='')`
+`parse(partitionsDir='../partitions/', namespaces=[1], parallel='', dryRun=False, partitionName='')`
 :   Selects the next dump from the database, extracts the features and
     imports them into several database tables.
     
@@ -275,6 +280,25 @@ Functions
 `ratioWhitespace(string)`
 :   Returns the ratio of whitespace to all characters in text
 
+Classes
+-------
+
+`fileCursor(partitionName)`
+:   
+
+    ### Class variables
+
+    `lastrowid`
+    :
+
+    `testFile`
+    :
+
+    ### Methods
+
+    `execute(self, *args)`
+    :
+
 -----
 
 
@@ -299,7 +323,7 @@ Functions
 :   Returns the estimated number of lines in a dump using wcle.sh
 
     
-`split(number=10, inputFolder='/bigtemp/ckm8gz/dumps/', outputFolder='/bigtemp/ckm8gz/partitions/', deleteDump=True, fileName='', queue=0, cursor=0)`
+`split(number=10, inputFolder='/bigtemp/ckm8gz/dumps/', outputFolder='/bigtemp/ckm8gz/partitions/', deleteDump=True, fileName='', queue=0, cursor=0, dryRun=False)`
 :   Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
     

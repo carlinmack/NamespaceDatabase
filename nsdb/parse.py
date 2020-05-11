@@ -10,8 +10,8 @@ import subprocess
 import sys
 import traceback
 from datetime import datetime
-from typing import Tuple, List
 from sys import argv
+from typing import List, Tuple
 
 import mwreverts
 import mwxml
@@ -21,28 +21,46 @@ from profanity import profanity
 import Database
 
 
-def multiprocess(partitionsDir: str, namespaces: List[int], queue, jobId: str):
+def multiprocess(
+    partitionsDir: str, namespaces: List[int], queue, jobId: str, dryRun: bool = False
+):
     """Wrapper around process to call parse in a multiprocessing pool"""
     while True:
-        i = queue.get()
+        partitionName = queue.get()
 
-        parseId = str(jobId) + "_" + str(i)
-        parse(partitionsDir, namespaces, parseId)
+        parseId = str(jobId) + "_" + str(partitionName)
+        parse(partitionsDir, namespaces, parseId, dryRun, partitionName)
 
     print("EXIT", flush=True)
+
+
+class fileCursor:
+    testFile = "../test-output.txt"
+    lastrowid = -1
+
+    def __init__(self, partitionName):
+        self.testFile = "../test-output-" + partitionName + ".txt"
+
+    def execute(self, *args):
+        parameters = tuple(map(lambda x: '"' + str(x) + '"', args[1]))
+        output = args[0] % parameters
+        output = " ".join(output.split())
+        with open(self.testFile, "a+") as file:
+            file.write(output + "\n")
 
 
 def markAsNotFound(fileName):
     query = """update partition 
         set status = 'failed', error = 'Not found' 
         where file_name = %s;"""
-    
+
     database, cursor = Database.connect()
     cursor.execute(query, (fileName,))
     cursor.close()
     database.close()
 
-def getDump(partitionsDir: str, cursor):
+
+def getDump(partitionsDir: str, cursor=0, partitionName: str = ""):
     """Returns the next dump to be parsed from the database
 
     Parameters
@@ -54,33 +72,39 @@ def getDump(partitionsDir: str, cursor):
     dump: class 'mwxml.iteration.dump.Dump' - dump file iterator
     fileName: str - fileName of dump
     """
-    ## Read dump from database
-    query = "SELECT file_name FROM partition WHERE status = 'todo' LIMIT 1"
-    cursor.execute(query)
-    todofile = cursor.fetchone()
 
-    if not todofile:
-        ## no files to run, close database connections and finish
-        return None, None
+    if cursor:
+        ## Read dump from database
+        query = "SELECT file_name FROM partition WHERE status = 'todo' LIMIT 1"
+        cursor.execute(query)
+        todofile = cursor.fetchone()
 
-    fileName = todofile[0]
-    path = partitionsDir + fileName
+        if not todofile:
+            ## no files to run, close database connections and finish
+            return None, None
 
-    if not os.path.exists(path):
-        markAsNotFound(fileName)
-        raise IOError("file " + path + " not found on disk")
+        fileName = todofile[0]
+        path = partitionsDir + fileName
 
-    print(path)
-    dump = mwxml.Dump.from_file(open(path))
+        if not os.path.exists(path):
+            markAsNotFound(fileName)
+            raise IOError("file " + path + " not found on disk")
 
-    ## Change status of dump
-    currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    query = """UPDATE partition
-        SET
-            status = "running",
-            start_time_1 = %s
-        WHERE file_name = %s;"""
-    cursor.execute(query, (currentTime, fileName))
+        print("Parsing", path)
+        dump = mwxml.Dump.from_file(open(path))
+
+        ## Change status of dump
+        currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        query = """UPDATE partition
+            SET
+                status = "running",
+                start_time_1 = %s
+            WHERE file_name = %s;"""
+        cursor.execute(query, (currentTime, fileName))
+    else:
+        path = partitionsDir + partitionName
+        dump = mwxml.Dump.from_file(open(path))
+        fileName = partitionName
 
     return dump, fileName
 
@@ -216,7 +240,9 @@ def parseNonTargetNamespace(
     cursor.execute(query, (pageEdits, title, namespace))
 
 
-def parseTargetNamespace(page, title: str, namespace: str, cursor, parallel: str, partitionsDir):
+def parseTargetNamespace(
+    page, title: str, namespace: str, cursor, parallel: str, partitionsDir
+):
     """Extracts features from each revision of a page into a database
 
     Ignores edits that have been deleted like:
@@ -651,9 +677,11 @@ def containsVulgarity(string: str) -> bool:
 
 
 def parse(
-    partitionsDir: str = "/bigtemp/ckm8gz/partitions/",
+    partitionsDir: str = "../partitions/",
     namespaces: List[int] = [1],
     parallel: str = "",
+    dryRun: bool = False,
+    partitionName: str = "",
 ):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
@@ -668,7 +696,10 @@ def parse(
     namespaces : list[int] - Wikipedia namespaces of interest.
     parallel: str - whether to parse with multiple cores
     """
-    database, cursor = Database.connect()
+    if not dryRun:
+        database, cursor = Database.connect()
+    else:
+        cursor = fileCursor(partitionName)
 
     if not os.path.exists(partitionsDir + "revision"):
         os.mkdir(partitionsDir + "revision")
@@ -677,12 +708,15 @@ def parse(
     open(partitionsDir + "revision/new" + parallel + ".txt", "w").close()
 
     try:
-        dump, fileName = getDump(partitionsDir, cursor)
+        if not dryRun:
+            dump, fileName = getDump(partitionsDir, cursor=cursor)
 
-        if dump is None:
-            cursor.close()
-            database.close()
-            return
+            if dump is None:
+                cursor.close()
+                database.close()
+                return
+        else:
+            dump, fileName = getDump(partitionsDir, partitionName=partitionName)
 
         # for development, disable namespace check
         # fileName = "../test.xml"
@@ -703,7 +737,9 @@ def parse(
 
                 continue
 
-            parseTargetNamespace(page, title, str(namespace), cursor, parallel, partitionsDir)
+            parseTargetNamespace(
+                page, title, str(namespace), cursor, parallel, partitionsDir
+            )
 
         ## Change status of dump
         currentTime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -749,8 +785,9 @@ def parse(
     os.remove(partitionsDir + "revision/old" + parallel + ".txt")
     os.remove(partitionsDir + "revision/new" + parallel + ".txt")
 
-    cursor.close()
-    database.close()
+    if not dryRun:
+        cursor.close()
+        database.close()
 
 
 if __name__ == "__main__":
@@ -759,4 +796,3 @@ if __name__ == "__main__":
         parse(parallel=jobId)
     else:
         parse()
-    

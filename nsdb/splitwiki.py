@@ -7,7 +7,6 @@ import os
 import subprocess
 import time
 
-# import click
 from tqdm import tqdm
 
 
@@ -30,16 +29,6 @@ def addJobToQueue(queue, jobId: str):
     queue.put(jobId)
 
 
-# @click.command()
-# @click.option(
-#     "-n", "--number", default=40,
-# )
-# @click.option(
-#     "-o", "--outputfolder",
-# )
-# @click.option(
-#     "-d", "--deletedump", default=False, is_flag=True,
-# )
 def split(
     number: int = 10,
     inputFolder: str = "/bigtemp/ckm8gz/dumps/",
@@ -48,6 +37,7 @@ def split(
     fileName: str = "",
     queue=0,
     cursor=0,
+    dryRun=False,
 ):
     """Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
@@ -139,11 +129,12 @@ def split(
             partitionName = fileName + "." + str(index)
             outputFileName = os.path.join(outputFolder, partitionName)
 
-            if index > 0 and cursor and queue:
+            if index > 0 and queue:
                 prevPartitionName = fileName + "." + str(index - 1)
-                addJobToDatabase(cursor, prevPartitionName)
-                time.sleep(1)
-                addJobToQueue(queue, str(lines) + "_" + str(index - 1))
+                if not dryRun and cursor:
+                    addJobToDatabase(cursor, prevPartitionName)
+                    time.sleep(1)
+                addJobToQueue(queue, prevPartitionName)
             elif not os.path.exists(outputFolder):
                 os.mkdir(outputFolder)
 
@@ -171,10 +162,12 @@ def split(
                 if moreFile:
                     outFile.write(footer)
 
-    partitionName = fileName + "." + str(index)
-    addJobToDatabase(cursor, partitionName)
-    time.sleep(1)
-    addJobToQueue(queue, str(lines) + "_" + str(index))
+    if queue:
+        partitionName = fileName + "." + str(index)
+        if not dryRun and cursor:
+            addJobToDatabase(cursor, partitionName)
+            time.sleep(1)
+        addJobToQueue(queue, partitionName)
 
     if deleteDump:
         os.remove(file)
