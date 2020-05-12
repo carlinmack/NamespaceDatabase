@@ -2,6 +2,7 @@
 This script looks in the dumps/ directory and splits the first file into 40
 partitions by default. This can be changed by adjusting the parameters to split()
 """
+import argparse
 import glob
 import os
 import subprocess
@@ -31,10 +32,10 @@ def addJobToQueue(queue, jobId: str):
 
 def split(
     number: int = 10,
-    inputFolder: str = "/bigtemp/ckm8gz/dumps/",
-    outputFolder: str = "/bigtemp/ckm8gz/partitions/",
-    deleteDump: bool = True,
     fileName: str = "",
+    inputFolder: str = "../dumps/",
+    outputFolder: str = "../partitions/",
+    deleteDump: bool = True,
     queue=0,
     cursor=0,
     dryRun=False,
@@ -173,5 +174,69 @@ def split(
         os.remove(file)
 
 
+def defineArgParser():
+    """Creates parser for command line arguments"""
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.add_argument(
+        "--dryrun",
+        help="Don't use a database, no partitions will be deleted",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "-n",
+        "--number",
+        help="Number of partitions to split the dump into [default: 10]",
+        default=10,
+        type=int,
+    )
+
+    parser.add_argument(
+        "-f",
+        "--fileName",
+        help="Which partition to split [default: '']",
+        default="",
+        type=str,
+    )
+
+    parser.add_argument(
+        "-i",
+        "--inputFolder",
+        help="Location of the dumps [default: ../dumps/]",
+        default="../dumps/",
+        type=str,
+    )
+
+    parser.add_argument(
+        "-o",
+        "--outputFolder",
+        help="Location of the partitions [default: ../partitions/]",
+        default="../partitions/",
+        type=str,
+    )
+
+    parser.add_argument(
+        "--keepDump",
+        help="Don't delete the dump after splitting",
+        action="store_false",
+    )
+
+    return parser
+
+
 if __name__ == "__main__":
-    split()
+
+    argParser = defineArgParser()
+    clArgs = argParser.parse_args()
+
+    split(
+        number=clArgs.number,
+        fileName=clArgs.fileName,
+        inputFolder=clArgs.inputFolder,
+        outputFolder=clArgs.outputFolder,
+        deleteDump=clArgs.deleteDump,
+        dryRun=clArgs.dryRun,
+    )

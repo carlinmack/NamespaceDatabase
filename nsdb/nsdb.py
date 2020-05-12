@@ -433,7 +433,7 @@ def main(
     namespaces: List[int] = [1],
     parallelID: str = 0,
     numParallel: int = 1,
-    dataDir: str = "/bigtemp/ckm8gz/",
+    dataDir: str = "../",
     maxSpace: int = 600,
     freeCores: int = 0,
     dryRun: bool = False,

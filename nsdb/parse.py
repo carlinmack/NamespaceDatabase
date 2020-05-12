@@ -4,6 +4,7 @@ and extract features to a database table.
 
 This tool uses a MySQL database that is configured in the Database() module.
 """
+import argparse
 import os
 import re
 import subprocess
@@ -677,11 +678,11 @@ def containsVulgarity(string: str) -> bool:
 
 
 def parse(
+    partitionName: str = "",
     partitionsDir: str = "../partitions/",
     namespaces: List[int] = [1],
     parallel: str = "",
     dryRun: bool = False,
-    partitionName: str = "",
 ):
     """Selects the next dump from the database, extracts the features and
     imports them into several database tables.
@@ -790,9 +791,58 @@ def parse(
         database.close()
 
 
+def defineArgParser():
+    """Creates parser for command line arguments"""
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+
+    parser.add_argument(
+        "--dryrun",
+        help="Don't use a database, no partitions will be deleted",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--partitionName",
+        help="Set when called from the slurm script [default: 0]",
+        default="",
+        type=str,
+    )
+
+    parser.add_argument(
+        "-d",
+        "--partitionsDir",
+        help="Where the partitions are stored [default: ../partitions/]",
+        default="../partitions/",
+        type=str,
+    )
+
+    parser.add_argument(
+        "-n", "--namespaces", help="Namespaces of interest [default: [1]]", type=str,
+    )
+
+    parser.add_argument(
+        "-i",
+        "--parallelID",
+        help="Set when called from the slurm script [default: '']",
+        default="",
+        type=str,
+    )
+
+    return parser
+
+
 if __name__ == "__main__":
-    if len(argv) > 1:
-        jobId = argv[1]
-        parse(parallel=jobId)
-    else:
-        parse()
+
+    argParser = defineArgParser()
+    clArgs = argParser.parse_args()
+
+    parse(
+        partitionName=clArgs.partitionName,
+        partitionsDir=clArgs.partitionsDir,
+        namespaces=clArgs.namespaces,
+        parallel=clArgs.parallel,
+        dryRun=clArgs.dryRun,
+    )

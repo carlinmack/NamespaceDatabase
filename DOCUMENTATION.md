@@ -100,7 +100,7 @@ Functions
 :   Returns True if all jobs are done
 
     
-`main(wiki='enwiki/', dump='', namespaces=[1], parallelID=0, numParallel=1, dataDir='/bigtemp/ckm8gz/', maxSpace=600, freeCores=0, dryRun=False, test=True)`
+`main(wiki='enwiki/', dump='', namespaces=[1], parallelID=0, numParallel=1, dataDir='../', maxSpace=600, freeCores=0, dryRun=False, test=True)`
 :   Download a list of dumps if it doesn't exist. If there are no dumps,
     download one and split it, then process the dump on multiple threads
     
@@ -161,6 +161,27 @@ and extract features to a database table.
 
 This tool uses a MySQL database that is configured in the Database() module.
 
+**Usage:**
+```
+  parse.py [-h] [--dryrun] [-p PARTITIONNAME] [-d PARTITIONSDIR] [-n NAMESPACES] 
+           [-i PARALLELID]
+```
+**Optional Arguments:**
+```
+  -h, --help
+      show this help message and exit
+  --dryrun
+      Don't use a database, no partitions will be deleted
+  -p --partitionName PARTITIONNAME
+      Set when called from the slurm script [default: 0]
+  -d --partitionsDir PARTITIONSDIR
+      Where the partitions are stored [default: ../partitions/]
+  -n --namespaces NAMESPACES
+      Namespaces of interest [default: [1]]
+  -i --parallelID PARALLELID
+      Set when called from the slurm script [default: '']
+```
+
 Functions
 ---------
 
@@ -176,6 +197,10 @@ Functions
     
 `containsVulgarity(string)`
 :   Returns whether text contains profanity based on a simple wordlist approach
+
+    
+`defineArgParser()`
+:   Creates parser for command line arguments
 
     
 `getDiff(old, new, parallel, partitionsDir)`
@@ -222,7 +247,7 @@ Functions
 :   Wrapper around process to call parse in a multiprocessing pool
 
     
-`parse(partitionsDir='../partitions/', namespaces=[1], parallel='', dryRun=False, partitionName='')`
+`parse(partitionName='', partitionsDir='../partitions/', namespaces=[1], parallel='', dryRun=False)`
 :   Selects the next dump from the database, extracts the features and
     imports them into several database tables.
     
@@ -311,6 +336,29 @@ Module [splitwiki](nsdb/splitwiki.py)
 This script looks in the dumps/ directory and splits the first file into 40
 partitions by default. This can be changed by adjusting the parameters to split()
 
+**Usage:**
+```
+  splitwiki.py [-h] [--dryrun] [-n NUMBER] [-f FILENAME] [-i INPUTFOLDER] 
+               [-o OUTPUTFOLDER] [--deleteDump DELETEDUMP]
+```
+**Optional Arguments:**
+```
+  -h, --help
+      show this help message and exit
+  --dryrun
+      Don't use a database, no partitions will be deleted
+  -n --number NUMBER
+      Number of partitions to split the dump into [default: 10]
+  -f --fileName FILENAME
+      Which partition to split [default: '']
+  -i --inputFolder INPUTFOLDER
+      Location of the dumps [default: ../dumps/]
+  -o --outputFolder OUTPUTFOLDER
+      Location of the partitions [default: ../partitions/]
+  --keepDump
+      Don't delete the dump after splitting
+```
+
 Functions
 ---------
 
@@ -327,7 +375,11 @@ Functions
 :   Returns the estimated number of lines in a dump using wcle.sh
 
     
-`split(number=10, inputFolder='/bigtemp/ckm8gz/dumps/', outputFolder='/bigtemp/ckm8gz/partitions/', deleteDump=True, fileName='', queue=0, cursor=0, dryRun=False)`
+`defineArgParser()`
+:   Creates parser for command line arguments
+
+    
+`split(number=10, fileName='', inputFolder='../dumps/', outputFolder='../partitions/', deleteDump=True, queue=0, cursor=0, dryRun=False)`
 :   Splits Wikipedia dumps into smaller partitions. Creates a file
     partitions.txt with the created partitions.
     
