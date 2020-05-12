@@ -820,7 +820,12 @@ def defineArgParser():
     )
 
     parser.add_argument(
-        "-n", "--namespaces", help="Namespaces of interest [default: [1]]", type=str,
+        "-n",
+        "--namespaces",
+        help="Namespaces of interest [default: 1]",
+        default=[1],
+        type=int,
+        nargs="+",
     )
 
     parser.add_argument(

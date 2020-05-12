@@ -163,8 +163,8 @@ This tool uses a MySQL database that is configured in the Database() module.
 
 **Usage:**
 ```
-  parse.py [-h] [--dryrun] [-p PARTITIONNAME] [-d PARTITIONSDIR] [-n NAMESPACES] 
-           [-i PARALLELID]
+  parse.py [-h] [--dryrun] [-p PARTITIONNAME] [-d PARTITIONSDIR] 
+           [-n NAMESPACES [NAMESPACES ...]] [-i PARALLELID]
 ```
 **Optional Arguments:**
 ```
@@ -176,8 +176,8 @@ This tool uses a MySQL database that is configured in the Database() module.
       Set when called from the slurm script [default: 0]
   -d --partitionsDir PARTITIONSDIR
       Where the partitions are stored [default: ../partitions/]
-  -n --namespaces NAMESPACES
-      Namespaces of interest [default: [1]]
+  -n --namespaces NAMESPACES [NAMESPACES ...]
+      Namespaces of interest [default: 1]
   -i --parallelID PARALLELID
       Set when called from the slurm script [default: '']
 ```

@@ -96,7 +96,7 @@ python nsdb.py [-w WIKI] [-d DUMP] [-n NAMESPACES [NAMESPACES ...]] [-D DATADIR]
 If dumps are extracted, they can also be parsed manually and it's features can be added to the database with:
 
 ```
-python parse.py [-p PARTITIONNAME] [-d PARTITIONSDIR] [-n NAMESPACES] [-i PARALLELID]
+python parse.py [-p PARTITIONNAME] [-d PARTITIONSDIR] [-n NAMESPACES [NAMESPACES ...]] [-i PARALLELID]
 ```
 
 To split the first dump in the `dumps/` folder into ~40 partitions in the `partitions/` folder run:
