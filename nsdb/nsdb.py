@@ -22,6 +22,7 @@ import traceback
 import urllib
 import urllib.request
 from datetime import datetime
+from math import ceil
 from typing import List
 
 from tqdm import tqdm
@@ -471,17 +472,20 @@ def main(
     cores = max(multiprocessing.cpu_count() - freeCores, 1)
     queue = multiprocessing.Manager().Queue()
 
-    if cores > 4:
-        # cores - 3 as 1 thread to run nsdb.py and 2 to run splitwiki
-        # min, max ensures that it is within 1 and 10
-        numParseCores = min(max(cores - 3, 1), 10)
-    else:
-        numParseCores = max(cores - 2, 1)
-
     if numParallel > 1:
-        numSplitCores = min(max(cores - 1 - numParseCores, 1), 3)
+        # bounded between 1 and 10
+        # the inner function is found from:
+        # cores = 1 + numParseCores + numSplitCores
+        # cores = 1 + numParseCores + numParseCores / 3
+        # numParseCores = 3(cores - 1)/4
+        # the constant 1 above is courtesy to not have a process for every core
+        numParseCores = min(max(ceil((cores - 1) * 0.75), 1), 10)
+        # constrained between 1 and 3 as we probably don't want 3 * numParallel
+        # cores writing to the same storage
+        numSplitCores = min(max(round(numParseCores / 3), 1), 3)
     else:
-        numSplitCores = max(cores - 1 - numParseCores, 1)
+        numParseCores = max(ceil((cores - 1) * 0.75), 1)
+        numSplitCores = max(round(numParseCores / 3), 1)
 
     numPartitions = 8 * numParseCores
 
