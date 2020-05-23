@@ -10,6 +10,10 @@ scripts to parallelise and to only import necessary information to the database.
 
 > If there is a feature you'd like, or a roadblock to you using this, please [create an issue!](https://github.com/carlinmack/NamespaceDatabase/issues/new)
 
+**Example Queries**
+|                           |                       |                       |
+|---------------------------|-----------------------|-----------------------|
+| ![image](plots/3-log.png) | ![image](plots/8.png) | ![image](plots/9.png) |
 
 ## Contents
 
