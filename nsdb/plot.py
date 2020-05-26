@@ -277,6 +277,26 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         mainspaceBotData = [340, 101, 272, 211, 995]
 
+    mainspaceBlocked = """SELECT
+    (SELECT count(*) FROM user WHERE blocked is true
+    and number_of_edits = 0),
+    (SELECT count(*) FROM user WHERE blocked is true
+    and number_of_edits = 1),
+    (SELECT count(*) FROM user WHERE blocked is true
+    and number_of_edits > 1 and number_of_edits <= 10),
+    (SELECT count(*) FROM user WHERE blocked is true
+    and number_of_edits > 10 and number_of_edits <= 100),
+    (SELECT count(*) FROM user WHERE blocked is true
+    and number_of_edits > 100);"""
+    if not dryrun:
+        cursor.execute(mainspaceBlocked,)
+        mainspaceBlockedData = cursor.fetchall()
+        mainspaceBlockedData = list(*mainspaceBlockedData)
+        with open(dataDir + str(i) + "-mainspace-blocked.txt", "w") as file:
+            file.write(str(mainspaceBlockedData))
+    else:
+        mainspaceBlockedData = [2432, 50266, 82503, 32119, 6513]
+
     talkspaceUser = """SELECT
     (SELECT count(*) FROM user WHERE bot is null
     and talkpage_number_of_edits = 0),
@@ -317,18 +337,42 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         talkspaceBotData = [1367, 63, 119, 103, 267]
 
-    fig, axs = plt.subplots(4)
+    talkspaceBlocked = """SELECT
+    (SELECT count(*) FROM user WHERE blocked is true
+    and talkpage_number_of_edits = 0),
+    (SELECT count(*) FROM user WHERE blocked is true
+    and  talkpage_number_of_edits = 1),
+    (SELECT count(*) FROM user WHERE blocked is true
+    and  talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
+    (SELECT count(*) FROM user WHERE blocked is true
+    and  talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
+    (SELECT count(*) FROM user WHERE blocked is true
+    and  talkpage_number_of_edits > 100);"""
+    if not dryrun:
+        cursor.execute(talkspaceBlocked,)
+        talkspaceBlockedData = cursor.fetchall()
+        talkspaceBlockedData = list(*talkspaceBlockedData)
+        with open(dataDir + str(i) + "-talkspace-blocked.txt", "w") as file:
+            file.write(str(talkspaceBlockedData))
+    else:
+        talkspaceBlockedData = [154838, 6404, 8635, 3173, 783]
+
+    fig, axs = plt.subplots(2, 3)
     fig.suptitle("Distribution of edits across name spaces for bots and users")
-    axs[0].set_title("user edits in main space")
-    axs[0].bar(columns, mainspaceUserData)
-    axs[1].set_title("bot edits in main space")
-    axs[1].bar(columns, mainspaceBotData)
-    axs[2].set_title("user edits in talk space")
-    axs[2].bar(columns, talkspaceUserData)
-    axs[3].set_title("bot edits in talk space")
-    axs[3].bar(columns, talkspaceBotData)
-    fig.tight_layout()
-    plt.gcf().set_size_inches(5, 10)
+    axs[0, 0].set_title("user edits in main space")
+    axs[0, 0].bar(columns, mainspaceUserData)
+    axs[0, 1].set_title("bot edits in main space")
+    axs[0, 1].bar(columns, mainspaceBotData)
+    axs[0, 2].set_title("blocked edits in main space")
+    axs[0, 2].bar(columns, mainspaceBlockedData)
+    axs[1, 0].set_title("user edits in talk space")
+    axs[1, 0].bar(columns, talkspaceUserData)
+    axs[1, 1].set_title("bot edits in talk space")
+    axs[1, 1].bar(columns, talkspaceBotData)
+    axs[1, 2].set_title("blocked edits in talk space")
+    axs[1, 2].bar(columns, talkspaceBlockedData)
+    # fig.tight_layout()
+    plt.gcf().set_size_inches(20, 10)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
@@ -378,15 +422,35 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
             file.write(str(botData))
     else:
         botData = [548, 1031, 4, 336]
+
+    blocked = """SELECT
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and blocked is true),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and blocked is true),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and blocked is true),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and blocked is true);"""
+    if not dryrun:
+        cursor.execute(blocked,)
+        blockedData = cursor.fetchall()
+        blockedData = list(*blockedData)
+        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
+            file.write(str(blockedData))
+    else:
+        blockedData = [16578, 154823, 2417, 15]
     plt.title("Namespaces that users edit")
 
-    fig, axs = plt.subplots(2)
+    fig, axs = plt.subplots(3)
     axs[0].set_title("Namespaces that users edit")
     axs[0].bar(columns, userData)
     axs[1].set_title("Namespaces that bots edit")
     axs[1].bar(columns, botData)
-    fig.tight_layout()
-    plt.gcf().set_size_inches(8, 8)
+    axs[2].set_title("Namespaces that blocked edit")
+    axs[2].bar(columns, blockedData)
+    # fig.tight_layout()
+    plt.gcf().set_size_inches(10, 17.5)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
@@ -410,6 +474,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
         FROM user;"""
         cursor.execute(query,)
         totalUsers = cursor.fetchone()[0]
+    else:
+        totalUsers = 50390420
 
     # 0
     i = 0
@@ -447,7 +513,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1
     # distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    # 0
+    # 9
     i = i + 1
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
 
