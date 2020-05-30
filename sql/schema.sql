@@ -9,6 +9,8 @@ DROP TABLE IF EXISTS user;
 
 DROP TABLE IF EXISTS partition;
 
+DROP TABLE IF EXISTS user_time_stats;
+
 CREATE TABLE user (
     id int unsigned NOT NULL AUTO_INCREMENT,
     user_id int DEFAULT NULL,
@@ -105,5 +107,14 @@ CREATE TABLE partition (
     end_time_1 timestamp NULL DEFAULT '0000-00-00 00:00:00',
     start_time_2 timestamp NULL DEFAULT '0000-00-00 00:00:00',
     end_time_2 timestamp NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE user_time_stats (
+    id INT NOT NULL,
+    min_time INT UNSIGNED NULL DEFAULT NULL,
+    avg_time INT UNSIGNED NULL DEFAULT NULL,
+    max_time INT UNSIGNED NULL DEFAULT NULL,
+    duration INT UNSIGNED NULL DEFAULT NULL,
     PRIMARY KEY (id)
 );
