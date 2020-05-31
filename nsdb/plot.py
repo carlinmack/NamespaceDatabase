@@ -3,9 +3,10 @@ This script ....
 """
 import argparse
 import os
-import matplotlib.pyplot as plt
 
 import Database
+import matplotlib.pyplot as plt
+import matplotlib.ticker as tkr
 
 
 def partitionStatus(cursor, i, plotDir, dataDir):
@@ -233,6 +234,14 @@ def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir):
 
 
 def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
+    def formatter(x, pos):  # formatter function takes tick label and tick position
+        s = "%d" % x
+        groups = []
+        while s and s[-1].isdigit():
+            groups.append(s[-3:])
+            s = s[:-3]
+        return s + ",".join(reversed(groups))
+
     figname = plotDir + str(i)
     plt.figure()
 
@@ -358,20 +367,26 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         talkspaceBlockedData = [154838, 6404, 8635, 3173, 783]
 
     fig, axs = plt.subplots(2, 3)
+    threeFigures = tkr.FuncFormatter(formatter)
     fig.suptitle("Distribution of edits across name spaces for bots and users")
     axs[0, 0].set_title("user edits in main space")
     axs[0, 0].bar(columns, mainspaceUserData)
+    axs[0, 0].yaxis.set_major_formatter(threeFigures)
     axs[0, 1].set_title("bot edits in main space")
     axs[0, 1].bar(columns, mainspaceBotData)
+    axs[0, 1].yaxis.set_major_formatter(threeFigures)
     axs[0, 2].set_title("blocked edits in main space")
     axs[0, 2].bar(columns, mainspaceBlockedData)
+    axs[0, 2].yaxis.set_major_formatter(threeFigures)
     axs[1, 0].set_title("user edits in talk space")
     axs[1, 0].bar(columns, talkspaceUserData)
+    axs[1, 0].yaxis.set_major_formatter(threeFigures)
     axs[1, 1].set_title("bot edits in talk space")
     axs[1, 1].bar(columns, talkspaceBotData)
+    axs[1, 1].yaxis.set_major_formatter(threeFigures)
     axs[1, 2].set_title("blocked edits in talk space")
     axs[1, 2].bar(columns, talkspaceBlockedData)
-    # fig.tight_layout()
+    axs[1, 2].yaxis.set_major_formatter(threeFigures)
     plt.gcf().set_size_inches(20, 10)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
@@ -525,6 +540,98 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
+    figname = plotDir + str(i)
+    plt.figure()
+
+    columns = ["1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
+    mainspace = """SELECT
+    (SELECT count(*) FROM page WHERE namespace = 0
+    and number_of_edits = 1),
+    (SELECT count(*) FROM page WHERE namespace = 0
+    and number_of_edits > 1 and number_of_edits <= 10),
+    (SELECT count(*) FROM page WHERE namespace = 0
+    and number_of_edits > 10 and number_of_edits <= 100),
+    (SELECT count(*) FROM page WHERE namespace = 0
+    and number_of_edits > 100);"""
+    if not dryrun:
+        cursor.execute(mainspace,)
+        mainspaceData = cursor.fetchall()
+        mainspaceData = list(*mainspaceData)
+        with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
+            file.write(str(mainspaceData))
+    else:
+        mainspaceData = [4778018, 4321490, 3307576, 866011]
+
+    mainspaceTalk = """SELECT
+    (SELECT count(*) FROM page WHERE namespace = 1
+    and number_of_edits = 1),
+    (SELECT count(*) FROM page WHERE namespace = 1
+    and number_of_edits > 1 and number_of_edits <= 10),
+    (SELECT count(*) FROM page WHERE namespace = 1
+    and number_of_edits > 10 and number_of_edits <= 100),
+    (SELECT count(*) FROM page WHERE namespace = 1
+    and number_of_edits > 100);"""
+    if not dryrun:
+        cursor.execute(mainspaceTalk,)
+        mainspaceTalkData = cursor.fetchall()
+        mainspaceTalkData = list(*mainspaceTalkData)
+        with open(dataDir + str(i) + "-mainspace-talk.txt", "w") as file:
+            file.write(str(mainspaceTalkData))
+    else:
+        mainspaceTalkData = [2016660, 4227840, 683342, 45133]
+
+    user = """SELECT
+    (SELECT count(*) FROM page WHERE namespace = 2
+    and number_of_edits = 1),
+    (SELECT count(*) FROM page WHERE namespace = 2
+    and number_of_edits > 1 and number_of_edits <= 10),
+    (SELECT count(*) FROM page WHERE namespace = 2
+    and number_of_edits > 10 and number_of_edits <= 100),
+    (SELECT count(*) FROM page WHERE namespace = 2
+    and number_of_edits > 100);"""
+    if not dryrun:
+        cursor.execute(user,)
+        userData = cursor.fetchall()
+        userData = list(*userData)
+        with open(dataDir + str(i) + "-user.txt", "w") as file:
+            file.write(str(userData))
+    else:
+        userData = [1284828, 1161523, 284302, 38574]
+
+    userTalk = """SELECT
+    (SELECT count(*) FROM page WHERE namespace = 3
+    and  number_of_edits = 1),
+    (SELECT count(*) FROM page WHERE namespace = 3
+    and  number_of_edits > 1 and number_of_edits <= 10),
+    (SELECT count(*) FROM page WHERE namespace = 3
+    and  number_of_edits > 10 and number_of_edits <= 100),
+    (SELECT count(*) FROM page WHERE  namespace = 3
+    and  number_of_edits > 100);"""
+    if not dryrun:
+        cursor.execute(userTalk,)
+        userTalkData = cursor.fetchall()
+        userTalkData = list(*userTalkData)
+        with open(dataDir + str(i) + "-user-talk.txt", "w") as file:
+            file.write(str(userTalkData))
+    else:
+        userTalkData = [7782495, 5047261, 406777, 33363]
+
+    fig, axs = plt.subplots(2, 2, sharey=True)
+    fig.suptitle("Distribution of number of edits per page across name spaces")
+    axs[0, 0].set_title("page edits in main space")
+    axs[0, 0].bar(columns, mainspaceData)
+    axs[0, 1].set_title("page edits in main talk space")
+    axs[0, 1].bar(columns, mainspaceTalkData)
+    axs[1, 0].set_title("page edits in user space")
+    axs[1, 0].bar(columns, userData)
+    axs[1, 1].set_title("page edits in user talk space")
+    axs[1, 1].bar(columns, userTalkData)
+    # fig.tight_layout()
+    plt.gcf().set_size_inches(11, 9)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
 def plot(plotDir: str = "../plots/", dryrun=False):
     """A function"""
     if not os.path.exists(plotDir):
@@ -591,6 +698,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 10
     i = i + 1
     # editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
+
+    # 11
+    i = i + 1
+    distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
