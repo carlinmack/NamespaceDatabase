@@ -454,6 +454,77 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
+
+    figname = plotDir + str(i)
+    plt.figure()
+
+    columns = [
+        "min time",
+        "average time",
+        "maximum time",
+        "account duration",
+    ]
+
+    users = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, avg(duration)/3600
+    from user_time_stats 
+    join user 
+    on user_time_stats.id = user.id 
+    where user.blocked is null;"""
+    if not dryrun:
+        cursor.execute(users,)
+        userData = cursor.fetchall()
+        userData = list(*userData)
+        with open(dataDir + str(i) + "-user.txt", "w") as file:
+            file.write(str(userData))
+    else:
+        userData = [554.73523706, 1895.69554062, 12669.22330022, 40912.15355312]
+
+    blocked = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, avg(duration)/3600
+    from user_time_stats 
+    join user 
+    on user_time_stats.id = user.id 
+    where user.blocked is true;"""
+    if not dryrun:
+        cursor.execute(blocked,)
+        blockedData = cursor.fetchall()
+        blockedData = list(*blockedData)
+        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
+            file.write(str(blockedData))
+    else:
+        blockedData = [5.51123904, 215.49983126, 4457.78610197, 17759.69208272]
+
+    # Numbers of pairs of bars you want
+    N = len(columns)
+
+    # Position of bars on x-axis
+    ind = list(range(N))
+
+    # Figure size
+    plt.figure(figsize=(9, 7))
+
+    # Width of a bar
+    width = 0.3
+
+    # Plotting
+    plt.bar(ind, userData, width, label="Non blocked users")
+    plt.bar(
+        list(map(lambda x: x + width, ind)), blockedData, width, label="Blocked users"
+    )
+
+    plt.ylabel("Hours")
+    plt.title("Time between talkpage edits and duration between first and last edit")
+
+    # xticks()
+    # First argument - A list of positions at which ticks should be placed
+    # Second argument -  A list of labels to place at the given locations
+    plt.xticks(list(map(lambda x: x + width / 2, ind)), columns)
+
+    # Finding the best position for legends and putting it
+    plt.legend(loc="best")
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
 def plot(plotDir: str = "../plots/", dryrun=False):
     """A function"""
     if not os.path.exists(plotDir):
@@ -516,6 +587,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 9
     i = i + 1
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
+
+    # 10
+    i = i + 1
+    # editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
