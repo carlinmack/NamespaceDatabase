@@ -27,6 +27,8 @@ def statsForAll():
     cursor.close()
     database.close()
 
+    print(found, total, found / total)
+
     return found < total
 
 
@@ -58,6 +60,9 @@ def generate(cursor, userId):
     average = mean(editTimes)
     duration = (last - first).total_seconds()
 
+    # print(minimum, average / 86400, maximum / 86400, duration / 86400)
+    # print(minimum, average, maximum, duration)
+
     query = """INSERT INTO user_time_stats
         (id, min_time, avg_time, max_time, duration)
         VALUES (%s, %s, %s, %s, %s);"""
@@ -67,7 +72,7 @@ def generate(cursor, userId):
     )
 
 
-def main(namespaces=[1]):
+def main():
     """A function"""
     tick = time.time()
 
@@ -81,11 +86,9 @@ def main(namespaces=[1]):
         LEFT OUTER JOIN user_time_stats
         ON user.id = user_time_stats.id
         WHERE user_time_stats.id IS null
-        and user.namespaces & %s
         and user.talkpage_number_of_edits > 1;"""
 
-        # to fix, won't work if multiple namespaces are targets
-        cursor.execute(query, (namespaces[0],))
+        cursor.execute(query,)
         while True:
             try:
                 userId = cursor.fetchone()
@@ -113,20 +116,19 @@ def defineArgParser():
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
-    parser.add_argument(
-        "-n",
-        "--namespaces",
-        help="""Same namespaces which you parsed for [default: 1]""",
-        default=[1],
-        type=int,
-        nargs="+",
-    )
+    # parser.add_argument(
+    #     "-n",
+    #     "--namespaces",
+    #     help="""Same namespaces which you parsed for [default: 1]""",
+    #     default=[1],
+    #     type=int,
+    #     nargs="+",
+    # )
 
     return parser
 
 
 if __name__ == "__main__":
-    argParser = defineArgParser()
-    clArgs = argParser.parse_args()
-    # plot(dir=clArgs.dir,)
-    main(namespaces=clArgs.namespaces,)
+    # argParser = defineArgParser()
+    # clArgs = argParser.parse_args()
+    main()
