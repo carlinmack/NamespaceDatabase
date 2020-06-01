@@ -4,12 +4,30 @@ This script ....
 
 import argparse
 import os
-from datetime import datetime
-from statistics import mean
 import sys
 import time
+from datetime import datetime
+from statistics import mean
 
 import Database
+
+
+def statsForAll():
+    database, cursor = Database.connect()
+
+    query = """SELECT count(*) FROM user
+    WHERE talkpage_number_of_edits > 1;"""
+    cursor.execute(query,)
+    total = cursor.fetchone()[0]
+
+    query = """SELECT count(*) FROM user_time_stats;"""
+    cursor.execute(query,)
+    found = cursor.fetchone()[0]
+
+    cursor.close()
+    database.close()
+
+    return found < total
 
 
 def generate(cursor, userId):
@@ -40,9 +58,6 @@ def generate(cursor, userId):
     average = mean(editTimes)
     duration = (last - first).total_seconds()
 
-    # print(minimum, average / 86400, maximum / 86400, duration / 86400)
-    # print(minimum, average, maximum, duration)
-
     query = """INSERT INTO user_time_stats
         (id, min_time, avg_time, max_time, duration)
         VALUES (%s, %s, %s, %s, %s);"""
@@ -56,33 +71,40 @@ def main(namespaces=[1]):
     """A function"""
     tick = time.time()
 
-    database, cursor = Database.connect()
-    generatedatabase, generateCursor = Database.connect()
+    usersToDo = statsForAll()
 
-    query = """SELECT user.id FROM user
-    LEFT OUTER JOIN user_time_stats
-    ON user.id = user_time_stats.id
-    WHERE user_time_stats.id IS null
-    and user.namespaces & %s
-    and user.talkpage_number_of_edits > 1;"""
+    while usersToDo:
+        database, cursor = Database.connect()
+        generateDatabase, generateCursor = Database.connect()
 
-    # to fix, won't work if multiple namespaces are targets
-    cursor.execute(query, (namespaces[0],))
+        query = """SELECT user.id FROM user
+        LEFT OUTER JOIN user_time_stats
+        ON user.id = user_time_stats.id
+        WHERE user_time_stats.id IS null
+        and user.namespaces & %s
+        and user.talkpage_number_of_edits > 1;"""
 
-    while True:
-        userId = cursor.fetchone()
-        if userId:
-            userId = userId[0]
-            generate(generateCursor, userId)
-        else:
-            break
+        # to fix, won't work if multiple namespaces are targets
+        cursor.execute(query, (namespaces[0],))
+        while True:
+            try:
+                userId = cursor.fetchone()
+            except:
+                database, cursor = Database.connect()
+                continue
+            if userId:
+                userId = userId[0]
+                generate(generateCursor, userId)
+            else:
+                break
+
+        generateCursor.close()
+        generateDatabase.close()
+        cursor.close()
+        database.close()
+        usersToDo = statsForAll()
 
     print("--- %s seconds ---" % (time.time() - tick))
-
-    generateCursor.close()
-    generateDatabase.close()
-    cursor.close()
-    database.close()
 
 
 def defineArgParser():
