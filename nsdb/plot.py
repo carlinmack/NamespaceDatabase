@@ -84,7 +84,7 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
-def numberOfEditsPerNamespace(cursor, i, plotDir, dataDir):
+def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i)
     plt.figure()
 
@@ -92,15 +92,48 @@ def numberOfEditsPerNamespace(cursor, i, plotDir, dataDir):
     AS 'count'
     FROM page
     GROUP BY namespace;"""
-    cursor.execute(query,)
-    data = cursor.fetchall()
-    data = list(map(lambda x: (str(x[0]), x[1]), data))
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(map(lambda x: (str(x[0]), x[1]), data))
 
-    with open(dataDir + str(i) + ".txt", "w") as file:
-        file.write(str(data))
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [
+            ("0", 13274486),
+            ("1", 6973255),
+            ("2", 2769259),
+            ("4", 1064053),
+            ("5", 145316),
+            ("3", 13270254),
+            ("100", 89259),
+            ("13", 1051),
+            ("12", 1934),
+            ("118", 91670),
+            ("6", 799880),
+            ("7", 421780),
+            ("101", 22247),
+            ("11", 310669),
+            ("8", 2119),
+            ("9", 1308),
+            ("119", 20586),
+            ("10", 575245),
+            ("14", 1668104),
+            ("15", 1399806),
+            ("829", 6564),
+            ("828", 9691),
+            ("108", 6893),
+            ("109", 6196),
+            ("710", 924),
+            ("711", 40),
+            ("447", 1323),
+            ("2300", 1),
+            ("2301", 1),
+        ]
 
-    plt.title("Number of edits per namespace")
-    plt.xticks(rotation=45)
+    plt.title("Number of Pages per namespace")
+    plt.xticks(rotation=90)
     plt.xlabel("Namespace")
     plt.ylabel("Number of Pages (log)")
     plt.yscale("log")
@@ -172,7 +205,7 @@ def numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir):
     plt.title("Number of main and talk edits for the biggest editors")
     plt.bar(*zip(*mainspaceData), label="mainspace edits")
     plt.bar(*zip(*talkspaceData), label="talkspace edits")
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.legend(loc="upper right")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
@@ -200,7 +233,7 @@ def numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir):
     plt.title("Number of main and talk edits for the biggest bots")
     plt.bar(*zip(*mainspaceData), label="mainspace edits")
     plt.bar(*zip(*talkspaceData), label="talkspace edits")
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.legend(loc="upper right")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
@@ -228,7 +261,7 @@ def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir):
     plt.title("Number of main and talk edits for the biggest IP editors")
     plt.bar(*zip(*mainspaceData), label="mainspace edits")
     plt.bar(*zip(*talkspaceData), label="talkspace edits")
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.legend(loc="upper right")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
@@ -632,6 +665,335 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
+    figname = plotDir + str(i)
+    plt.figure()
+
+    columns = [
+        "added sentiment",
+        "deleted sentiment",
+    ]
+
+    users = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.blocked is null and user.ip_address is null and user.bot is null;"""
+    if not dryrun:
+        cursor.execute(users,)
+        userData = cursor.fetchall()
+        userData = list(*userData)
+        with open(dataDir + str(i) + "-user.txt", "w") as file:
+            file.write(str(userData))
+    else:
+        userData = [0.03575823190161788, 0.005590118354446301]
+
+    blocked = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.blocked is true;"""
+    if not dryrun:
+        cursor.execute(blocked,)
+        blockedData = cursor.fetchall()
+        blockedData = list(*blockedData)
+        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
+            file.write(str(blockedData))
+    else:
+        blockedData = [0.027887433037106706, 0.00475190706470203]
+
+    bots = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.bot is true;"""
+    if not dryrun:
+        cursor.execute(bots,)
+        botsData = cursor.fetchall()
+        botsData = list(*botsData)
+        with open(dataDir + str(i) + "-bot.txt", "w") as file:
+            file.write(str(botsData))
+    else:
+        botsData = [0.005499846173827871, 0.004018131754929727]
+
+    ipAddress = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.ip_address is true;"""
+    if not dryrun:
+        cursor.execute(ipAddress,)
+        ipAddressData = cursor.fetchall()
+        ipAddressData = list(*ipAddressData)
+        with open(dataDir + str(i) + "-ipAddress.txt", "w") as file:
+            file.write(str(ipAddressData))
+    else:
+        ipAddressData = [0.05001974686845408, 0.008109401602654984]
+
+    # Numbers of pairs of bars you want
+    N = len(columns)
+
+    # Position of bars on x-axis
+    ind = list(range(N))
+
+    # Figure size
+    plt.figure(figsize=(12, 7))
+
+    # Width of a bar
+    width = 0.2
+
+    # Plotting
+    plt.bar(ind, userData, width, label="Non blocked users")
+    plt.bar(
+        list(map(lambda x: x + width, ind)), blockedData, width, label="Blocked users"
+    )
+    plt.bar(list(map(lambda x: x + width * 2, ind)), botsData, width, label="Bots")
+    plt.bar(
+        list(map(lambda x: x + width * 3, ind)),
+        ipAddressData,
+        width,
+        label="IP address",
+    )
+
+    plt.ylabel("unit ?")
+    plt.title("Average sentiment of different subsets of users")
+
+    # xticks()
+    # First argument - A list of positions at which ticks should be placed
+    # Second argument -  A list of labels to place at the given locations
+    plt.xticks(list(map(lambda x: x + (width * 3) / 2, ind)), columns)
+
+    # Finding the best position for legends and putting it
+    plt.legend(loc="best")
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
+def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
+
+    figname = plotDir + str(i)
+    plt.figure()
+
+    columns = [
+        "added sentiment",
+        "deleted sentiment",
+    ]
+
+    botsAddedPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.bot is true and edit.added_sentiment > 0;"""
+    if not dryrun:
+        cursor.execute(botsAddedPos,)
+        botsAddedPosData = cursor.fetchall()
+        botsAddedPosData = list(*botsAddedPosData)
+        with open(dataDir + str(i) + "-added-pos.txt", "w") as file:
+            file.write(str(botsAddedPosData))
+    else:
+        botsAddedPosData = [0.14632212385263108, 0.009081743779086889]
+
+    botsDelPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.bot is true and edit.deleted_sentiment > 0;"""
+    if not dryrun:
+        cursor.execute(botsDelPos,)
+        botsDelPosData = cursor.fetchall()
+        botsDelPosData = list(*botsDelPosData)
+        with open(dataDir + str(i) + "-del-pos.txt", "w") as file:
+            file.write(str(botsDelPosData))
+    else:
+        botsDelPosData = [0.015218654447829615, 0.14050409393497162]
+
+    botsAddNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.bot is true and edit.added_sentiment < 0;"""
+    if not dryrun:
+        cursor.execute(botsAddNeg,)
+        botsAddNegData = cursor.fetchall()
+        botsAddNegData = list(*botsAddNegData)
+        with open(dataDir + str(i) + "-added-neg.txt", "w") as file:
+            file.write(str(botsAddNegData))
+    else:
+        botsAddNegData = [-0.06679255441733645, -0.004087247193970783]
+
+    botsDelNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.bot is true and edit.deleted_sentiment < 0;"""
+    if not dryrun:
+        cursor.execute(botsDelNeg,)
+        botsDelNegData = cursor.fetchall()
+        botsDelNegData = list(*botsDelNegData)
+        with open(dataDir + str(i) + "-del-neg.txt", "w") as file:
+            file.write(str(botsDelNegData))
+    else:
+        botsDelNegData = [-0.0052931137240005395, -0.1429369148030895]
+
+    botsBoth = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.bot is true and edit.added_sentiment != 0 and edit.deleted_sentiment != 0;"""
+    if not dryrun:
+        cursor.execute(botsBoth,)
+        botsBothData = cursor.fetchall()
+        botsBothData = list(*botsBothData)
+        with open(dataDir + str(i) + "-both.txt", "w") as file:
+            file.write(str(botsBothData))
+    else:
+        botsBothData = [0.0840575952452897, 0.04664798862148708]
+
+    bots = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+    from edit
+    join user 
+    on edit.user_table_id = user.id 
+    where user.bot is true;"""
+    if not dryrun:
+        cursor.execute(bots,)
+        botsData = cursor.fetchall()
+        botsData = list(*botsData)
+        with open(dataDir + str(i) + "-bots.txt", "w") as file:
+            file.write(str(botsData))
+    else:
+        botsData = [0.005499846173827871, 0.004018131754929727]
+
+    # Numbers of pairs of bars you want
+    N = len(columns)
+
+    # Position of bars on x-axis
+    ind = list(range(N))
+
+    # Figure size
+    plt.figure(figsize=(12, 7))
+
+    # Width of a bar
+    width = 0.15
+
+    # Plotting
+    plt.bar(ind, botsAddedPosData, width, label="added positive")
+    plt.bar(
+        list(map(lambda x: x + width, ind)),
+        botsAddNegData,
+        width,
+        label="added negative",
+    )
+    plt.bar(
+        list(map(lambda x: x + width * 2, ind)),
+        botsDelPosData,
+        width,
+        label="deleted positive",
+    )
+    plt.bar(
+        list(map(lambda x: x + width * 3, ind)),
+        botsDelNegData,
+        width,
+        label="deleted negative",
+    )
+    plt.bar(
+        list(map(lambda x: x + width * 4, ind)),
+        botsBothData,
+        width,
+        label="both have sentiment",
+    )
+    plt.bar(
+        list(map(lambda x: x + width * 5, ind)), botsData, width, label="all bots",
+    )
+
+    plt.ylabel("unit ?")
+    plt.title("Average sentiment for different types of bot edits")
+
+    # xticks()
+    # First argument - A list of positions at which ticks should be placed
+    # Second argument -  A list of labels to place at the given locations
+    plt.xticks(list(map(lambda x: x + (width * 3) / 2, ind)), columns)
+
+    # Finding the best position for legends and putting it
+    plt.legend(loc="best")
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
+def profanityAll(cursor, i, plotDir, dataDir, dryrun):
+
+    figname = plotDir + str(i)
+    plt.figure()
+
+    data = []
+
+    users = """select avg(edit.ins_vulgarity)
+    from edit
+    join user
+    on edit.user_table_id = user.id
+    where user.blocked is null and user.ip_address is null and user.bot is null;"""
+    if not dryrun:
+        cursor.execute(users,)
+        userData = cursor.fetchall()
+        userData = userData[0][0]
+        with open(dataDir + str(i) + "-user.txt", "w") as file:
+            file.write(str(userData))
+    else:
+        userData = 0.0187
+
+    data.append(("users", userData))
+
+    blocked = """select avg(edit.ins_vulgarity)
+    from edit
+    join user
+    on edit.user_table_id = user.id
+    where user.blocked is true;"""
+    if not dryrun:
+        cursor.execute(blocked,)
+        blockedData = cursor.fetchall()
+        blockedData = blockedData[0][0]
+        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
+            file.write(str(blockedData))
+    else:
+        blockedData = 0.0209
+
+    data.append(("blocked", blockedData))
+
+    bots = """select avg(edit.ins_vulgarity)
+    from edit
+    join user
+    on edit.user_table_id = user.id
+    where user.bot is true;"""
+    if not dryrun:
+        cursor.execute(bots,)
+        botsData = cursor.fetchall()
+        botsData = botsData[0][0]
+        with open(dataDir + str(i) + "-bot.txt", "w") as file:
+            file.write(str(botsData))
+    else:
+        botsData = 0.0108
+
+    data.append(("bots", botsData))
+
+    ipAddress = """select avg(edit.ins_vulgarity)
+    from edit
+    join user
+    on edit.user_table_id = user.id
+    where user.ip_address is true;"""
+    if not dryrun:
+        cursor.execute(ipAddress,)
+        ipAddressData = cursor.fetchall()
+        ipAddressData = ipAddressData[0][0]
+        with open(dataDir + str(i) + "-ipAddress.txt", "w") as file:
+            file.write(str(ipAddressData))
+    else:
+        ipAddressData = 0.0418
+
+    data.append(("ip", ipAddressData))
+
+    plt.title("Average profanity per type of user")
+    plt.ylabel("Average profanity / %")
+    plt.bar(*zip(*data))
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
 def plot(plotDir: str = "../plots/", dryrun=False):
     """A function"""
     if not os.path.exists(plotDir):
@@ -669,7 +1031,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 3
     i = i + 1
-    # numberOfEditsPerNamespace(cursor, i, plotDir, dataDir)
+    # numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
     # 4
     i = i + 1
@@ -701,7 +1063,19 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 11
     i = i + 1
-    distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)
+    # distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)
+
+    # 12
+    i = i + 1
+    # sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun)
+
+    # 13
+    i = i + 1
+    # sentimentBots(cursor, i, plotDir, dataDir, dryrun)
+
+    # 14
+    i = i + 1
+    profanityAll(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
