@@ -652,6 +652,7 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
 
     fig, axs = plt.subplots(2, 2, sharey=True)
     fig.suptitle("Distribution of number of edits per page across name spaces")
+    print(columns, mainspaceData)
     axs[0, 0].set_title("page edits in main space")
     axs[0, 0].bar(columns, mainspaceData)
     axs[0, 1].set_title("page edits in main talk space")
@@ -779,10 +780,9 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     ]
 
     botsAddedPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user 
+    from edit join user 
     on edit.user_table_id = user.id 
-    where user.bot is true and edit.added_sentiment > 0;"""
+    where user.bot is true and edit.added_sentiment > 0 and edit.deleted_length > 0;"""
     if not dryrun:
         cursor.execute(botsAddedPos,)
         botsAddedPosData = cursor.fetchall()
@@ -793,10 +793,9 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
         botsAddedPosData = [0.14632212385263108, 0.009081743779086889]
 
     botsDelPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user 
+    from edit join user 
     on edit.user_table_id = user.id 
-    where user.bot is true and edit.deleted_sentiment > 0;"""
+    where user.bot is true and edit.deleted_sentiment > 0 and edit.added_length > 0 ;"""
     if not dryrun:
         cursor.execute(botsDelPos,)
         botsDelPosData = cursor.fetchall()
@@ -807,10 +806,9 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
         botsDelPosData = [0.015218654447829615, 0.14050409393497162]
 
     botsAddNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user 
+    from edit join user 
     on edit.user_table_id = user.id 
-    where user.bot is true and edit.added_sentiment < 0;"""
+    where user.bot is true and edit.added_sentiment < 0 and edit.deleted_length > 0 ;"""
     if not dryrun:
         cursor.execute(botsAddNeg,)
         botsAddNegData = cursor.fetchall()
@@ -821,10 +819,9 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
         botsAddNegData = [-0.06679255441733645, -0.004087247193970783]
 
     botsDelNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user 
+    from edit join user 
     on edit.user_table_id = user.id 
-    where user.bot is true and edit.deleted_sentiment < 0;"""
+    where user.bot is true and edit.deleted_sentiment < 0 and edit.added_length > 0 ;"""
     if not dryrun:
         cursor.execute(botsDelNeg,)
         botsDelNegData = cursor.fetchall()
@@ -835,8 +832,7 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
         botsDelNegData = [-0.0052931137240005395, -0.1429369148030895]
 
     botsBoth = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user 
+    from edit join user 
     on edit.user_table_id = user.id 
     where user.bot is true and edit.added_sentiment != 0 and edit.deleted_sentiment != 0;"""
     if not dryrun:
@@ -849,8 +845,7 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
         botsBothData = [0.0840575952452897, 0.04664798862148708]
 
     bots = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user 
+    from edit join user 
     on edit.user_table_id = user.id 
     where user.bot is true;"""
     if not dryrun:
@@ -994,6 +989,81 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+def averageAll(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i)
+    plt.figure()
+
+    query = """select AVG(added_length),AVG(deleted_length),AVG(comment_length),AVG(del_words),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment) from edit;"""
+    columns = [
+        "added_length",
+        "deleted_length",
+        "comment_length",
+        "del_words",
+        "ins_longest_inserted_word",
+        "ins_longest_character_sequence",
+        "ins_internal_link",
+        "ins_external_link",
+        "blanking",
+        "comment_copyedit",
+        "comment_personal_life",
+        "comment_special_chars",
+        "ins_capitalization",
+        "ins_digits",
+        "ins_pronouns",
+        "ins_special_chars",
+        "ins_vulgarity",
+        "ins_whitespace",
+        "reverted",
+        "added_sentiment",
+        "deleted_sentiment",
+    ]
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(*data)
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [
+            442.0422,
+            439.0867,
+            49.1949,
+            58.0321,
+            10.6587,
+            1.8952,
+            1.6529,
+            0.1304,
+            0.0022,
+            0.0005,
+            0.0002,
+            0.11972271,
+            0.10387291,
+            0.02747601,
+            0.00610185,
+            0.12846018,
+            0.0216,
+            0.16946286,
+            0.0293,
+            0.03135975155021137,
+            0.0055170703440406196,
+        ]
+
+    fig, axs = plt.subplots(1, 3)
+
+    fig.suptitle("Average of all integer edit fields")
+    # axs[0, 0].set_title("user edits in main space")
+    axs[0].bar(columns[:2], data[:2])
+    # axs[1].set_title("bot edits in main space")
+    axs[1].bar(columns[2:7], data[2:7])
+    axs[1].tick_params(labelrotation=90)
+    # axs[0, 2].set_title("blocked edits in main space")
+    axs[2].bar(columns[7:], data[7:])
+    axs[2].tick_params(labelrotation=90)
+    plt.gcf().set_size_inches(20, 10)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
 def plot(plotDir: str = "../plots/", dryrun=False):
     """A function"""
     if not os.path.exists(plotDir):
@@ -1009,13 +1079,13 @@ def plot(plotDir: str = "../plots/", dryrun=False):
         cursor = 0
 
     # Constants
-    if not dryrun:
-        query = """SELECT count(*)
-        FROM user;"""
-        cursor.execute(query,)
-        totalUsers = cursor.fetchone()[0]
-    else:
-        totalUsers = 50390420
+    # if not dryrun:
+    #     query = """SELECT count(*)
+    #     FROM user;"""
+    #     cursor.execute(query,)
+    #     totalUsers = cursor.fetchone()[0]
+    # else:
+    #     totalUsers = 50390420
 
     # 0
     i = 0
@@ -1075,7 +1145,11 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 14
     i = i + 1
-    profanityAll(cursor, i, plotDir, dataDir, dryrun)
+    # profanityAll(cursor, i, plotDir, dataDir, dryrun)
+
+    # 15
+    i = i + 1
+    # averageAll(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
