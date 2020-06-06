@@ -17,6 +17,7 @@ CREATE TABLE user (
     username varchar(255) binary DEFAULT NULL,
     ip_address varbinary(16) DEFAULT NULL,
     confirmed tinyint(1) DEFAULT NULL,
+    autoconfirmed tinyint(1) DEFAULT NULL,
     user_special tinyint(1) DEFAULT NULL,
     bot tinyint(1) DEFAULT NULL,
     blocked tinyint(1) DEFAULT NULL,
@@ -59,8 +60,10 @@ CREATE TABLE edit (
     user_table_id int unsigned NOT NULL,
     added text,
     deleted text,
+    added_sentiment decimal(4, 4) DEFAULT NULL,
+    deleted_sentiment decimal(4, 4) DEFAULT NULL,
     added_length MEDIUMINT,
-    deleted_length MEDIUMINT, 
+    deleted_length MEDIUMINT,
     blanking tinyint(1) DEFAULT NULL,
     comment_copyedit tinyint(1) DEFAULT NULL,
     comment_length tinyint(1) DEFAULT NULL,
@@ -95,6 +98,7 @@ CREATE TABLE edit (
 
 /* create index */
 CREATE INDEX editid_idx ON edit (edit_id);
+
 CREATE INDEX editdate_idx ON edit (edit_date);
 
 CREATE TABLE partition (
