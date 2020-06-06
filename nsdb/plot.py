@@ -542,6 +542,25 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         blockedData = [5.51123904, 215.49983126, 4457.78610197, 17759.69208272]
 
+    overFiveHundred = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, avg(duration)/3600
+    from user_time_stats 
+    join user 
+    on user_time_stats.id = user.id 
+    where user.confirmed is true;"""
+    if not dryrun:
+        cursor.execute(overFiveHundred,)
+        overFiveHundredData = cursor.fetchall()
+        overFiveHundredData = list(*overFiveHundredData)
+        with open(dataDir + str(i) + "-overFiveHundredData.txt", "w") as file:
+            file.write(str(overFiveHundredData))
+    else:
+        overFiveHundredData = [
+            147.03132949,
+            1124.02555881,
+            13976.81447445,
+            45119.61085901,
+        ]
+
     # Numbers of pairs of bars you want
     N = len(columns)
 
@@ -555,9 +574,17 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     width = 0.3
 
     # Plotting
-    plt.bar(ind, userData, width, label="Non blocked users")
     plt.bar(
-        list(map(lambda x: x + width, ind)), blockedData, width, label="Blocked users"
+        ind, overFiveHundredData, width, label="Users with over 500 edits",
+    )
+    plt.bar(
+        list(map(lambda x: x + width, ind)), userData, width, label="Non blocked users",
+    )
+    plt.bar(
+        list(map(lambda x: x + width * 2, ind)),
+        blockedData,
+        width,
+        label="Blocked users",
     )
 
     plt.ylabel("Hours")
@@ -566,7 +593,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     # xticks()
     # First argument - A list of positions at which ticks should be placed
     # Second argument -  A list of labels to place at the given locations
-    plt.xticks(list(map(lambda x: x + width / 2, ind)), columns)
+    plt.xticks(list(map(lambda x: x + (width * 2) / 2, ind)), columns)
 
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
@@ -652,7 +679,6 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
 
     fig, axs = plt.subplots(2, 2, sharey=True)
     fig.suptitle("Distribution of number of edits per page across name spaces")
-    print(columns, mainspaceData)
     axs[0, 0].set_title("page edits in main space")
     axs[0, 0].bar(columns, mainspaceData)
     axs[0, 1].set_title("page edits in main talk space")
@@ -782,7 +808,7 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     botsAddedPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
     from edit join user 
     on edit.user_table_id = user.id 
-    where user.bot is true and edit.added_sentiment > 0 and edit.deleted_length > 0;"""
+    where user.bot is true and edit.added_sentiment > 0 and edit.deleted_length > 2;"""
     if not dryrun:
         cursor.execute(botsAddedPos,)
         botsAddedPosData = cursor.fetchall()
@@ -795,7 +821,7 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     botsDelPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
     from edit join user 
     on edit.user_table_id = user.id 
-    where user.bot is true and edit.deleted_sentiment > 0 and edit.added_length > 0 ;"""
+    where user.bot is true and edit.deleted_sentiment > 0 and edit.added_length > 2;"""
     if not dryrun:
         cursor.execute(botsDelPos,)
         botsDelPosData = cursor.fetchall()
@@ -808,7 +834,7 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     botsAddNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
     from edit join user 
     on edit.user_table_id = user.id 
-    where user.bot is true and edit.added_sentiment < 0 and edit.deleted_length > 0 ;"""
+    where user.bot is true and edit.added_sentiment < 0 and edit.deleted_length > 2;"""
     if not dryrun:
         cursor.execute(botsAddNeg,)
         botsAddNegData = cursor.fetchall()
@@ -821,7 +847,7 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     botsDelNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
     from edit join user 
     on edit.user_table_id = user.id 
-    where user.bot is true and edit.deleted_sentiment < 0 and edit.added_length > 0 ;"""
+    where user.bot is true and edit.deleted_sentiment < 0 and edit.added_length > 2;"""
     if not dryrun:
         cursor.execute(botsDelNeg,)
         botsDelNegData = cursor.fetchall()
@@ -918,6 +944,21 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     plt.figure()
 
     data = []
+
+    overFiveHundred = """select avg(edit.ins_vulgarity)
+    from edit join user
+    on edit.user_table_id = user.id
+    where user.blocked is null and user.bot is null and confirmed is true;"""
+    if not dryrun:
+        cursor.execute(overFiveHundred,)
+        overFiveHundredData = cursor.fetchall()
+        overFiveHundredData = overFiveHundredData[0][0]
+        with open(dataDir + str(i) + "-overFiveHundred.txt", "w") as file:
+            file.write(str(overFiveHundredData))
+    else:
+        overFiveHundredData = 0.0187
+
+    data.append(("users with\n>500 edits", overFiveHundredData))
 
     users = """select avg(edit.ins_vulgarity)
     from edit
@@ -1048,19 +1089,92 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
             0.0055170703440406196,
         ]
 
-    fig, axs = plt.subplots(1, 3)
+    fig, axs = plt.subplots(1, 3, gridspec_kw={"width_ratios": [2, 5, 14]})
 
     fig.suptitle("Average of all integer edit fields")
     # axs[0, 0].set_title("user edits in main space")
     axs[0].bar(columns[:2], data[:2])
+    axs[0].tick_params(labelrotation=90)
     # axs[1].set_title("bot edits in main space")
     axs[1].bar(columns[2:7], data[2:7])
     axs[1].tick_params(labelrotation=90)
     # axs[0, 2].set_title("blocked edits in main space")
     axs[2].bar(columns[7:], data[7:])
     axs[2].tick_params(labelrotation=90)
-    plt.gcf().set_size_inches(20, 10)
+    plt.gcf().set_size_inches(10, 5)
 
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
+def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i)
+    plt.figure()
+    # https://stackoverflow.com/questions/28620904/how-to-count-unique-set-values-in-mysql
+    query = """SELECT set_list.namespaces, COUNT(user.namespaces) FROM
+    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns 
+    WHERE table_name = 'user' AND column_name = 'namespaces'),
+    ',', @r:=@r+1), ',', -1)) AS namespaces
+    FROM (SELECT @r:=0) deriv1,
+    (SELECT ID FROM information_schema.COLLATIONS) deriv2
+    HAVING @r <= 
+    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+    FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+    LEFT OUTER JOIN (SELECT namespaces FROM user
+        where bot is null order by number_of_edits desc limit 500) user
+    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+    GROUP BY set_list.namespaces
+    ;"""
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(map(lambda x: (str(x[0]), x[1]), data))
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [
+            ("0", 500),
+            ("1", 500),
+            ("2", 499),
+            ("3", 500),
+            ("4", 499),
+            ("5", 494),
+            ("6", 475),
+            ("7", 351),
+            ("8", 102),
+            ("9", 266),
+            ("10", 497),
+            ("11", 481),
+            ("12", 280),
+            ("13", 292),
+            ("14", 492),
+            ("15", 450),
+            ("-1", 0),
+            ("-2", 0),
+            ("100", 444),
+            ("101", 267),
+            ("118", 439),
+            ("119", 258),
+            ("710", 31),
+            ("711", 9),
+            ("828", 169),
+            ("829", 159),
+            ("108", 229),
+            ("109", 117),
+            ("446", 0),
+            ("447", 31),
+            ("2300", 0),
+            ("2301", 2),
+            ("2302", 0),
+            ("2303", 0),
+        ]
+
+    plt.title("Namespaces that the top 500 users have edited")
+    plt.xticks(rotation=90)
+    plt.ylabel("? (log)")
+    # plt.yscale("log")
+    plt.bar(*zip(*data))
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
@@ -1150,6 +1264,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 15
     i = i + 1
     # averageAll(cursor, i, plotDir, dataDir, dryrun)
+
+    # 16
+    i = i + 1
+    namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
