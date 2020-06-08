@@ -1,5 +1,5 @@
 """
-This script ....
+This script ....t
 """
 import argparse
 import os
@@ -14,7 +14,7 @@ def partitionStatus(cursor, i, plotDir, dataDir):
     figname = plotDir + str(i)
 
     query = """SELECT status, count(id)
-    FROM partition
+    FROM wikiactors.partition
     GROUP BY status;"""
 
     cursor.execute(query,)
@@ -146,9 +146,14 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
 
 
-def editsMainTalkNeither(cursor, i, plotDir, dataDir, totalUsers, dryrun):
+def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i)
     plt.figure()
+
+    query = """SELECT count(*)
+        FROM user;"""
+    cursor.execute(query,)
+    totalUsers = cursor.fetchone()[0]
 
     query = """SELECT
     (select count(*) as target from user
@@ -514,51 +519,70 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         "account duration",
     ]
 
-    users = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, avg(duration)/3600
-    from user_time_stats 
-    join user 
+    users = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, 
+    avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, std(duration)/3600
+    from user_time_stats join user 
     on user_time_stats.id = user.id 
-    where user.blocked is null;"""
+    where user.blocked is not True;"""
     if not dryrun:
         cursor.execute(users,)
         userData = cursor.fetchall()
-        userData = list(*userData)
+        userStd = list(*userData)[4:]
+        userData = list(*userData)[:4]
         with open(dataDir + str(i) + "-user.txt", "w") as file:
-            file.write(str(userData))
+            file.write(str(userData) + "\n" + str(userStd))
     else:
-        userData = [554.73523706, 1895.69554062, 12669.22330022, 40912.15355312]
+        # userData = [554.73523706, 1895.69554062, 12669.22330022, 40912.15355312]
+        userData = [584.68424387, 1352.63700297, 4186.79704245, 7490.39812962]
+        userStd = [
+            4172.026442852001,
+            4943.701153194956,
+            10873.528895162885,
+            19310.972230041192,
+        ]
 
-    blocked = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, avg(duration)/3600
-    from user_time_stats 
-    join user 
+    blocked = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, 
+    avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, std(duration)/3600
+    from user_time_stats join user 
     on user_time_stats.id = user.id 
     where user.blocked is true;"""
     if not dryrun:
         cursor.execute(blocked,)
         blockedData = cursor.fetchall()
-        blockedData = list(*blockedData)
+        blockedStd = list(*blockedData)[4:]
+        blockedData = list(*blockedData)[:4]
         with open(dataDir + str(i) + "-blocked.txt", "w") as file:
-            file.write(str(blockedData))
+            file.write(str(blockedData) + "\n" + str(blockedStd))
     else:
-        blockedData = [5.51123904, 215.49983126, 4457.78610197, 17759.69208272]
+        # blockedData = [5.51123904, 215.49983126, 4457.78610197, 17759.69208272]
+        blockedData = [92.79879749, 303.09142600, 1582.28911081, 3231.75859999]
+        blockedStd = [
+            1437.4337418350062,
+            1804.4136287010265,
+            5778.304638286785,
+            10743.635287170524,
+        ]
 
-    overFiveHundred = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, avg(duration)/3600
-    from user_time_stats 
-    join user 
+    specialUsers = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, 
+    avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, std(duration)/3600
+    from user_time_stats join user 
     on user_time_stats.id = user.id 
-    where user.confirmed is true;"""
+    where user.user_special is true;"""
     if not dryrun:
-        cursor.execute(overFiveHundred,)
-        overFiveHundredData = cursor.fetchall()
-        overFiveHundredData = list(*overFiveHundredData)
-        with open(dataDir + str(i) + "-overFiveHundredData.txt", "w") as file:
-            file.write(str(overFiveHundredData))
+        cursor.execute(specialUsers,)
+        specialUsersData = cursor.fetchall()
+        specialUsersStd = list(*specialUsersData)[4:]
+        specialUsersData = list(*specialUsersData)[:4]
+        with open(dataDir + str(i) + "-specialUsers.txt", "w") as file:
+            file.write(str(specialUsersData) + "\n" + str(specialUsersStd))
     else:
-        overFiveHundredData = [
-            147.03132949,
-            1124.02555881,
-            13976.81447445,
-            45119.61085901,
+        # specialUsersData = [147.03132949, 1124.02555881, 13976.81447445, 45119.61085901]
+        specialUsersData = [192.15421342, 1462.58485847, 17093.34624816, 55476.52302954]
+        specialUsersStd = [
+            2590.0629314313774,
+            3788.0370304857165,
+            17440.14473037299,
+            40756.72616459319,
         ]
 
     # Numbers of pairs of bars you want
@@ -575,20 +599,29 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     # Plotting
     plt.bar(
-        ind, overFiveHundredData, width, label="Users with over 500 edits",
+        ind,
+        specialUsersData,
+        width,
+        label="Users with special privileges",
+        yerr=specialUsersStd,
     )
     plt.bar(
-        list(map(lambda x: x + width, ind)), userData, width, label="Non blocked users",
+        list(map(lambda x: x + width, ind)),
+        userData,
+        width,
+        label="Non blocked users",
+        yerr=userStd,
     )
     plt.bar(
         list(map(lambda x: x + width * 2, ind)),
         blockedData,
         width,
         label="Blocked users",
+        yerr=blockedStd,
     )
-
+    plt.ylim(bottom=0)
     plt.ylabel("Hours")
-    plt.title("Time between talkpage edits and duration between first and last edit")
+    plt.title("")
 
     # xticks()
     # First argument - A list of positions at which ticks should be placed
@@ -598,6 +631,21 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+    # fig, axs = plt.subplots(1, 2, gridspec_kw={"width_ratios": [3, 1]})
+
+    # fig.suptitle("Time between talkpage edits and duration between first and last edit")
+
+    # axs[0].bar(columns[:2], data[:2])
+    # axs[0].set_xticks
+    # axs[0].tick_params(labelrotation=90)
+    # axs[0].ylabel("Hours")
+
+    # axs[1].bar(columns[2:7], data[2:7])
+    # axs[1].tick_params(labelrotation=90)
+    # axs[1].ylabel("Hours")
+
+    # plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
 def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
@@ -692,6 +740,7 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+#
 def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     figname = plotDir + str(i)
     plt.figure()
@@ -795,6 +844,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+#
 def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     figname = plotDir + str(i)
@@ -938,27 +988,27 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+#
 def profanityAll(cursor, i, plotDir, dataDir, dryrun):
-
     figname = plotDir + str(i)
     plt.figure()
 
     data = []
 
-    overFiveHundred = """select avg(edit.ins_vulgarity)
+    specialUsers = """select avg(edit.ins_vulgarity)
     from edit join user
     on edit.user_table_id = user.id
     where user.blocked is null and user.bot is null and confirmed is true;"""
     if not dryrun:
-        cursor.execute(overFiveHundred,)
-        overFiveHundredData = cursor.fetchall()
-        overFiveHundredData = overFiveHundredData[0][0]
-        with open(dataDir + str(i) + "-overFiveHundred.txt", "w") as file:
-            file.write(str(overFiveHundredData))
+        cursor.execute(specialUsers,)
+        specialUsersData = cursor.fetchall()
+        specialUsersData = specialUsersData[0][0]
+        with open(dataDir + str(i) + "-specialUsers.txt", "w") as file:
+            file.write(str(specialUsersData))
     else:
-        overFiveHundredData = 0.0187
+        specialUsersData = 0.0187
 
-    data.append(("users with\n>500 edits", overFiveHundredData))
+    data.append(("users with\nspecial priviliges", specialUsersData))
 
     users = """select avg(edit.ins_vulgarity)
     from edit
@@ -1030,16 +1080,39 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+#
 def averageAll(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i)
     plt.figure()
 
-    query = """select AVG(added_length),AVG(deleted_length),AVG(comment_length),AVG(del_words),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment) from edit;"""
+    users = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, 
+    avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, std(duration)/3600
+    from user_time_stats join user 
+    on user_time_stats.id = user.id 
+    where user.blocked is not True;"""
+    if not dryrun:
+        cursor.execute(users,)
+        userData = cursor.fetchall()
+        userStd = list(*userData)[4:]
+        userData = list(*userData)[:4]
+        with open(dataDir + str(i) + "-user.txt", "w") as file:
+            file.write(str(userData) + "\n" + str(userStd))
+    else:
+        # userData = [554.73523706, 1895.69554062, 12669.22330022, 40912.15355312]
+        userData = [584.68424387, 1352.63700297, 4186.79704245, 7490.39812962]
+        userStd = [
+            4172.026442852001,
+            4943.701153194956,
+            10873.528895162885,
+            19310.972230041192,
+        ]
+
+    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment), STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),STD(deleted_sentiment)  from edit;"""
     columns = [
         "added_length",
         "deleted_length",
-        "comment_length",
         "del_words",
+        "comment_length",
         "ins_longest_inserted_word",
         "ins_longest_character_sequence",
         "ins_internal_link",
@@ -1061,15 +1134,16 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
     if not dryrun:
         cursor.execute(query,)
         data = cursor.fetchall()
-        data = list(*data)
+        dataStd = list(*data)[21:]
+        data = list(*data)[:21]
         with open(dataDir + str(i) + ".txt", "w") as file:
-            file.write(str(data))
+            file.write(str(data) + "\n" + str(dataStd))
     else:
         data = [
             442.0422,
             439.0867,
-            49.1949,
             58.0321,
+            49.1949,
             10.6587,
             1.8952,
             1.6529,
@@ -1082,26 +1156,52 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
             0.02747601,
             0.00610185,
             0.12846018,
-            0.0216,
+            0.0143,
             0.16946286,
             0.0293,
             0.03135975155021137,
             0.0055170703440406196,
         ]
+        dataStd = [
+            4654.176162916367,
+            6176.346864990649,
+            951.2080429740175,
+            39.922080083596796,
+            72.77314313715188,
+            45.67935596915416,
+            17.34742048576987,
+            5.371908826641828,
+            0.047305664882096865,
+            0.022598233982907077,
+            0.014979221561754661,
+            0.09649544409376277,
+            0.13556309951733453,
+            0.0529137673082975,
+            0.018949801230515435,
+            0.07763594209856826,
+            0.11881033215053255,
+            0.18192642687661204,
+            0.16869769991099628,
+            0.14008787360862252,
+            0.0690388085081368,
+        ]
 
-    fig, axs = plt.subplots(1, 3, gridspec_kw={"width_ratios": [2, 5, 14]})
+    fig, axs = plt.subplots(1, 3, gridspec_kw={"width_ratios": [3, 5, 13]})
 
     fig.suptitle("Average of all integer edit fields")
     # axs[0, 0].set_title("user edits in main space")
-    axs[0].bar(columns[:2], data[:2])
+    axs[0].bar(columns[:3], data[:3], yerr=dataStd[:3])
     axs[0].tick_params(labelrotation=90)
+    axs[0].set_ylim(bottom=0)
     # axs[1].set_title("bot edits in main space")
-    axs[1].bar(columns[2:7], data[2:7])
+    axs[1].bar(columns[3:8], data[3:8], yerr=dataStd[3:8])
     axs[1].tick_params(labelrotation=90)
+    axs[1].set_ylim(bottom=0)
     # axs[0, 2].set_title("blocked edits in main space")
-    axs[2].bar(columns[7:], data[7:])
+    axs[2].bar(columns[8:], data[8:], yerr=dataStd[8:])
     axs[2].tick_params(labelrotation=90)
-    plt.gcf().set_size_inches(10, 5)
+    axs[2].set_ylim(bottom=0)
+    plt.gcf().set_size_inches(10, 7.5)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
@@ -1178,6 +1278,119 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+#
+def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i)
+    plt.figure()
+
+    internalData = []
+    externalData = []
+
+    specialUsers = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
+    from edit join user
+    on edit.user_table_id = user.id
+    where user.user_special is true;"""
+    # where user.user_special is true
+    if not dryrun:
+        cursor.execute(specialUsers,)
+        specialUsersData = cursor.fetchall()
+        specialUsersInternalData = specialUsersData[0][0]
+        specialUsersExternalData = specialUsersData[0][1]
+        with open(dataDir + str(i) + "-specialUsers.txt", "w") as file:
+            file.write(str([specialUsersInternalData, specialUsersExternalData]))
+    else:
+        specialUsersInternalData = 1.6357
+        specialUsersExternalData = 0.1278
+
+    internalData.append(("users with\nspecial priviliges", specialUsersInternalData))
+    externalData.append(("users with\nspecial priviliges", specialUsersExternalData))
+
+    users = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
+    from edit
+    join user
+    on edit.user_table_id = user.id
+    where user.blocked is null and user.ip_address is null and user.bot is null;"""
+    if not dryrun:
+        cursor.execute(users,)
+        userData = cursor.fetchall()
+        userInternalData = userData[0][0]
+        userExternalData = userData[0][1]
+        with open(dataDir + str(i) + "-user.txt", "w") as file:
+            file.write(str([userInternalData, userExternalData]))
+    else:
+        userInternalData = 1.5574
+        userExternalData = 0.1189
+
+    internalData.append(("users", userInternalData))
+    externalData.append(("users", userExternalData))
+
+    blocked = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
+    from edit
+    join user
+    on edit.user_table_id = user.id
+    where user.blocked is true;"""
+    if not dryrun:
+        cursor.execute(blocked,)
+        blockedData = cursor.fetchall()
+        blockedInternalData = blockedData[0][0]
+        blockedExternalData = blockedData[0][1]
+        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
+            file.write(str([blockedInternalData, blockedExternalData]))
+    else:
+        blockedInternalData = 1.3400
+        blockedExternalData = 0.1222
+
+    internalData.append(("blocked", blockedInternalData))
+    externalData.append(("blocked", blockedExternalData))
+
+    bots = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
+    from edit
+    join user
+    on edit.user_table_id = user.id
+    where user.bot is true;"""
+    if not dryrun:
+        cursor.execute(bots,)
+        botsData = cursor.fetchall()
+        botsInternalData = botsData[0][0]
+        botsExternalData = botsData[0][1]
+        with open(dataDir + str(i) + "-bot.txt", "w") as file:
+            file.write(str([botsInternalData, botsExternalData]))
+    else:
+        botsInternalData = 2.3044
+        botsExternalData = 0.1800
+
+    internalData.append(("bots", botsInternalData))
+    externalData.append(("bots", botsExternalData))
+
+    ipAddress = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
+    from edit
+    join user
+    on edit.user_table_id = user.id
+    where user.ip_address is true;"""
+    if not dryrun:
+        cursor.execute(ipAddress,)
+        ipAddressData = cursor.fetchall()
+        ipAddressInternalData = ipAddressData[0][0]
+        ipAddressExternalData = ipAddressData[0][1]
+        with open(dataDir + str(i) + "-ipAddress.txt", "w") as file:
+            file.write(str([ipAddressInternalData, ipAddressExternalData]))
+    else:
+        ipAddressInternalData = 1.0504
+        ipAddressExternalData = 0.1154
+
+    internalData.append(("ip", ipAddressInternalData))
+    externalData.append(("ip", ipAddressExternalData))
+
+    fig, axs = plt.subplots(2, 1)
+
+    fig.suptitle("Average added internal links per type of user")
+    axs[0].bar(*zip(*internalData))
+    axs[1].bar(*zip(*externalData))
+    plt.gcf().set_size_inches(5, 10)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
 def plot(plotDir: str = "../plots/", dryrun=False):
     """A function"""
     if not os.path.exists(plotDir):
@@ -1191,15 +1404,6 @@ def plot(plotDir: str = "../plots/", dryrun=False):
         database, cursor = Database.connect()
     else:
         cursor = 0
-
-    # Constants
-    # if not dryrun:
-    #     query = """SELECT count(*)
-    #     FROM user;"""
-    #     cursor.execute(query,)
-    #     totalUsers = cursor.fetchone()[0]
-    # else:
-    #     totalUsers = 50390420
 
     # 0
     i = 0
@@ -1219,7 +1423,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 4
     i = i + 1
-    # editsMainTalkNeither(cursor, i, plotDir, dataDir, totalUsers)
+    # editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun)
 
     # 5
     i = i + 1
@@ -1267,7 +1471,11 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 16
     i = i + 1
-    namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun)
+    # namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun)
+
+    # 17
+    i = i + 1
+    # internalExternalLinks(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
