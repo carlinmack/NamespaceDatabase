@@ -15,7 +15,7 @@ CREATE TABLE user (
     id int unsigned NOT NULL AUTO_INCREMENT,
     user_id int DEFAULT NULL,
     username varchar(255) binary DEFAULT NULL,
-    ip_address varbinary(16) DEFAULT NULL,
+    ip_address varbinary(255) DEFAULT NULL,
     confirmed tinyint(1) DEFAULT NULL,
     autoconfirmed tinyint(1) DEFAULT NULL,
     user_special tinyint(1) DEFAULT NULL,

@@ -20,9 +20,39 @@ def ipGlobalBlocks(dir="lists/"):
 
     latest = list(re.findall(r'<a href="(\d+)', content))[-1]
 
+    globalBlocksFile = dir + latest + "-globalblocks.sql"
+    globalBlocksArchive = globalBlocksFile + ".gz"
+
     url = url + latest + "/" + latest + "-globalblocks.gz"
 
-    urllib.request.urlretrieve(url, dir + latest + "-globalblocks.gz")
+    urllib.request.urlretrieve(url, globalBlocksArchive)
+
+    subprocess.run(["7z", "x", globalBlocksArchive, "-o" + dir, "-aos"], check=True)
+
+    database, cursor = Database.connect()
+
+    with open(globalBlocksFile) as file:
+        for result in cursor.execute(file.read(), multi=True):
+            if result.with_rows:
+                print("Rows produced by statement '{}':".format(result.statement))
+                # print(result.fetchall())
+            else:
+                if result.rowcount != 0:
+                    print(
+                        "Number of rows affected by statement: {}".format(
+                            result.rowcount
+                        )
+                    )
+
+    query = """update user, globalblocks set blocked = 1 where Is_ipv4(ip_address) and INET_ATON(ip_address) between CONV(globalblocks.gb_range_start, 16, 10) and CONV(globalblocks.gb_range_end, 16, 10);"""
+
+    cursor.execute(query,)
+
+    os.remove(globalBlocksFile)
+    os.remove(globalBlocksArchive)
+
+    cursor.close()
+    database.close()
 
 
 def goodUsers(dir="lists/"):
@@ -52,33 +82,33 @@ def goodUsers(dir="lists/"):
 
         subprocess.run(["7z", "x", userGroupsArchive, "-o" + dir, "-aos"], check=True)
 
-    database, cursor = Database.connect()
+        database, cursor = Database.connect()
 
-    with open(userGroupsFile) as f:
-        for result in cursor.execute(f.read(), multi=True):
-            if result.with_rows:
-                print("Rows produced by statement '{}':".format(result.statement))
-                # print(result.fetchall())
-            else:
-                if result.rowcount != 0:
-                    print(
-                        "Number of rows affected by statement: {}".format(
-                            result.rowcount
+        with open(userGroupsFile) as file:
+            for result in cursor.execute(file.read(), multi=True):
+                if result.with_rows:
+                    print("Rows produced by statement '{}':".format(result.statement))
+                    # print(result.fetchall())
+                else:
+                    if result.rowcount != 0:
+                        print(
+                            "Number of rows affected by statement: {}".format(
+                                result.rowcount
+                            )
                         )
-                    )
 
-    query = """UPDATE user A
-    INNER JOIN user_groups B
-    ON A.user_id = B.ug_user
-    SET A.user_special = 1; """
+        query = """UPDATE user A
+        INNER JOIN user_groups B
+        ON A.user_id = B.ug_user
+        SET A.user_special = 1;"""
 
-    cursor.execute(query,)
+        cursor.execute(query,)
 
-    os.remove(userGroupsFile)
-    os.remove(userGroupsArchive)
+        os.remove(userGroupsFile)
+        os.remove(userGroupsArchive)
 
-    cursor.close()
-    database.close()
+        cursor.close()
+        database.close()
 
 
 def allBlocked(dir="lists/"):
@@ -101,7 +131,7 @@ def main():
 
     # allBlocked(listDir)
 
-    goodUsers(listDir)
+    # goodUsers(listDir)
 
     # if os.path.exists(listDir):
     #     os.rmdir(listDir)
