@@ -1383,9 +1383,10 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
 
     fig, axs = plt.subplots(2, 1)
 
-    fig.suptitle("Average added internal links per type of user")
     axs[0].bar(*zip(*internalData))
+    axs[0].set_title("Average added internal links per type of user")
     axs[1].bar(*zip(*externalData))
+    axs[1].set_title("Average added external links per type of user")
     plt.gcf().set_size_inches(5, 10)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
