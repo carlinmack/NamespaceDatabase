@@ -132,16 +132,18 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
             ("2301", 1),
         ]
 
-    plt.title("Number of Pages per namespace")
-    plt.xticks(rotation=90)
-    plt.xlabel("Namespace")
-    plt.ylabel("Number of Pages (log)")
-    plt.yscale("log")
-    plt.bar(*zip(*data))
+    fig, ax = plt.subplots()  # Create a figure and an axes.
+    ax.bar(*zip(*data))
+    ax.set_xlabel("Namespace")  # Add an x-label to the axes.
+    ax.set_ylabel("Number of Pages (log)")  # Add a y-label to the axes.
+    ax.set_yscale("log")
+    ax.set_title("Number of Pages per namespace")  # Add a title to the axes.
+    ax.tick_params(axis="x", labelrotation=90)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25)
 
-    plt.ylabel("Number of Pages (linear)")
-    plt.yscale("linear")
+    ax.set_ylabel("Number of Pages (linear)")
+    ax.set_yscale("linear")
     plt.bar(*zip(*data))
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
 
@@ -272,14 +274,6 @@ def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir):
 
 
 def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
-    def formatter(x, pos):  # formatter function takes tick label and tick position
-        s = "%d" % x
-        groups = []
-        while s and s[-1].isdigit():
-            groups.append(s[-3:])
-            s = s[:-3]
-        return s + ",".join(reversed(groups))
-
     figname = plotDir + str(i)
     plt.figure()
 
@@ -405,7 +399,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         talkspaceBlockedData = [154838, 6404, 8635, 3173, 783]
 
     fig, axs = plt.subplots(2, 3)
-    threeFigures = tkr.FuncFormatter(formatter)
+    threeFigures = tkr.FuncFormatter(threeFigureFormatter)
     fig.suptitle("Distribution of edits across name spaces for bots and users")
     axs[0, 0].set_title("user edits in main space")
     axs[0, 0].bar(columns, mainspaceUserData)
@@ -1392,6 +1386,79 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
+def specialUsers(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i)
+    plt.figure()
+
+    query = """SELECT ug_group, count(ug_user)
+    AS 'count'
+    FROM user_groups
+    GROUP BY ug_group;"""
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(map(lambda x: (str(x[0]), x[1]), data))
+
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [
+            ("abusefilter", 150),
+            ("abusefilter-helper", 19),
+            ("accountcreator", 35),
+            ("autoreviewer", 4092),
+            ("bot", 309),
+            ("bureaucrat", 19),
+            ("checkuser", 43),
+            ("confirmed", 428),
+            ("copyviobot", 1),
+            ("epadmin", 2),
+            ("eventcoordinator", 131),
+            ("extendedconfirmed", 50792),
+            ("extendedmover", 309),
+            ("filemover", 403),
+            ("flow-bot", 1),
+            ("founder", 1),
+            ("import", 2),
+            ("interface-admin", 11),
+            ("ipblock-exempt", 418),
+            ("massmessage-sender", 59),
+            ("oversight", 45),
+            ("patroller", 724),
+            ("researcher", 3),
+            ("reviewer", 7370),
+            ("rollbacker", 6281),
+            ("sysop", 1140),
+            ("templateeditor", 184),
+        ]
+
+    fig, ax = plt.subplots()  # Create a figure and an axes.
+    ax.bar(*zip(*data))
+    ax.set_xlabel("User groups")  # Add an x-label to the axes.
+    ax.set_ylabel("Number of Users (log)")  # Add a y-label to the axes.
+    ax.set_yscale("log")
+    ax.set_title("Number of Users per User Group")  # Add a title to the axes.
+    ax.tick_params(axis="x", labelrotation=90)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25)
+
+    ax.set_ylabel("Number of Users (linear)")
+    ax.set_yscale("linear")
+    plt.bar(*zip(*data))
+    plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
+
+
+def threeFigureFormatter(
+    x, pos
+):  # formatter function takes tick label and tick position
+    s = "%d" % x
+    groups = []
+    while s and s[-1].isdigit():
+        groups.append(s[-3:])
+        s = s[:-3]
+    return s + ",".join(reversed(groups))
+
+
 def plot(plotDir: str = "../plots/", dryrun=False):
     """A function"""
     if not os.path.exists(plotDir):
@@ -1420,7 +1487,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 3
     i = i + 1
-    # numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
+    numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
     # 4
     i = i + 1
@@ -1477,6 +1544,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 17
     i = i + 1
     # internalExternalLinks(cursor, i, plotDir, dataDir, dryrun)
+
+    # 18
+    i = i + 1
+    # specialUsers(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
