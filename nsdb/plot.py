@@ -1079,28 +1079,6 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i)
     plt.figure()
 
-    users = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600, 
-    avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, std(duration)/3600
-    from user_time_stats join user 
-    on user_time_stats.id = user.id 
-    where user.blocked is not True;"""
-    if not dryrun:
-        cursor.execute(users,)
-        userData = cursor.fetchall()
-        userStd = list(*userData)[4:]
-        userData = list(*userData)[:4]
-        with open(dataDir + str(i) + "-user.txt", "w") as file:
-            file.write(str(userData) + "\n" + str(userStd))
-    else:
-        # userData = [554.73523706, 1895.69554062, 12669.22330022, 40912.15355312]
-        userData = [584.68424387, 1352.63700297, 4186.79704245, 7490.39812962]
-        userStd = [
-            4172.026442852001,
-            4943.701153194956,
-            10873.528895162885,
-            19310.972230041192,
-        ]
-
     query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment), STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),STD(deleted_sentiment)  from edit;"""
     columns = [
         "added_length",
@@ -1266,8 +1244,8 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
 
     plt.title("Namespaces that the top 500 users have edited")
     plt.xticks(rotation=90)
-    plt.ylabel("? (log)")
-    # plt.yscale("log")
+    # plt.ylabel("? (log)")
+    # # plt.yscale("log")
     plt.bar(*zip(*data))
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
@@ -1386,7 +1364,7 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
-def specialUsers(cursor, i, plotDir, dataDir, dryrun):
+def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i)
     plt.figure()
 
@@ -1448,6 +1426,172 @@ def specialUsers(cursor, i, plotDir, dataDir, dryrun):
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
 
 
+#
+def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i)
+    plt.figure()
+
+    # query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit;"""
+    columns = [
+        "added_length",
+        "deleted_length",
+        "del_words",
+        "comment_length",
+        "ins_longest_inserted_word",
+        "ins_longest_character_sequence",
+        "ins_internal_link",
+        "ins_external_link",
+        "blanking",
+        "comment_copyedit",
+        "comment_personal_life",
+        "comment_special_chars",
+        "ins_capitalization",
+        "ins_digits",
+        "ins_pronouns",
+        "ins_special_chars",
+        "ins_vulgarity",
+        "ins_whitespace",
+        "reverted",
+        "added_sentiment",
+        "deleted_sentiment",
+    ]
+    # if not dryrun:
+    #     cursor.execute(query,)
+    #     data = cursor.fetchall()
+    #     data = list(*data)
+    #     with open(dataDir + str(i) + ".txt", "w") as file:
+    #         file.write(str(data))
+    # else:
+    data = [
+        442.0422,
+        439.0867,
+        58.0321,
+        49.1949,
+        10.6587,
+        1.8952,
+        1.6529,
+        0.1304,
+        0.0022,
+        0.0005,
+        0.0002,
+        0.11972271,
+        0.10387291,
+        0.02747601,
+        0.00610185,
+        0.12846018,
+        0.0143,
+        0.16946286,
+        0.0293,
+        0.03135975155021137,
+        0.0055170703440406196,
+    ]
+
+    special = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit 
+    inner join user 
+    on user.id = edit.user_table_id 
+    where user.user_special is True;"""
+    if not dryrun:
+        cursor.execute(special,)
+        specialData = cursor.fetchall()
+        specialData = list(*specialData)
+        with open(dataDir + str(i) + "-special.txt", "w") as file:
+            file.write(str(specialData))
+    else:
+        specialData = [
+            398.5122,
+            392.4957,
+            50.8446,
+            52.4496,
+            10.5209,
+            1.7682,
+            1.6357,
+            0.1278,
+            0.0016,
+            0.0006,
+            0.0002,
+            0.11922957,
+            0.10697243,
+            0.02570266,
+            0.00522568,
+            0.13717350,
+            0.0093,
+            0.15875237,
+            0.0148,
+            0.02470609377917194,
+            0.004687928593039355,
+        ]
+
+    fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [2, 5, 13]})
+
+    fig.suptitle("Average of all integer edit fields")
+
+    start = 0
+    end = 2
+    plotRange = range(start, end)
+
+
+    axs[0].hlines(
+        y=plotRange, xmin=data[:2], xmax=specialData[:2], color="grey", alpha=0.4,
+    )
+    axs[0].scatter(data[:2], plotRange, color="navy", label="all users")
+    axs[0].scatter(
+        specialData[:2], plotRange, color="gold", label="users with privileges"
+    )
+    print(columns[:2])
+    axs[0].set_yticklabels(columns[:2])
+    axs[0].set_yticks(plotRange)
+    axs[0].legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.5),
+        ncol=3,
+        fancybox=True,
+        shadow=True,
+    )
+    axs[0].set_ylim([start - 0.5, end + 0.5])
+
+
+    start = 3
+    end = 8
+    plotRange = range(1, end - start + 1)
+    axs[1].hlines(
+        y=plotRange,
+        xmin=data[start:end],
+        xmax=specialData[start:end],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[1].scatter(data[start:end], plotRange, color="navy", label="all users")
+    axs[1].scatter(
+        specialData[start:end], plotRange, color="gold", label="users with privileges"
+    )
+    axs[1].set_yticklabels(columns[start:end])
+    axs[1].set_yticks(plotRange)
+
+    start = 8
+    end = 21
+    plotRange = range(1, end - start + 1)
+    axs[2].hlines(
+        y=plotRange,
+        xmin=data[start:],
+        xmax=specialData[start:],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[2].scatter(data[start:], plotRange, color="navy", label="all users")
+    axs[2].scatter(
+        specialData[start:], plotRange, color="gold", label="users with privileges"
+    )
+    axs[2].set_yticklabels(columns[start:])
+    axs[2].set_yticks(plotRange)
+
+    plt.gcf().set_size_inches(7.5, 7.5)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
+# --------------------------------------------------------------------------------------
+
+
 def threeFigureFormatter(
     x, pos
 ):  # formatter function takes tick label and tick position
@@ -1487,7 +1631,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 3
     i = i + 1
-    numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
+    # numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
     # 4
     i = i + 1
@@ -1547,7 +1691,11 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 18
     i = i + 1
-    # specialUsers(cursor, i, plotDir, dataDir, dryrun)
+    # specialUsersPlot(cursor, i, plotDir, dataDir, dryrun)
+
+    # 19
+    i = i + 1
+    # averageAllSpecial(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
