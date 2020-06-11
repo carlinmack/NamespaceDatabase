@@ -988,23 +988,26 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     plt.figure()
 
     data = []
+    std = []
 
-    specialUsers = """select avg(edit.ins_vulgarity)
+    specialUsers = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit join user
     on edit.user_table_id = user.id
     where user.blocked is null and user.bot is null and confirmed is true;"""
     if not dryrun:
         cursor.execute(specialUsers,)
         specialUsersData = cursor.fetchall()
+        specialUsersStd = specialUsersData[0][1]
         specialUsersData = specialUsersData[0][0]
         with open(dataDir + str(i) + "-specialUsers.txt", "w") as file:
-            file.write(str(specialUsersData))
+            file.write(str(specialUsersData) + "\n" + str(specialUsersStd))
     else:
-        specialUsersData = 0.0187
+        specialUsersData = 0.0109
 
     data.append(("users with\nspecial priviliges", specialUsersData))
+    std.append(specialUsersStd)
 
-    users = """select avg(edit.ins_vulgarity)
+    users = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
     join user
     on edit.user_table_id = user.id
@@ -1012,15 +1015,17 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     if not dryrun:
         cursor.execute(users,)
         userData = cursor.fetchall()
+        userStd = userData[0][1]
         userData = userData[0][0]
         with open(dataDir + str(i) + "-user.txt", "w") as file:
-            file.write(str(userData))
+            file.write(str(userData) + "\n" + str(userStd))
     else:
-        userData = 0.0187
+        userData = 0.0123
 
     data.append(("users", userData))
+    std.append(userData)
 
-    blocked = """select avg(edit.ins_vulgarity)
+    blocked = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
     join user
     on edit.user_table_id = user.id
@@ -1028,15 +1033,17 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     if not dryrun:
         cursor.execute(blocked,)
         blockedData = cursor.fetchall()
+        blockedStd = blockedData[0][1]
         blockedData = blockedData[0][0]
         with open(dataDir + str(i) + "-blocked.txt", "w") as file:
-            file.write(str(blockedData))
+            file.write(str(blockedData) + "\n" + str(blockedStd))
     else:
-        blockedData = 0.0209
+        blockedData = 0.0153
 
     data.append(("blocked", blockedData))
+    std.append(blockedData)
 
-    bots = """select avg(edit.ins_vulgarity)
+    bots = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
     join user
     on edit.user_table_id = user.id
@@ -1044,15 +1051,17 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     if not dryrun:
         cursor.execute(bots,)
         botsData = cursor.fetchall()
+        botsStd = botsData[0][1]
         botsData = botsData[0][0]
         with open(dataDir + str(i) + "-bot.txt", "w") as file:
-            file.write(str(botsData))
+            file.write(str(botsData) + "\n" + str(botsStd))
     else:
-        botsData = 0.0108
+        botsData = 0.0080
 
     data.append(("bots", botsData))
+    std.append(botsData)
 
-    ipAddress = """select avg(edit.ins_vulgarity)
+    ipAddress = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
     join user
     on edit.user_table_id = user.id
@@ -1060,17 +1069,19 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     if not dryrun:
         cursor.execute(ipAddress,)
         ipAddressData = cursor.fetchall()
+        ipAddressStd = ipAddressData[0][1]
         ipAddressData = ipAddressData[0][0]
         with open(dataDir + str(i) + "-ipAddress.txt", "w") as file:
-            file.write(str(ipAddressData))
+            file.write(str(ipAddressData) + "\n" + str(ipAddressStd))
     else:
-        ipAddressData = 0.0418
+        ipAddressData = 0.0434
 
     data.append(("ip", ipAddressData))
+    std.append(ipAddressData)
 
     plt.title("Average profanity per type of user")
     plt.ylabel("Average profanity / %")
-    plt.bar(*zip(*data))
+    plt.bar(*zip(*data), yerr=std)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
 
@@ -1596,7 +1607,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.00475190706470203,
         ]
 
-    fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [2, 5, 13]})
+    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3,13]})
 
     fig.suptitle("Average of all integer edit fields")
 
@@ -1635,7 +1646,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[0].set_ylim([start - 0.5, end + 0.5])
 
     start = 3
-    end = 8
+    end = 5
     plotRange = range(1, end - start + 1)
     axs[1].hlines(
         y=plotRange,
@@ -1670,11 +1681,45 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     )
     axs[1].set_yticklabels(columns[start:end])
     axs[1].set_yticks(plotRange)
+    axs[1].set_ylim([0.5, 2.25])
+
+    start = 5
+    end = 8
+    plotRange = range(1, end - start + 1)
+    axs[2].hlines(
+        y=plotRange,
+        xmin=[
+            min(a, b, c, d)
+            for a, b, c, d in zip(
+                data[start:end], specialData[start:end], blockedData[start:end], ipData[start:end]
+            )
+        ],
+        xmax=[
+            max(a, b, c, d)
+            for a, b, c, d in zip(
+                data[start:end], specialData[start:end], blockedData[start:end], ipData[start:end]
+            )
+        ],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[2].scatter(data[start:end], plotRange, color="navy", label="all users")
+    axs[2].scatter(
+        specialData[start:end], plotRange, color="gold", label="users with privileges"
+    )
+    axs[2].scatter(ipData[start:end], plotRange, color="skyblue", label="ip users")
+    axs[2].scatter(
+        blockedData[start:end], plotRange, color="orangered", label="blocked users"
+    )
+    axs[2].set_yticklabels(columns[start:end])
+    axs[2].set_yticks(plotRange)
+    print(axs[1].get_ylim())
+    axs[2].set_ylim([0.5,  3.25])
 
     start = 8
     end = 21
     plotRange = range(1, end - start + 1)
-    axs[2].hlines(
+    axs[3].hlines(
         y=plotRange,
         xmin=[
             min(a, b, c, d)
@@ -1691,18 +1736,19 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
-    axs[2].scatter(data[start:], plotRange, color="navy", label="all users")
-    axs[2].scatter(
+    axs[3].scatter(data[start:], plotRange, color="navy", label="all users")
+    axs[3].scatter(
         specialData[start:], plotRange, color="gold", label="users with privileges"
     )
-    axs[2].scatter(ipData[start:], plotRange, color="skyblue", label="ip users")
-    axs[2].scatter(
+    axs[3].scatter(ipData[start:], plotRange, color="skyblue", label="ip users")
+    axs[3].scatter(
         blockedData[start:], plotRange, color="orangered", label="blocked users"
     )
-    axs[2].set_yticklabels(columns[start:])
-    axs[2].set_yticks(plotRange)
+    axs[3].set_yticklabels(columns[start:])
+    axs[3].set_yticks(plotRange)
+    print(plotRange)
 
-    plt.gcf().set_size_inches(7.5, 7.5)
+    plt.gcf().set_size_inches(7.5, 9.5)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
