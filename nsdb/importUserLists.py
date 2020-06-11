@@ -44,7 +44,16 @@ def ipGlobalBlocks(dir="lists/"):
                         )
                     )
 
-    query = """update user, globalblocks set blocked = 1 where Is_ipv4(ip_address) and INET_ATON(ip_address) between CONV(globalblocks.gb_range_start, 16, 10) and CONV(globalblocks.gb_range_end, 16, 10);"""
+    query = """update user A
+    inner join ( 
+        select id from user, globalblocks 
+        where Is_ipv4(ip_address)  
+        and gb_range_start not REGEXP '^v'
+        and INET_ATON(ip_address) 
+            between Cast(CONV(globalblocks.gb_range_start, 16, 10) as unsigned)
+            and Cast(CONV(globalblocks.gb_range_end, 16, 10) as unsigned)
+    ) as B on A.id = B.id
+    set blocked = 1; """
 
     cursor.execute(query,)
 
