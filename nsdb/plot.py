@@ -2138,9 +2138,10 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
 
+
 #
 def aggregations(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "averageAllSpecial"
+    figname = plotDir + str(i) + "-" + "aggregations"
     plt.figure()
 
     columns = [
@@ -2167,36 +2168,93 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
         "deleted_sentiment",
     ]
 
-    modes = """select
-    (SELECT added_length FROM edit GROUP BY added_length ORDER BY count(*) DESC LIMIT 1),
-    (SELECT deleted_length FROM edit GROUP BY deleted_length ORDER BY count(*) DESC LIMIT 1),
-    (SELECT del_words FROM edit GROUP BY del_words ORDER BY count(*) DESC LIMIT 1),
-    (SELECT comment_length FROM edit GROUP BY comment_length ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_longest_inserted_word FROM edit GROUP BY ins_longest_inserted_word ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_longest_character_sequence FROM edit GROUP BY ins_longest_character_sequence ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_internal_link FROM edit GROUP BY ins_internal_link ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_external_link FROM edit GROUP BY ins_external_link ORDER BY count(*) DESC LIMIT 1),
-    (SELECT blanking FROM edit GROUP BY blanking ORDER BY count(*) DESC LIMIT 1),
-    (SELECT comment_copyedit FROM edit GROUP BY comment_copyedit ORDER BY count(*) DESC LIMIT 1),
-    (SELECT comment_personal_life FROM edit GROUP BY comment_personal_life ORDER BY count(*) DESC LIMIT 1),
-    (SELECT comment_special_chars FROM edit GROUP BY comment_special_chars ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_capitalization FROM edit GROUP BY ins_capitalization ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_digits FROM edit GROUP BY ins_digits ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_pronouns FROM edit GROUP BY ins_pronouns ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_special_chars FROM edit GROUP BY ins_special_chars ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_vulgarity FROM edit GROUP BY ins_vulgarity ORDER BY count(*) DESC LIMIT 1),
-    (SELECT ins_whitespace FROM edit GROUP BY ins_whitespace ORDER BY count(*) DESC LIMIT 1),
-    (SELECT reverted FROM edit GROUP BY reverted ORDER BY count(*) DESC LIMIT 1),
-    (SELECT added_sentiment FROM edit GROUP BY added_sentiment ORDER BY count(*) DESC LIMIT 1),
-    (SELECT deleted_sentiment FROM edit GROUP BY deleted_sentiment ORDER BY count(*) DESC LIMIT 1);"""
     if not dryrun:
-        cursor.execute(modes,)
-        modesData = cursor.fetchall()
-        modesData = list(*modesData)
+        modesData = []
+        for i in columns:
+            query = "SELECT {i} FROM edit GROUP BY {i} ORDER BY count(*) DESC LIMIT 1".format(
+                i=i
+            )
+            cursor.execute(query,)
+            modesData.append(cursor.fetchall()[0][0])
+
         with open(dataDir + str(i) + "-modes.txt", "w") as file:
             file.write(str(modesData))
     else:
-        modesData = [
+        modesData = [0, 2, 1, 0, 11, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    mins = """select MIN(added_length),MIN(deleted_length),MIN(del_words),MIN(comment_length),MIN(ins_longest_inserted_word),MIN(ins_longest_character_sequence),MIN(ins_internal_link),MIN(ins_external_link),MIN(blanking),MIN(comment_copyedit),MIN(comment_personal_life),MIN(comment_special_chars),MIN(ins_capitalization),MIN(ins_digits),MIN(ins_pronouns),MIN(ins_special_chars),MIN(ins_vulgarity),MIN(ins_whitespace),MIN(reverted),MIN(added_sentiment),MIN(deleted_sentiment) FROM edit;"""
+    if not dryrun:
+        cursor.execute(mins,)
+        minsData = cursor.fetchall()
+        minsData = list(*minsData)
+        with open(dataDir + str(i) + "-mins.txt", "w") as file:
+            file.write(str(minsData))
+    else:
+        minsData = [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.0000,
+            0.0000,
+            0.0000,
+            0.0000,
+            0.0000,
+            0,
+            0.0000,
+            0,
+            -1.0,
+            -1.0,
+        ]
+
+    maxs = """select MAX(added_length),MAX(deleted_length),MAX(del_words),MAX(comment_length),MAX(ins_longest_inserted_word),MAX(ins_longest_character_sequence),MAX(ins_internal_link),MAX(ins_external_link),MAX(blanking),MAX(comment_copyedit),MAX(comment_personal_life),MAX(comment_special_chars),MAX(ins_capitalization),MAX(ins_digits),MAX(ins_pronouns),MAX(ins_special_chars),MAX(ins_vulgarity),MAX(ins_whitespace),MAX(reverted),MAX(added_sentiment),MAX(deleted_sentiment)  FROM edit;"""
+    if not dryrun:
+        cursor.execute(maxs,)
+        maxsData = cursor.fetchall()
+        maxsData = list(*maxsData)
+        with open(dataDir + str(i) + "-maxs.txt", "w") as file:
+            file.write(str(maxsData))
+    else:
+        maxsData = [
+            8388607,
+            8388607,
+            2426845,
+            127,
+            32767,
+            32767,
+            24365,
+            32767,
+            1,
+            1,
+            1,
+            0.9999,
+            0.9999,
+            0.9999,
+            0.9999,
+            0.9999,
+            1,
+            0.9999,
+            1,
+            1.0,
+            1.0,
+        ]
+
+    means = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment) from edit;"""
+    if not dryrun:
+        cursor.execute(means,)
+        meansData = cursor.fetchall()
+        meansData = list(*meansData)
+        with open(dataDir + str(i) + "-means.txt", "w") as file:
+            file.write(str(meansData))
+    else:
+        meansData = [
             442.0422,
             439.0867,
             58.0321,
@@ -2220,291 +2278,169 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
             0.0055170703440406196,
         ]
 
-    mins = """select MIN(added_length),MIN(deleted_length),MIN(del_words),MIN(comment_length),MIN(ins_longest_inserted_word),MIN(ins_longest_character_sequence),MIN(ins_internal_link),MIN(ins_external_link),MIN(blanking),MIN(comment_copyedit),MIN(comment_personal_life),MIN(comment_special_chars),MIN(ins_capitalization),MIN(ins_digits),MIN(ins_pronouns),MIN(ins_special_chars),MIN(ins_vulgarity),MIN(ins_whitespace),MIN(reverted),MIN(added_sentiment),MIN(deleted_sentiment) FROM edit;"""
+    stds = """select STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),STD(deleted_sentiment) from edit;"""
     if not dryrun:
-        cursor.execute(mins,)
-        minsData = cursor.fetchall()
-        minsData = list(*minsData)
-        with open(dataDir + str(i) + "-mins.txt", "w") as file:
-            file.write(str(minsData))
+        cursor.execute(stds,)
+        stdsData = cursor.fetchall()
+        stdsData = list(*stdsData)
+        with open(dataDir + str(i) + "-stds.txt", "w") as file:
+            file.write(str(stdsData))
     else:
-        minsData = [
-            525.9844,
-            427.2599,
-            58.6059,
-            37.0737,
-            10.5163,
-            1.8895,
-            1.7960,
-            0.1359,
-            0.0029,
-            0.0005,
-            0.0003,
-            0.11632597,
-            0.10173668,
-            0.02940640,
-            0.00933118,
-            0.10858162,
-            0.0192,
-            0.18442976,
-            0.0325,
-            0.05423712919836253,
-            0.006679179803724929,
+        stdsData = [
+            4654.176162916367,
+            6176.346864990649,
+            951.2080429740175,
+            39.922080083596796,
+            72.77314313715188,
+            45.67935596915416,
+            17.34742048576987,
+            5.371908826641828,
+            0.047305664882096865,
+            0.022598233982907077,
+            0.014979221561754661,
+            0.09649544409376277,
+            0.13556309951733453,
+            0.0529137673082975,
+            0.018949801230515435,
+            0.07763594209856826,
+            0.11881033215053255,
+            0.18192642687661204,
+            0.16869769991099628,
+            0.14008787360862252,
+            0.0690388085081368,
         ]
 
-    maxs = """select MAX(added_length),MAX(deleted_length),MAX(del_words),MAX(comment_length),MAX(ins_longest_inserted_word),MAX(ins_longest_character_sequence),MAX(ins_internal_link),MAX(ins_external_link),MAX(blanking),MAX(comment_copyedit),MAX(comment_personal_life),MAX(comment_special_chars),MAX(ins_capitalization),MAX(ins_digits),MAX(ins_pronouns),MAX(ins_special_chars),MAX(ins_vulgarity),MAX(ins_whitespace),MAX(reverted),MAX(added_sentiment),MAX(deleted_sentiment)  FROM edit
-    inner join user
-    on user.id = edit.user_table_id
-    where user.user_special is True;"""
-    if not dryrun:
-        cursor.execute(maxs,)
-        maxsData = cursor.fetchall()
-        maxsData = list(*maxsData)
-        with open(dataDir + str(i) + "-maxs.txt", "w") as file:
-            file.write(str(maxsData))
-    else:
-        maxsData = [
-            398.5122,
-            392.4957,
-            50.8446,
-            52.4496,
-            10.5209,
-            1.7682,
-            1.6357,
-            0.1278,
-            0.0016,
-            0.0006,
-            0.0002,
-            0.11922957,
-            0.10697243,
-            0.02570266,
-            0.00522568,
-            0.13717350,
-            0.0093,
-            0.15875237,
-            0.0148,
-            0.02470609377917194,
-            0.004687928593039355,
-        ]
+    stdsData = list(map(sum, zip(stdsData, meansData)))
 
-    # fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
+    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [3, 4, 12, 2]})
 
-    # fig.suptitle("Average of all integer edit fields")
+    fig.suptitle("Min, max, mean and standard deviation of all fields")
 
-    # start = 0
-    # end = 2
-    # plotRange = range(start, end)
+    start = 0
+    end = 3
+    plotRange = range(start, end)
 
-    # axs[0].hlines(
-    #     y=plotRange,
-    #     xmin=[
-    #         min(a, b, c, d, e)
-    #         for a, b, c, d, e in zip(
-    #             data[:end],
-    #             specialData[:end],
-    #             blockedData[:end],
-    #             ipData[:end],
-    #             botData[:end],
-    #         )
-    #     ],
-    #     xmax=[
-    #         max(a, b, c, d, e)
-    #         for a, b, c, d, e in zip(
-    #             data[:end],
-    #             specialData[:end],
-    #             blockedData[:end],
-    #             ipData[:end],
-    #             botData[:end],
-    #         )
-    #     ],
-    #     color="grey",
-    #     alpha=0.4,
-    # )
-    # axs[0].vlines(
-    #     x=allData[:2],
-    #     ymin=list(map(lambda x: x - 0.5, plotRange)),
-    #     ymax=list(map(lambda x: x + 0.5, plotRange)),
-    #     color="grey",
-    #     alpha=0.4,
-    # )
-    # axs[0].scatter(data[:2], plotRange, color="navy", label="all users")
-    # axs[0].scatter(
-    #     specialData[:2], plotRange, color="gold", label="users with privileges"
-    # )
-    # axs[0].scatter(botData[:2], plotRange, color="mediumaquamarine", label="bots")
-    # axs[0].scatter(ipData[:2], plotRange, color="skyblue", label="ip users")
-    # axs[0].scatter(blockedData[:2], plotRange, color="orangered", label="blocked users")
-    # axs[0].set_yticklabels(columns[:2])
-    # axs[0].set_yticks(plotRange)
-    # axs[0].legend(
-    #     loc="upper center", bbox_to_anchor=(0.5, 2), ncol=3, fancybox=True, shadow=True,
-    # )
-    # # axs[0].set_ylim([start - 0.5, end + 0.5])
+    axs[0].hlines(
+        y=plotRange, xmin=minsData[:end], xmax=maxsData[:end], color="grey", alpha=0.4,
+    )
+    axs[0].vlines(
+        x=[*minsData[:end], *maxsData[:end]],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="black",
+    )
+    axs[0].scatter(
+        stdsData[:end], plotRange, color="skyblue", label="Standard Deviation"
+    )
+    axs[0].scatter(meansData[:end], plotRange, color="black", label="Mean")
+    axs[0].set_yticklabels(columns[:end])
+    axs[0].set_yticks(plotRange)
+    axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    axs[0].legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.5),
+        ncol=3,
+        fancybox=True,
+        shadow=True,
+    )
 
-    # start = 3
-    # end = 5
-    # plotRange = range(1, end - start + 1)
-    # axs[1].hlines(
-    #     y=plotRange,
-    #     xmin=[
-    #         min(a, b, c, d, e)
-    #         for a, b, c, d, e in zip(
-    #             data[start:end],
-    #             specialData[start:end],
-    #             blockedData[start:end],
-    #             ipData[start:end],
-    #             botData[start:end],
-    #         )
-    #     ],
-    #     xmax=[
-    #         max(a, b, c, d, e)
-    #         for a, b, c, d, e in zip(
-    #             data[start:end],
-    #             specialData[start:end],
-    #             blockedData[start:end],
-    #             ipData[start:end],
-    #             botData[start:end],
-    #         )
-    #     ],
-    #     color="grey",
-    #     alpha=0.4,
-    # )
-    # axs[1].vlines(
-    #     x=allData[start:end],
-    #     ymin=list(map(lambda x: x - 0.5, plotRange)),
-    #     ymax=list(map(lambda x: x + 0.5, plotRange)),
-    #     color="grey",
-    #     alpha=0.4,
-    # )
-    # axs[1].scatter(data[start:end], plotRange, color="navy", label="all users")
-    # axs[1].scatter(
-    #     specialData[start:end], plotRange, color="gold", label="users with privileges"
-    # )
-    # axs[1].scatter(
-    #     botData[start:end], plotRange, color="mediumaquamarine", label="bots"
-    # )
-    # axs[1].scatter(ipData[start:end], plotRange, color="skyblue", label="ip users")
-    # axs[1].scatter(
-    #     blockedData[start:end], plotRange, color="orangered", label="blocked users"
-    # )
-    # axs[1].set_yticklabels(columns[start:end])
-    # axs[1].set_yticks(plotRange)
-    # # axs[1].set_ylim([0.5, 2.25])
+    start = 4
+    end = 8
+    plotRange = range(1, end - start + 1)
 
-    # start = 5
-    # end = 8
-    # plotRange = range(1, end - start + 1)
-    # axs[2].hlines(
-    #     y=plotRange,
-    #     xmin=[
-    #         min(a, b, c, d, e)
-    #         for a, b, c, d, e in zip(
-    #             data[start:end],
-    #             specialData[start:end],
-    #             blockedData[start:end],
-    #             ipData[start:end],
-    #             botData[start:end],
-    #         )
-    #     ],
-    #     xmax=[
-    #         max(a, b, c, d, e)
-    #         for a, b, c, d, e in zip(
-    #             data[start:end],
-    #             specialData[start:end],
-    #             blockedData[start:end],
-    #             ipData[start:end],
-    #             botData[start:end],
-    #         )
-    #     ],
-    #     color="grey",
-    #     alpha=0.4,
-    # )
-    # axs[2].vlines(
-    #     x=allData[start:end],
-    #     ymin=list(map(lambda x: x - 0.5, plotRange)),
-    #     ymax=list(map(lambda x: x + 0.5, plotRange)),
-    #     color="grey",
-    #     alpha=0.4,
-    # )
-    # axs[2].scatter(data[start:end], plotRange, color="navy", label="all users")
-    # axs[2].scatter(
-    #     specialData[start:end], plotRange, color="gold", label="users with privileges"
-    # )
-    # axs[2].scatter(
-    #     botData[start:end], plotRange, color="mediumaquamarine", label="bots"
-    # )
-    # axs[2].scatter(ipData[start:end], plotRange, color="skyblue", label="ip users")
-    # axs[2].scatter(
-    #     blockedData[start:end], plotRange, color="orangered", label="blocked users"
-    # )
-    # axs[2].set_yticklabels(columns[start:end])
-    # axs[2].set_yticks(plotRange)
-    # axs[2].set_xlim(left=0)
-    # # print(axs[1].get_ylim())
-    # # axs[2].set_ylim([0.5, 3.25])
+    axs[1].hlines(
+        y=plotRange,
+        xmin=minsData[start:end],
+        xmax=maxsData[start:end],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[1].vlines(
+        x=[*minsData[start:end], *maxsData[start:end]],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="black",
+    )
+    axs[1].scatter(
+        stdsData[start:end], plotRange, color="skyblue", label="Standard Deviation"
+    )
+    axs[1].scatter(meansData[start:end], plotRange, color="black", label="Mode")
+    axs[1].set_yticklabels(columns[start:end])
+    axs[1].set_yticks(plotRange)
+    axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
-    # start = 8
-    # end = 21
-    # plotRange = range(1, end - start + 1)
-    # axs[3].hlines(
-    #     y=plotRange,
-    #     xmin=[
-    #         min(a, b, c, d, e)
-    #         for a, b, c, d, e in zip(
-    #             data[start:],
-    #             specialData[start:],
-    #             blockedData[start:],
-    #             ipData[start:],
-    #             botData[start:],
-    #         )
-    #     ],
-    #     xmax=[
-    #         max(a, b, c, d, e)
-    #         for a, b, c, d, e in zip(
-    #             data[start:],
-    #             specialData[start:],
-    #             blockedData[start:],
-    #             ipData[start:],
-    #             botData[start:],
-    #         )
-    #     ],
-    #     color="grey",
-    #     alpha=0.4,
-    # )
-    # axs[3].vlines(
-    #     x=allData[start:],
-    #     ymin=list(map(lambda x: x - 0.5, plotRange)),
-    #     ymax=list(map(lambda x: x + 0.5, plotRange)),
-    #     color="grey",
-    #     alpha=0.4,
-    # )
-    # axs[3].scatter(data[start:], plotRange, color="navy", label="all users")
-    # axs[3].scatter(
-    #     specialData[start:], plotRange, color="gold", label="users with privileges"
-    # )
-    # axs[3].scatter(botData[start:], plotRange, color="mediumaquamarine", label="bots")
-    # axs[3].scatter(ipData[start:], plotRange, color="skyblue", label="ip users")
-    # axs[3].scatter(
-    #     blockedData[start:], plotRange, color="orangered", label="blocked users"
-    # )
-    # axs[3].set_yticklabels(columns[start:])
-    # axs[3].set_yticks(plotRange)
-    # axs[3].set_xlim(left=0)
+    start = 8
+    end = 19
+    plotRange = range(1, end - start + 1)
 
-    # # print(plotRange)
+    axs[2].hlines(
+        y=plotRange,
+        xmin=minsData[start:end],
+        xmax=maxsData[start:end],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[2].vlines(
+        x=[*minsData[start:end], *maxsData[start:end]],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="black",
+    )
+    axs[2].scatter(
+        stdsData[start:end], plotRange, color="skyblue", label="Standard Deviation"
+    )
+    invertedStds = list(
+        map(
+            lambda x: max(2 * x[0] - x[1], 0),
+            zip(meansData[start:end], stdsData[start:end]),
+        )
+    )
+    axs[2].scatter(invertedStds, plotRange, color="skyblue")
+    axs[2].scatter(meansData[start:end], plotRange, color="black", label="Mode")
+    axs[2].set_yticklabels(columns[start:end])
+    axs[2].set_yticks(plotRange)
 
-    # plt.gcf().set_size_inches(9.5, 9.5)
-    # axs[0].spines["top"].set_visible(False)
-    # axs[0].spines["right"].set_visible(False)
-    # axs[1].spines["top"].set_visible(False)
-    # axs[1].spines["right"].set_visible(False)
-    # axs[2].spines["top"].set_visible(False)
-    # axs[2].spines["right"].set_visible(False)
-    # axs[3].spines["top"].set_visible(False)
-    # axs[3].spines["right"].set_visible(False)
+    start = 19
+    end = 21
+    plotRange = range(1, end - start + 1)
 
-    # plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
-    # plt.close()
+    axs[3].hlines(
+        y=plotRange,
+        xmin=minsData[start:end],
+        xmax=maxsData[start:end],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[3].vlines(
+        x=[*minsData[start:end], *maxsData[start:end]],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="black",
+    )
+    axs[3].scatter(meansData[start:end], plotRange, color="black", label="Mode")
+    axs[3].scatter(
+        stdsData[start:end], plotRange, color="skyblue", label="Standard Deviation"
+    )
+    invertedStds = list(
+        map(lambda x: 2 * x[0] - x[1], zip(meansData[start:end], stdsData[start:end]))
+    )
+    axs[3].scatter(invertedStds, plotRange, color="skyblue")
+    axs[3].set_yticklabels(columns[start:end])
+    axs[3].set_yticks(plotRange)
+
+    plt.gcf().set_size_inches(9.5, 9.5)
+    axs[0].spines["top"].set_visible(False)
+    axs[0].spines["right"].set_visible(False)
+    axs[1].spines["top"].set_visible(False)
+    axs[1].spines["right"].set_visible(False)
+    axs[2].spines["top"].set_visible(False)
+    axs[2].spines["right"].set_visible(False)
+    axs[3].spines["top"].set_visible(False)
+    axs[3].spines["right"].set_visible(False)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
+
 
 # --------------------------------------------------------------------------------------
 

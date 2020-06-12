@@ -66,3 +66,6 @@
 
 ### 21 Composition Of User
 ![plot](21-compositionOfUser.png)
+
+### 22 Aggregations
+![plot](22-aggregations.png)
