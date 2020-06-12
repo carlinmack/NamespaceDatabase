@@ -11,27 +11,31 @@ import matplotlib.font_manager as font_manager
 import matplotlib
 
 
-def partitionStatus(cursor, i, plotDir, dataDir):
+def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     plt.figure()
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "partitionStatus"
 
     query = """SELECT status, count(id)
     FROM wikiactors.partition
     GROUP BY status;"""
 
-    cursor.execute(query,)
-    data = cursor.fetchall()
-    with open(dataDir + str(i) + ".txt", "w") as file:
-        file.write(str(data))
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [("done", 76988), ("failed again", 59), ("failed", 1418)]
     plt.title("Status of parsing partitions")
     plt.xlabel("Status")
     plt.ylabel("Number of Partitions")
     plt.bar(*zip(*data))
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
-def distributionOfMainEdits(cursor, i, plotDir, dataDir):
-    figname = plotDir + str(i)
+def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "distributionOfMainEdits"
     plt.figure()
 
     query = """SELECT
@@ -41,11 +45,14 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir):
     (SELECT count(*) FROM user WHERE number_of_edits > 10 and number_of_edits <= 100),
     (SELECT count(*) FROM user WHERE number_of_edits > 100);"""
     columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
-    cursor.execute(query,)
-    data = cursor.fetchall()
-    data = list(*data)
-    with open(dataDir + str(i) + ".txt", "w") as file:
-        file.write(str(data))
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(*data)
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [47508198, 1585249, 1092331, 169984, 34658]
 
     total = sum(data)
     data = list(map(lambda x: x * 100 / total, data))
@@ -56,10 +63,11 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir):
     plt.bar(columns, data)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
-def distributionOfTalkEdits(cursor, i, plotDir, dataDir):
-    figname = plotDir + str(i)
+def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "distributionOfTalkEdits"
     plt.figure()
 
     query = """SELECT
@@ -69,11 +77,14 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir):
     (SELECT count(*) FROM user WHERE talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
     (SELECT count(*) FROM user WHERE talkpage_number_of_edits > 100);"""
     columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
-    cursor.execute(query,)
-    data = cursor.fetchall()
-    data = list(*data)
-    with open(dataDir + str(i) + ".txt", "w") as file:
-        file.write(str(data))
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(*data)
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [47508198, 1585249, 1092331, 169984, 34658]
 
     total = sum(data)
     data = list(map(lambda x: x * 100 / total, data))
@@ -84,10 +95,11 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir):
     plt.bar(columns, data)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "numberOfPagesPerNamespace"
     plt.figure()
 
     query = """SELECT namespace, count(page_id)
@@ -151,13 +163,16 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
 
 
 def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "editsMainTalkNeither"
     plt.figure()
 
-    query = """SELECT count(*)
-        FROM user;"""
-    cursor.execute(query,)
-    totalUsers = cursor.fetchone()[0]
+    if not dryrun:
+        query = """SELECT count(*)
+            FROM user;"""
+        cursor.execute(query,)
+        totalUsers = cursor.fetchone()[0]
+    else:
+        totalUsers = 50390420
 
     query = """SELECT
     (select count(*) as target from user
@@ -189,27 +204,54 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     plt.bar(columns, data)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
-def numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir):
-    figname = plotDir + str(i)
+def numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "numMainTalkEditsForBiggestUsers"
     plt.figure()
 
     mainspace = """SELECT username, number_of_edits FROM user
     where bot is null order by number_of_edits desc limit 10;"""
     talkspace = """SELECT username, talkpage_number_of_edits FROM user
     where bot is null order by talkpage_number_of_edits desc limit 10;"""
-    cursor.execute(mainspace,)
-    mainspaceData = cursor.fetchall()
+    if not dryrun:
+        cursor.execute(mainspace,)
+        mainspaceData = cursor.fetchall()
 
-    with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
-        file.write(str(mainspaceData))
+        with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
+            file.write(str(mainspaceData))
 
-    cursor.execute(talkspace,)
-    talkspaceData = cursor.fetchall()
+        cursor.execute(talkspace,)
+        talkspaceData = cursor.fetchall()
 
-    with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
-        file.write(str(talkspaceData))
+        with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
+            file.write(str(talkspaceData))
+    else:
+        mainspaceData = [
+            ("Ser Amantio di Nicolao", 2642285),
+            ("Koavf", 1501381),
+            ("BrownHairedGirl", 1486023),
+            ("BD2412", 1358460),
+            ("Rich Farmbrough", 1254142),
+            ("Tom.Reding", 1210959),
+            ("Waacstats", 1108188),
+            ("Materialscientist", 1059053),
+            ("Hmains", 1047292),
+            ("Bearcat", 953537),
+        ]
+        talkspaceData = [
+            ("Koavf", 432184),
+            ("Ser Amantio di Nicolao", 324243),
+            ("Rich Farmbrough", 270090),
+            ("Dthomsen8", 265542),
+            ("BetacommandBot", 253719),
+            ("EP111", 246440),
+            ("Johnsoniensis", 238420),
+            ("Fortdj33", 168119),
+            ("ChrisGualtieri", 167658),
+            ("Meno25", 144943),
+        ]
 
     plt.title("Number of main and talk edits for the biggest editors")
     plt.bar(*zip(*mainspaceData), label="mainspace edits")
@@ -217,27 +259,54 @@ def numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir):
     plt.xticks(rotation=90)
     plt.legend(loc="upper right")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
-def numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir):
-    figname = plotDir + str(i)
+def numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "numMainTalkEditsForBiggestBots"
     plt.figure()
 
     mainspace = """SELECT username, number_of_edits FROM user
     where bot is true order by number_of_edits desc limit 10;"""
     talkspace = """SELECT username, talkpage_number_of_edits FROM user
     where bot is true order by talkpage_number_of_edits desc limit 10;"""
-    cursor.execute(mainspace,)
-    mainspaceData = cursor.fetchall()
+    if not dryrun:
+        cursor.execute(mainspace,)
+        mainspaceData = cursor.fetchall()
 
-    with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
-        file.write(str(mainspaceData))
+        with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
+            file.write(str(mainspaceData))
 
-    cursor.execute(talkspace,)
-    talkspaceData = cursor.fetchall()
+        cursor.execute(talkspace,)
+        talkspaceData = cursor.fetchall()
 
-    with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
-        file.write(str(talkspaceData))
+        with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
+            file.write(str(talkspaceData))
+    else:
+        mainspaceData = [
+            ("WP 1.0 bot", 6589889),
+            ("Cydebot", 6336698),
+            ("ClueBot NG", 5196209),
+            ("AnomieBOT", 4361942),
+            ("SmackBot", 3171007),
+            ("Yobot", 2823974),
+            ("Addbot", 2712291),
+            ("InternetArchiveBot", 2683840),
+            ("EmausBot", 1961489),
+            ("Monkbot", 1556995),
+        ]
+        talkspaceData = [
+            ("Yobot", 1520000),
+            ("SineBot", 1414852),
+            ("InternetArchiveBot", 1066758),
+            ("AnomieBOT", 483147),
+            ("ListasBot", 428200),
+            ("BattyBot", 418389),
+            ("Kingbotk", 366118),
+            ("Xenobot Mk V", 347264),
+            ("Lowercase sigmabot III", 311482),
+            ("MiszaBot I", 226159),
+        ]
 
     plt.title("Number of main and talk edits for the biggest bots")
     plt.bar(*zip(*mainspaceData), label="mainspace edits")
@@ -245,27 +314,54 @@ def numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir):
     plt.xticks(rotation=90)
     plt.legend(loc="upper right")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
-def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir):
-    figname = plotDir + str(i)
+def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "numMainTalkEditsForBiggestIPs"
     plt.figure()
 
     mainspace = """SELECT ip_address, number_of_edits FROM user
     where ip_address is not null order by number_of_edits desc limit 10;"""
     talkspace = """SELECT ip_address, talkpage_number_of_edits FROM user
     where ip_address is not null order by talkpage_number_of_edits desc limit 10;"""
-    cursor.execute(mainspace,)
-    mainspaceData = cursor.fetchall()
-    # data = list(*data)
-    with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
-        file.write(str(mainspaceData))
+    if not dryrun:
+        cursor.execute(mainspace,)
+        mainspaceData = cursor.fetchall()
+        # data = list(*data)
+        with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
+            file.write(str(mainspaceData))
 
-    cursor.execute(talkspace,)
-    talkspaceData = cursor.fetchall()
+        cursor.execute(talkspace,)
+        talkspaceData = cursor.fetchall()
 
-    with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
-        file.write(str(talkspaceData))
+        with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
+            file.write(str(talkspaceData))
+    else:
+        mainspaceData = [
+            ("84.90.219.128", 49897),
+            ("24.143.224.15", 45221),
+            ("208.81.184.4", 37762),
+            ("2600:1700:7E31:5", 33067),
+            ("2605:A000:140D:4", 24182),
+            ("129.33.19.254", 23492),
+            ("217.129.67.28", 23340),
+            ("204.153.84.10", 23007),
+            ("68.39.174.238", 21153),
+            ("2001:569:7C07:26", 20859),
+        ]
+        talkspaceData = [
+            ("208.81.184.4", 11671),
+            ("204.153.84.10", 4248),
+            ("64.6.124.31", 3862),
+            ("129.33.19.254", 3661),
+            ("98.113.248.40", 2575),
+            ("72.228.177.92", 2165),
+            ("208.245.87.2", 2063),
+            ("69.22.98.162", 1965),
+            ("66.234.33.8", 1913),
+            ("2001:8A0:F23F:16", 1874),
+        ]
 
     plt.title("Number of main and talk edits for the biggest IP editors")
     plt.bar(*zip(*mainspaceData), label="mainspace edits")
@@ -273,10 +369,11 @@ def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir):
     plt.xticks(rotation=90)
     plt.legend(loc="upper right")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "distributionOfMainEditsUserBots"
     plt.figure()
 
     columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
@@ -423,10 +520,11 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     axs[1, 2].yaxis.set_major_formatter(threeFigures)
     plt.gcf().set_size_inches(20, 10)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "editsMainTalkNeitherUserBots"
     plt.figure()
 
     columns = [
@@ -501,11 +599,11 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     # fig.tight_layout()
     plt.gcf().set_size_inches(10, 17.5)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
-
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "editTimesUserBots"
     plt.figure()
 
     columns = [
@@ -627,6 +725,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
     # fig, axs = plt.subplots(1, 2, gridspec_kw={"width_ratios": [3, 1]})
 
@@ -642,10 +741,11 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     # axs[1].ylabel("Hours")
 
     # plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "distributionOfEditsPerNamespace"
     plt.figure()
 
     columns = ["1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
@@ -734,11 +834,12 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     # fig.tight_layout()
     plt.gcf().set_size_inches(11, 9)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 #
 def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "sentimentUserBotsBlockedIP"
     plt.figure()
 
     columns = [
@@ -838,12 +939,12 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 #
 def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
-
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "sentimentBots"
     plt.figure()
 
     columns = [
@@ -982,11 +1083,12 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 #
 def profanityAll(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "profanityAll"
     plt.figure()
 
     data = []
@@ -1005,9 +1107,10 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(specialUsersData) + "\n" + str(specialUsersStd))
     else:
         specialUsersData = 0.0109
+        # specialUsersStd = 0.0109
 
     data.append(("users with\nspecial priviliges", specialUsersData))
-    std.append(specialUsersStd)
+    # std.append(specialUsersStd)
 
     users = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1025,7 +1128,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
         userData = 0.0123
 
     data.append(("users", userData))
-    std.append(userData)
+    # std.append(userData)
 
     blocked = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1043,7 +1146,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
         blockedData = 0.0153
 
     data.append(("blocked", blockedData))
-    std.append(blockedData)
+    # std.append(blockedData)
 
     bots = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1061,7 +1164,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
         botsData = 0.0080
 
     data.append(("bots", botsData))
-    std.append(botsData)
+    # std.append(botsData)
 
     ipAddress = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1079,17 +1182,19 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
         ipAddressData = 0.0434
 
     data.append(("ip", ipAddressData))
-    std.append(ipAddressData)
+    # std.append(ipAddressData)
 
     plt.title("Average profanity per type of user")
     plt.ylabel("Average profanity / %")
-    plt.bar(*zip(*data), yerr=std)
+    # plt.bar(*zip(*data), yerr=std)
+    plt.bar(*zip(*data))
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 #
 def averageAll(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "averageAll"
     plt.figure()
 
     query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment), STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),STD(deleted_sentiment)  from edit;"""
@@ -1189,10 +1294,11 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(10, 7.5)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "namespacesEditedByTopFiveHundred"
     plt.figure()
     # https://stackoverflow.com/questions/28620904/how-to-count-unique-set-values-in-mysql
     query = """SELECT set_list.namespaces, COUNT(user.namespaces) FROM
@@ -1261,11 +1367,12 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
     # # plt.yscale("log")
     plt.bar(*zip(*data))
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 #
 def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "internalExternalLinks"
     plt.figure()
 
     internalData = []
@@ -1375,10 +1482,11 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(5, 10)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "specialUsersPlot"
     plt.figure()
 
     query = """SELECT ug_group, count(ug_user)
@@ -1441,7 +1549,7 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
 
 #
 def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "averageAllSpecial"
     plt.figure()
 
     columns = [
@@ -1780,7 +1888,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     )
     axs[2].set_yticklabels(columns[start:end])
     axs[2].set_yticks(plotRange)
-    print(axs[1].get_ylim())
+    # print(axs[1].get_ylim())
     # axs[2].set_ylim([0.5, 3.25])
 
     start = 8
@@ -1820,15 +1928,16 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     )
     axs[3].set_yticklabels(columns[start:])
     axs[3].set_yticks(plotRange)
-    print(plotRange)
+    # print(plotRange)
 
     plt.gcf().set_size_inches(7.5, 9.5)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "compositionOfUserIP"
     plt.figure()
 
     query = """SELECT
@@ -1852,10 +1961,11 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     plt.bar([columns[1], columns[3]], [data[1], data[3]])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i)
+    figname = plotDir + str(i) + "-" + "compositionOfUser"
     plt.figure()
 
     query = """SELECT
@@ -1936,11 +2046,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     total = sum(editsData)
     editsData = list(map(lambda x: x / total, editsData))
 
-    print(sum(data), sum(editsData))
-
     data = list(zip(data, editsData))
-    print(data[0])
-    print(data[6])
     labels = ["distribution\nof users", "distribution\nof edits"]
     fig, ax = plt.subplots()
     ax.set_title("Distribution of users\nand how many edits on talkpages they make")
@@ -1955,6 +2061,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(5, 10)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
 
 
 # --------------------------------------------------------------------------------------
@@ -1994,15 +2101,15 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 0
     i = 0
-    # partitionStatus(cursor, i, plotDir, dataDir)
+    # partitionStatus(cursor, i, plotDir, dataDir, dryrun)
 
     # 1
     i = i + 1
-    # distributionOfMainEdits(cursor, i, plotDir, dataDir)
+    # distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun)
 
     # 2
     i = i + 1
-    # distributionOfTalkEdits(cursor, i, plotDir, dataDir)
+    # distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun)
 
     # 3
     i = i + 1
@@ -2014,15 +2121,15 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 5
     i = i + 1
-    # numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir)
+    # numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir, dryrun)
 
     # 6
     i = i + 1
-    # numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir)
+    # numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir, dryrun)
 
     # 7
     i = i + 1
-    # numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir)
+    # numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir, dryrun)
 
     # 8
     i = i + 1
