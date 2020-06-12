@@ -7,6 +7,8 @@ import os
 import Database
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
+import matplotlib.font_manager as font_manager
+import matplotlib
 
 
 def partitionStatus(cursor, i, plotDir, dataDir):
@@ -1442,12 +1444,6 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i)
     plt.figure()
 
-    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
-    inner join user 
-    on user.id = edit.user_table_id 
-    where user.blocked is not True
-    and user.user_special is not True
-    and user.ip_address is null;"""
     columns = [
         "added_length",
         "deleted_length",
@@ -1471,6 +1467,50 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         "added_sentiment",
         "deleted_sentiment",
     ]
+
+    all = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    inner join user 
+    on user.id = edit.user_table_id 
+    where user.blocked is not True
+    and user.user_special is not True
+    and user.ip_address is null;"""
+
+    if not dryrun:
+        cursor.execute(all,)
+        allData = cursor.fetchall()
+        allData = list(*allData)
+        with open(dataDir + str(i) + "-all.txt", "w") as file:
+            file.write(str(allData))
+    else:
+        allData = [
+            442.0422,
+            439.0867,
+            58.0321,
+            49.1949,
+            10.6587,
+            1.8952,
+            1.6529,
+            0.1304,
+            0.0022,
+            0.0005,
+            0.0002,
+            0.11972271,
+            0.10387291,
+            0.02747601,
+            0.00610185,
+            0.12846018,
+            0.0143,
+            0.16946286,
+            0.0293,
+            0.03135975155021137,
+            0.0055170703440406196,
+        ]
+    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    inner join user 
+    on user.id = edit.user_table_id 
+    where user.blocked is not True
+    and user.user_special is not True
+    and user.ip_address is null;"""
     if not dryrun:
         cursor.execute(query,)
         data = cursor.fetchall()
@@ -1607,7 +1647,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.00475190706470203,
         ]
 
-    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3,13]})
+    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
 
     fig.suptitle("Average of all integer edit fields")
 
@@ -1632,6 +1672,13 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
+    axs[0].vlines(
+        x=allData[:2],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
     axs[0].scatter(data[:2], plotRange, color="navy", label="all users")
     axs[0].scatter(
         specialData[:2], plotRange, color="gold", label="users with privileges"
@@ -1643,7 +1690,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[0].legend(
         loc="upper center", bbox_to_anchor=(0.5, 2), ncol=3, fancybox=True, shadow=True,
     )
-    axs[0].set_ylim([start - 0.5, end + 0.5])
+    # axs[0].set_ylim([start - 0.5, end + 0.5])
 
     start = 3
     end = 5
@@ -1671,6 +1718,13 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
+    axs[1].vlines(
+        x=allData[start:end],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
     axs[1].scatter(data[start:end], plotRange, color="navy", label="all users")
     axs[1].scatter(
         specialData[start:end], plotRange, color="gold", label="users with privileges"
@@ -1681,7 +1735,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     )
     axs[1].set_yticklabels(columns[start:end])
     axs[1].set_yticks(plotRange)
-    axs[1].set_ylim([0.5, 2.25])
+    # axs[1].set_ylim([0.5, 2.25])
 
     start = 5
     end = 8
@@ -1691,15 +1745,28 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         xmin=[
             min(a, b, c, d)
             for a, b, c, d in zip(
-                data[start:end], specialData[start:end], blockedData[start:end], ipData[start:end]
+                data[start:end],
+                specialData[start:end],
+                blockedData[start:end],
+                ipData[start:end],
             )
         ],
         xmax=[
             max(a, b, c, d)
             for a, b, c, d in zip(
-                data[start:end], specialData[start:end], blockedData[start:end], ipData[start:end]
+                data[start:end],
+                specialData[start:end],
+                blockedData[start:end],
+                ipData[start:end],
             )
         ],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[2].vlines(
+        x=allData[start:end],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
         color="grey",
         alpha=0.4,
     )
@@ -1714,7 +1781,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[2].set_yticklabels(columns[start:end])
     axs[2].set_yticks(plotRange)
     print(axs[1].get_ylim())
-    axs[2].set_ylim([0.5,  3.25])
+    # axs[2].set_ylim([0.5, 3.25])
 
     start = 8
     end = 21
@@ -1736,6 +1803,13 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
+    axs[3].vlines(
+        x=allData[start:],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
     axs[3].scatter(data[start:], plotRange, color="navy", label="all users")
     axs[3].scatter(
         specialData[start:], plotRange, color="gold", label="users with privileges"
@@ -1749,6 +1823,136 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     print(plotRange)
 
     plt.gcf().set_size_inches(7.5, 9.5)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
+def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i)
+    plt.figure()
+
+    query = """SELECT
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is not true and blocked is not true),
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is not true and blocked is true),
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is true and blocked is not true),
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is true and blocked is true);"""
+    columns = ["users", "blocked", "ip", "ip blocked"]
+    cursor.execute(query,)
+    data = cursor.fetchall()
+    data = list(*data)
+    with open(dataDir + str(i) + ".txt", "w") as file:
+        file.write(str(data))
+
+    plt.title("Comparison of blocked and unblocked IPs")
+    plt.bar([columns[0], columns[2]], [data[0], data[2]])
+    plt.bar([columns[1], columns[3]], [data[1], data[3]])
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+
+
+def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i)
+    plt.figure()
+
+    query = """SELECT
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is not true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is not true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM user 
+    WHERE bot is true and ip_address is not true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM user 
+    WHERE bot is true and ip_address is not true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is not true and blocked is not true and user_special is true),
+    (SELECT count(*) FROM user 
+    WHERE bot is not true and ip_address is not true and blocked is true and user_special is true);"""
+    columns = [
+        "users",
+        "blocked",
+        "bot",
+        "bot blocked",
+        "ip",
+        "ip blocked",
+        "special",
+        "special blocked",
+    ]
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(*data)
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [8705437, 173139, 1575, 20, 41452659, 2, 56590, 673]
+
+    total = sum(data)
+    data = list(map(lambda x: x / total, data))
+
+    edits = """SELECT
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id 
+    WHERE bot is not true and ip_address is not true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id 
+    WHERE bot is not true and ip_address is not true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id 
+    WHERE bot is true and ip_address is not true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id 
+    WHERE bot is true and ip_address is not true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id 
+    WHERE bot is not true and ip_address is true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id 
+    WHERE bot is not true and ip_address is true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id 
+    WHERE bot is not true and ip_address is not true and blocked is not true and user_special is true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id 
+    WHERE bot is not true and ip_address is not true and blocked is true and user_special is true);"""
+    columns = [
+        "users",
+        "blocked",
+        "bot",
+        "bot blocked",
+        "ip",
+        "ip blocked",
+        "special",
+        "special blocked",
+    ]
+    if not dryrun:
+        cursor.execute(edits,)
+        editsData = cursor.fetchall()
+        editsData = list(*editsData)
+        with open(dataDir + str(i) + "-edits.txt", "w") as file:
+            file.write(str(editsData))
+    else:
+        editsData = [10321534, 737816, 2900975, 179876, 5078532, 0, 30798811, 133243]
+
+    total = sum(editsData)
+    editsData = list(map(lambda x: x / total, editsData))
+
+    print(sum(data), sum(editsData))
+
+    data = list(zip(data, editsData))
+    print(data[0])
+    print(data[6])
+    labels = ["distribution\nof users", "distribution\nof edits"]
+    fig, ax = plt.subplots()
+    ax.set_title("Distribution of users\nand how many edits on talkpages they make")
+    y_pos_1 = y_pos_2 = 0
+    for k, v in enumerate(data):
+        abs_bottom = [y_pos_1, y_pos_2]
+        ax.bar(labels, v, bottom=abs_bottom, label=columns[k])
+        y_pos_1 += v[0]
+        y_pos_2 += v[1]
+    ax.legend(loc="center left")
+
+    plt.gcf().set_size_inches(5, 10)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
 
@@ -1780,6 +1984,13 @@ def plot(plotDir: str = "../plots/", dryrun=False):
         database, cursor = Database.connect()
     else:
         cursor = 0
+
+    font_files = font_manager.findSystemFonts(fontpaths=["./"])
+    for font_file in font_files:
+        font_manager.fontManager.addfont(font_file)
+
+    if "Inter" in [f.name for f in font_manager.fontManager.ttflist]:
+        matplotlib.rcParams["font.family"] = "Inter"
 
     # 0
     i = 0
@@ -1860,6 +2071,14 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 19
     i = i + 1
     # averageAllSpecial(cursor, i, plotDir, dataDir, dryrun)
+
+    # 20
+    i = i + 1
+    # compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun)
+
+    # 21
+    i = i + 1
+    # compositionOfUser(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
