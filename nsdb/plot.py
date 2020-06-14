@@ -35,7 +35,7 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -71,7 +71,7 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -107,7 +107,7 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -171,7 +171,7 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     plt.gcf().set_size_inches(8, 8)
-    plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
     ax.set_xlabel("Number of Pages (linear)")
     ax.set_xscale("linear")
@@ -179,7 +179,7 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
 
 def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
@@ -227,7 +227,7 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -296,7 +296,7 @@ def numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir, dryrun):
     axs[1].spines["top"].set_visible(False)
     axs[1].spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -365,7 +365,7 @@ def numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir, dryrun):
     axs[1].spines["top"].set_visible(False)
     axs[1].spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -434,7 +434,7 @@ def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir, dryrun):
     axs[1].spines["top"].set_visible(False)
     axs[1].spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -585,7 +585,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     axs[1, 2].bar(columns, talkspaceBlockedData)
     axs[1, 2].yaxis.set_major_formatter(threeFigures)
     plt.gcf().set_size_inches(20, 10)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -664,7 +664,7 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     axs[2].bar(columns, blockedData)
     # fig.tight_layout()
     plt.gcf().set_size_inches(10, 17.5)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -790,7 +790,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
     # fig, axs = plt.subplots(1, 2, gridspec_kw={"width_ratios": [3, 1]})
@@ -806,7 +806,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     # axs[1].tick_params(labelrotation=90)
     # axs[1].ylabel("Hours")
 
-    # plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    # plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -899,7 +899,7 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     axs[1, 1].bar(columns, userTalkData)
     # fig.tight_layout()
     plt.gcf().set_size_inches(11, 9)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -1004,7 +1004,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
 
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -1148,7 +1148,7 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -1259,7 +1259,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     plt.bar(*zip(*data), yerr=std)
     plt.ylim(bottom=0)
     # plt.bar(*zip(*data))
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -1364,7 +1364,7 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
     axs[2].set_ylim(bottom=0)
     plt.gcf().set_size_inches(10, 7.5)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -1437,7 +1437,7 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
     # plt.ylabel("? (log)")
     # # plt.yscale("log")
     plt.bar(*zip(*data))
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -1552,7 +1552,7 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     axs[1].set_title("Average added external links per type of user")
     plt.gcf().set_size_inches(5, 10)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -1613,7 +1613,7 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(7, 7)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
     ax.set_xlabel("Number of Users (linear)")
     ax.set_xscale("linear")
@@ -1621,7 +1621,7 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(7, 7)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
 
 #
@@ -2084,7 +2084,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[3].spines["top"].set_visible(False)
     axs[3].spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -2112,7 +2112,7 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     plt.bar([columns[0], columns[2]], [data[0], data[2]])
     plt.bar([columns[1], columns[3]], [data[1], data[3]])
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -2215,7 +2215,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -2518,7 +2518,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
     axs[3].spines["top"].set_visible(False)
     axs[3].spines["right"].set_visible(False)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -2566,7 +2566,7 @@ def booleanPieCharts(cursor, i, plotDir, dataDir, dryrun):
 
     plt.gcf().set_size_inches(8, 6)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
