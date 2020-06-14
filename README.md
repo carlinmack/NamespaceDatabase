@@ -13,7 +13,7 @@ scripts to parallelise and to only import necessary information to the database.
 **Example Queries**
 |                           |                       |                       |
 |---------------------------|-----------------------|-----------------------|
-| ![image](plots/3-log.png) | ![image](plots/8.png) | ![image](plots/9.png) |
+| ![image](plots/11-distributionOfEditsPerNamespace.png) | ![image](plots/19-averageAllSpecial.png) | ![image](plots/21-compositionOfUser.png) |
 
 ## Contents
 

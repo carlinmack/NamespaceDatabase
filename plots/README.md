@@ -69,3 +69,6 @@
 
 ### 22 Aggregations
 ![plot](22-aggregations.png)
+
+### 23 Boolean Pie Charts
+![plot](23-booleanPieCharts.png)

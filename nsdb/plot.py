@@ -1107,10 +1107,10 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(specialUsersData) + "\n" + str(specialUsersStd))
     else:
         specialUsersData = 0.0109
-        # specialUsersStd = 0.0109
+        specialUsersStd = 0.09959333924192307
 
     data.append(("users with\nspecial priviliges", specialUsersData))
-    # std.append(specialUsersStd)
+    std.append(specialUsersStd)
 
     users = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1126,9 +1126,10 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(userData) + "\n" + str(userStd))
     else:
         userData = 0.0123
+        userStd = 0.11028484312384287
 
     data.append(("users", userData))
-    # std.append(userData)
+    std.append(userData)
 
     blocked = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1144,9 +1145,10 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(blockedData) + "\n" + str(blockedStd))
     else:
         blockedData = 0.0153
+        blockedStd = 0.12255422751902714
 
     data.append(("blocked", blockedData))
-    # std.append(blockedData)
+    std.append(blockedData)
 
     bots = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1162,9 +1164,10 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(botsData) + "\n" + str(botsStd))
     else:
         botsData = 0.0080
+        botsStd = 0.08899117278773609
 
     data.append(("bots", botsData))
-    # std.append(botsData)
+    std.append(botsData)
 
     ipAddress = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1180,14 +1183,16 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(ipAddressData) + "\n" + str(ipAddressStd))
     else:
         ipAddressData = 0.0434
+        ipAddressStd = 0.20379850302087404
 
     data.append(("ip", ipAddressData))
-    # std.append(ipAddressData)
+    std.append(ipAddressData)
 
     plt.title("Average profanity per type of user")
     plt.ylabel("Average profanity / %")
-    # plt.bar(*zip(*data), yerr=std)
-    plt.bar(*zip(*data))
+    plt.bar(*zip(*data), yerr=std)
+    plt.ylim(bottom=0)
+    # plt.bar(*zip(*data))
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
 
@@ -2442,6 +2447,48 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
+def booleanPieCharts(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "booleanPieCharts"
+    plt.figure()
+
+    query = """select count(*), sum(comment_copyedit = 1), sum(comment_personal_life = 1), sum(ins_vulgarity = 1), sum(reverted = 1), sum(blanking = 1) from edit;"""
+
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(*data)
+        # data = list(map(lambda x: float(x), data))
+        # print(data)
+        population = data.pop(0)
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data) + "\n" + str(population))
+    else:
+        data = [29544, 12977, 828078, 1695274, 129688]
+        population = 57822696
+
+    columns = ["comment_copyedit", "comment_personal_life", "ins_vulgarity", "reverted", "blanking"]
+
+    # create a figure with two subplots
+    fig, axs = plt.subplots(2,3)
+
+    fig.suptitle("Ratios of binary features")
+
+    axs = axs.ravel()
+
+    # plot each pie chart in a separate subplot
+    for key, value in enumerate(columns):
+        axs[key].set_title(value)
+        print([population, data[key]])
+        axs[key].pie([population, data[key]])
+
+    axs[-1].axis('off')
+    
+    plt.gcf().set_size_inches(8, 6)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
+    plt.close()
+    
+
 # --------------------------------------------------------------------------------------
 
 
@@ -2568,6 +2615,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 22
     i = i + 1
     # aggregations(cursor, i, plotDir, dataDir, dryrun)
+
+    # 23
+    i = i + 1
+    # booleanPieCharts(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
