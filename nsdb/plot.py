@@ -1537,18 +1537,19 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
         ]
 
     fig, ax = plt.subplots()  # Create a figure and an axes.
-    ax.bar(*zip(*data))
-    ax.set_xlabel("User groups")  # Add an x-label to the axes.
-    ax.set_ylabel("Number of Users (log)")  # Add a y-label to the axes.
-    ax.set_yscale("log")
+    ax.barh(*zip(*data))
+    ax.set_ylabel("User groups")  # Add an x-label to the axes.
+    ax.set_xlabel("Number of Users (log)")  # Add a y-label to the axes.
+    ax.set_xscale("log")
     ax.set_title("Number of Users per User Group")  # Add a title to the axes.
-    ax.tick_params(axis="x", labelrotation=90)
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    plt.gcf().set_size_inches(7, 7)
     plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25)
 
-    ax.set_ylabel("Number of Users (linear)")
-    ax.set_yscale("linear")
-    plt.bar(*zip(*data))
+    ax.set_xlabel("Number of Users (linear)")
+    ax.set_xscale("linear")
+    
+    plt.gcf().set_size_inches(7, 7)
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
 
 
