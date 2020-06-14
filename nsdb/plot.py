@@ -253,11 +253,25 @@ def numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir, dryrun):
             ("Meno25", 144943),
         ]
 
-    plt.title("Number of main and talk edits for the biggest editors")
-    plt.bar(*zip(*mainspaceData), label="mainspace edits")
-    plt.bar(*zip(*talkspaceData), label="talkspace edits")
-    plt.xticks(rotation=90)
-    plt.legend(loc="upper right")
+    fig, axs = plt.subplots(2, 1)  # Create a figure and an axes.
+    fig.suptitle("Top 10 mainspace and talkpage editors")
+    axs[0].barh(*zip(*mainspaceData))
+    axs[0].set_ylabel("Usernames")  # Add an x-label to the axes.
+    axs[0].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
+    axs[0].set_title("Main space edits")  # Add a title to the axes.
+    axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    axs[1].barh(*zip(*talkspaceData))
+    axs[1].set_ylabel("Usernames")  # Add an x-label to the axes.
+    axs[1].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
+    axs[1].set_title("Talk space edits")  # Add a title to the axes.
+    axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+
+    plt.gcf().set_size_inches(8, 11)
+    axs[0].spines["top"].set_visible(False)
+    axs[0].spines["right"].set_visible(False)
+    axs[1].spines["top"].set_visible(False)
+    axs[1].spines["right"].set_visible(False)
+
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
 
@@ -308,11 +322,25 @@ def numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir, dryrun):
             ("MiszaBot I", 226159),
         ]
 
-    plt.title("Number of main and talk edits for the biggest bots")
-    plt.bar(*zip(*mainspaceData), label="mainspace edits")
-    plt.bar(*zip(*talkspaceData), label="talkspace edits")
-    plt.xticks(rotation=90)
-    plt.legend(loc="upper right")
+    fig, axs = plt.subplots(2, 1)  # Create a figure and an axes.
+    fig.suptitle("Top 10 mainspace and talkpage bot editors")
+    axs[0].barh(*zip(*mainspaceData))
+    axs[0].set_ylabel("Usernames")  # Add an x-label to the axes.
+    axs[0].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
+    axs[0].set_title("Main space edits")  # Add a title to the axes.
+    axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    axs[1].barh(*zip(*talkspaceData))
+    axs[1].set_ylabel("Usernames")  # Add an x-label to the axes.
+    axs[1].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
+    axs[1].set_title("Talk space edits")  # Add a title to the axes.
+    axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+
+    plt.gcf().set_size_inches(8, 11)
+    axs[0].spines["top"].set_visible(False)
+    axs[0].spines["right"].set_visible(False)
+    axs[1].spines["top"].set_visible(False)
+    axs[1].spines["right"].set_visible(False)
+
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
 
@@ -363,11 +391,25 @@ def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir, dryrun):
             ("2001:8A0:F23F:16", 1874),
         ]
 
-    plt.title("Number of main and talk edits for the biggest IP editors")
-    plt.bar(*zip(*mainspaceData), label="mainspace edits")
-    plt.bar(*zip(*talkspaceData), label="talkspace edits")
-    plt.xticks(rotation=90)
-    plt.legend(loc="upper right")
+    fig, axs = plt.subplots(2, 1)  # Create a figure and an axes.
+    fig.suptitle("Top 10 mainspace and talkpage IP editors")
+    axs[0].barh(*zip(*mainspaceData))
+    axs[0].set_ylabel("Usernames")  # Add an x-label to the axes.
+    axs[0].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
+    axs[0].set_title("Main space edits")  # Add a title to the axes.
+    axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    axs[1].barh(*zip(*talkspaceData))
+    axs[1].set_ylabel("Usernames")  # Add an x-label to the axes.
+    axs[1].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
+    axs[1].set_title("Talk space edits")  # Add a title to the axes.
+    axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+
+    plt.gcf().set_size_inches(8, 11)
+    axs[0].spines["top"].set_visible(False)
+    axs[0].spines["right"].set_visible(False)
+    axs[1].spines["top"].set_visible(False)
+    axs[1].spines["right"].set_visible(False)
+
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
 
@@ -1548,7 +1590,7 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
 
     ax.set_xlabel("Number of Users (linear)")
     ax.set_xscale("linear")
-    
+
     plt.gcf().set_size_inches(7, 7)
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
 
@@ -2467,10 +2509,16 @@ def booleanPieCharts(cursor, i, plotDir, dataDir, dryrun):
         data = [29544, 12977, 828078, 1695274, 129688]
         population = 57822696
 
-    columns = ["comment_copyedit", "comment_personal_life", "ins_vulgarity", "reverted", "blanking"]
+    columns = [
+        "comment_copyedit",
+        "comment_personal_life",
+        "ins_vulgarity",
+        "reverted",
+        "blanking",
+    ]
 
     # create a figure with two subplots
-    fig, axs = plt.subplots(2,3)
+    fig, axs = plt.subplots(2, 3)
 
     fig.suptitle("Ratios of binary features")
 
@@ -2482,13 +2530,13 @@ def booleanPieCharts(cursor, i, plotDir, dataDir, dryrun):
         print([population, data[key]])
         axs[key].pie([population, data[key]])
 
-    axs[-1].axis('off')
-    
+    axs[-1].axis("off")
+
     plt.gcf().set_size_inches(8, 6)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
-    
+
 
 # --------------------------------------------------------------------------------------
 
