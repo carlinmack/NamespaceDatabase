@@ -17,7 +17,8 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
 
     query = """SELECT status, count(id)
     FROM wikiactors.partition
-    GROUP BY status;"""
+    GROUP BY status
+    ORDER BY count(id) desc;"""
 
     if not dryrun:
         cursor.execute(query,)
@@ -25,11 +26,15 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
-        data = [("done", 76988), ("failed again", 59), ("failed", 1418)]
-    plt.title("Status of parsing partitions")
-    plt.xlabel("Status")
-    plt.ylabel("Number of Partitions")
-    plt.bar(*zip(*data))
+        data = [("done", 76988), ("failed", 1418), ("failed again", 59)]
+    fig, ax = plt.subplots()
+    ax.set_title("Status of parsing partitions")
+    ax.set_xlabel("Status")
+    ax.set_ylabel("Number of Partitions")
+    ax.bar(*zip(*data))
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
 
@@ -52,15 +57,19 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
-        data = [47508198, 1585249, 1092331, 169984, 34658]
+        data = [1062957, 23477790, 22217924, 3267408, 364341]
 
     total = sum(data)
     data = list(map(lambda x: x * 100 / total, data))
 
-    plt.title("Distribution of edits in main space")
-    plt.xlabel("Number of edits by user")
-    plt.ylabel("Percentage")
-    plt.bar(columns, data)
+    fig, ax = plt.subplots()
+    ax.set_title("Distribution of edits in main space")
+    ax.set_xlabel("Number of edits by user")
+    ax.set_ylabel("Percentage")
+    ax.bar(columns, data)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
@@ -89,10 +98,14 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
     total = sum(data)
     data = list(map(lambda x: x * 100 / total, data))
 
-    plt.title("Distribution of edits in talk space")
-    plt.xlabel("Talk Page Edits")
-    plt.ylabel("Percentage")
-    plt.bar(columns, data)
+    fig, ax = plt.subplots()
+    ax.set_title("Distribution of edits in talk space")
+    ax.set_xlabel("Talk Page Edits")
+    ax.set_ylabel("Percentage")
+    ax.bar(columns, data)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
@@ -105,7 +118,8 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     query = """SELECT namespace, count(page_id)
     AS 'count'
     FROM page
-    GROUP BY namespace;"""
+    GROUP BY namespace
+    ORDER BY namespace;"""
     if not dryrun:
         cursor.execute(query,)
         data = cursor.fetchall()
@@ -118,47 +132,53 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
             ("0", 13274486),
             ("1", 6973255),
             ("2", 2769259),
+            ("3", 13270254),
             ("4", 1064053),
             ("5", 145316),
-            ("3", 13270254),
-            ("100", 89259),
-            ("13", 1051),
-            ("12", 1934),
-            ("118", 91670),
             ("6", 799880),
             ("7", 421780),
-            ("101", 22247),
-            ("11", 310669),
             ("8", 2119),
             ("9", 1308),
-            ("119", 20586),
             ("10", 575245),
+            ("11", 310669),
+            ("12", 1934),
+            ("13", 1051),
             ("14", 1668104),
             ("15", 1399806),
-            ("829", 6564),
-            ("828", 9691),
+            ("100", 89259),
+            ("101", 22247),
             ("108", 6893),
             ("109", 6196),
+            ("118", 91670),
+            ("119", 20586),
+            ("447", 1323),
             ("710", 924),
             ("711", 40),
-            ("447", 1323),
+            ("828", 9691),
+            ("829", 6564),
             ("2300", 1),
             ("2301", 1),
         ]
 
     fig, ax = plt.subplots()  # Create a figure and an axes.
-    ax.bar(*zip(*data))
-    ax.set_xlabel("Namespace")  # Add an x-label to the axes.
-    ax.set_ylabel("Number of Pages (log)")  # Add a y-label to the axes.
-    ax.set_yscale("log")
+    ax.barh(*zip(*data))
+    ax.set_ylabel("Namespace")  # Add an x-label to the axes.
+    ax.set_xlabel("Number of Pages (log)")  # Add a y-label to the axes.
+    ax.set_xscale("log")
     ax.set_title("Number of Pages per namespace")  # Add a title to the axes.
-    ax.tick_params(axis="x", labelrotation=90)
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+
+    ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    plt.gcf().set_size_inches(8, 8)
     plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25)
 
-    ax.set_ylabel("Number of Pages (linear)")
-    ax.set_yscale("linear")
-    plt.bar(*zip(*data))
+    ax.set_xlabel("Number of Pages (linear)")
+    ax.set_xscale("linear")
+
+    ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25)
 
 
@@ -199,9 +219,13 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
         data = [1824008, 47503455, 1058214, 4407]
     data = list(map(lambda x: x * 100 / totalUsers, data))
 
-    plt.title("Namespaces that users edit")
-    plt.ylabel("Percentage")
-    plt.bar(columns, data)
+    fig, ax = plt.subplots()
+    ax.set_title("Namespaces that users edit")
+    ax.set_ylabel("Percentage")
+    ax.bar(columns, data)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25)
     plt.close()
