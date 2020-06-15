@@ -33,8 +33,8 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     ax.set_ylabel("Number of Partitions")
     ax.bar(*zip(*data))
     ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
+
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -68,8 +68,7 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
     ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -104,8 +103,7 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
     ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -168,8 +166,7 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     ax.set_title("Number of Pages per namespace")  # Add a title to the axes.
 
     ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
     plt.gcf().set_size_inches(8, 8)
     plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
@@ -177,8 +174,7 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     ax.set_xscale("linear")
 
     ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
 
@@ -224,8 +220,7 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
     ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -291,10 +286,8 @@ def numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir, dryrun):
     axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
     plt.gcf().set_size_inches(8, 11)
-    axs[0].spines["top"].set_visible(False)
-    axs[0].spines["right"].set_visible(False)
-    axs[1].spines["top"].set_visible(False)
-    axs[1].spines["right"].set_visible(False)
+    removeSpines(axs[0])
+    removeSpines(axs[1])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -360,10 +353,8 @@ def numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir, dryrun):
     axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
     plt.gcf().set_size_inches(8, 11)
-    axs[0].spines["top"].set_visible(False)
-    axs[0].spines["right"].set_visible(False)
-    axs[1].spines["top"].set_visible(False)
-    axs[1].spines["right"].set_visible(False)
+    removeSpines(axs[0])
+    removeSpines(axs[1])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -429,10 +420,8 @@ def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir, dryrun):
     axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
     plt.gcf().set_size_inches(8, 11)
-    axs[0].spines["top"].set_visible(False)
-    axs[0].spines["right"].set_visible(False)
-    axs[1].spines["top"].set_visible(False)
-    axs[1].spines["right"].set_visible(False)
+    removeSpines(axs[0])
+    removeSpines(axs[1])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -584,7 +573,15 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     axs[1, 2].set_title("blocked edits in talk space")
     axs[1, 2].bar(columns, talkspaceBlockedData)
     axs[1, 2].yaxis.set_major_formatter(threeFigures)
-    plt.gcf().set_size_inches(20, 10)
+
+    plt.gcf().set_size_inches(19, 9)
+    removeSpines(axs[0, 0])
+    removeSpines(axs[0, 1])
+    removeSpines(axs[0, 2])
+    removeSpines(axs[1, 0])
+    removeSpines(axs[1, 1])
+    removeSpines(axs[1, 2])
+
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -664,6 +661,13 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     axs[2].bar(columns, blockedData)
     # fig.tight_layout()
     plt.gcf().set_size_inches(10, 17.5)
+
+    axs[0].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    axs[1].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    axs[2].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    removeSpines(axs[0])
+    removeSpines(axs[1])
+    removeSpines(axs[2])
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -751,62 +755,48 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     # Position of bars on x-axis
     ind = list(range(N))
 
-    # Figure size
-    plt.figure(figsize=(9, 7))
+    fig, ax = plt.subplots()
 
     # Width of a bar
     width = 0.3
 
     # Plotting
-    plt.bar(
+    ax.bar(
         ind,
         specialUsersData,
         width,
         label="Users with special privileges",
         yerr=specialUsersStd,
     )
-    plt.bar(
+    ax.bar(
         list(map(lambda x: x + width, ind)),
         userData,
         width,
         label="Non blocked users",
         yerr=userStd,
     )
-    plt.bar(
+    ax.bar(
         list(map(lambda x: x + width * 2, ind)),
         blockedData,
         width,
         label="Blocked users",
         yerr=blockedStd,
     )
-    plt.ylim(bottom=0)
-    plt.ylabel("Hours")
-    plt.title("")
-
-    # xticks()
     # First argument - A list of positions at which ticks should be placed
     # Second argument -  A list of labels to place at the given locations
     plt.xticks(list(map(lambda x: x + (width * 2) / 2, ind)), columns)
 
-    # Finding the best position for legends and putting it
-    plt.legend(loc="best")
+    ax.set_ylim(bottom=0)
+    ax.set_ylabel("Hours")
+    plt.legend(loc="upper left")
+
+    plt.gcf().set_size_inches(9, 7)
+    removeSpines(ax)
+    plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
+    ax.set_axisbelow(True)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
-
-    # fig, axs = plt.subplots(1, 2, gridspec_kw={"width_ratios": [3, 1]})
-
-    # fig.suptitle("Time between talkpage edits and duration between first and last edit")
-
-    # axs[0].bar(columns[:2], data[:2])
-    # axs[0].set_xticks
-    # axs[0].tick_params(labelrotation=90)
-    # axs[0].ylabel("Hours")
-
-    # axs[1].bar(columns[2:7], data[2:7])
-    # axs[1].tick_params(labelrotation=90)
-    # axs[1].ylabel("Hours")
-
-    # plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
 
@@ -897,8 +887,17 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     axs[1, 0].bar(columns, userData)
     axs[1, 1].set_title("page edits in user talk space")
     axs[1, 1].bar(columns, userTalkData)
+
     # fig.tight_layout()
     plt.gcf().set_size_inches(11, 9)
+    removeSpines(axs[0, 0])
+    removeSpines(axs[0, 1])
+    removeSpines(axs[1, 0])
+    removeSpines(axs[1, 1])
+    axs[0, 0].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    axs[1, 0].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+
+    # ax.set_axisbelow(True)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -969,33 +968,32 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         ipAddressData = [0.05001974686845408, 0.008109401602654984]
 
+    fig, ax = plt.subplots()
+
     # Numbers of pairs of bars you want
     N = len(columns)
 
     # Position of bars on x-axis
     ind = list(range(N))
 
-    # Figure size
-    plt.figure(figsize=(12, 7))
-
     # Width of a bar
     width = 0.2
 
     # Plotting
-    plt.bar(ind, userData, width, label="Non blocked users")
-    plt.bar(
+    ax.bar(ind, userData, width, label="Non blocked users")
+    ax.bar(
         list(map(lambda x: x + width, ind)), blockedData, width, label="Blocked users"
     )
-    plt.bar(list(map(lambda x: x + width * 2, ind)), botsData, width, label="Bots")
-    plt.bar(
+    ax.bar(list(map(lambda x: x + width * 2, ind)), botsData, width, label="Bots")
+    ax.bar(
         list(map(lambda x: x + width * 3, ind)),
         ipAddressData,
         width,
         label="IP address",
     )
 
-    plt.ylabel("unit ?")
-    plt.title("Average sentiment of different subsets of users")
+    ax.set_ylabel("unit ?")
+    ax.set_title("Average sentiment of different subsets of users")
 
     # xticks()
     # First argument - A list of positions at which ticks should be placed
@@ -1003,6 +1001,9 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     plt.xticks(list(map(lambda x: x + (width * 3) / 2, ind)), columns)
 
     # Finding the best position for legends and putting it
+    removeSpines(ax)
+    plt.gcf().set_size_inches(12, 7)
+
     plt.legend(loc="best")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -1096,56 +1097,57 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         botsData = [0.005499846173827871, 0.004018131754929727]
 
+    fig, ax = plt.subplots()
+
     # Numbers of pairs of bars you want
     N = len(columns)
 
     # Position of bars on x-axis
     ind = list(range(N))
 
-    # Figure size
-    plt.figure(figsize=(12, 7))
-
     # Width of a bar
     width = 0.15
 
     # Plotting
-    plt.bar(ind, botsAddedPosData, width, label="added positive")
-    plt.bar(
+    ax.bar(ind, botsAddedPosData, width, label="added positive")
+    ax.bar(
         list(map(lambda x: x + width, ind)),
         botsAddNegData,
         width,
         label="added negative",
     )
-    plt.bar(
+    ax.bar(
         list(map(lambda x: x + width * 2, ind)),
         botsDelPosData,
         width,
         label="deleted positive",
     )
-    plt.bar(
+    ax.bar(
         list(map(lambda x: x + width * 3, ind)),
         botsDelNegData,
         width,
         label="deleted negative",
     )
-    plt.bar(
+    ax.bar(
         list(map(lambda x: x + width * 4, ind)),
         botsBothData,
         width,
         label="both have sentiment",
     )
-    plt.bar(
+    ax.bar(
         list(map(lambda x: x + width * 5, ind)), botsData, width, label="all bots",
     )
 
-    plt.ylabel("unit ?")
-    plt.title("Average sentiment for different types of bot edits")
+    ax.set_ylabel("unit ?")
+    ax.set_title("Average sentiment for different types of bot edits")
 
     # xticks()
     # First argument - A list of positions at which ticks should be placed
     # Second argument -  A list of labels to place at the given locations
     plt.xticks(list(map(lambda x: x + (width * 3) / 2, ind)), columns)
 
+    removeSpines(ax)
+    plt.gcf().set_size_inches(12, 7)
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
@@ -1254,11 +1256,13 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     data.append(("ip", ipAddressData))
     std.append(ipAddressData)
 
-    plt.title("Average profanity per type of user")
-    plt.ylabel("Average profanity / %")
-    plt.bar(*zip(*data), yerr=std)
-    plt.ylim(bottom=0)
+    fig, ax = plt.subplots()
+    ax.set_title("Average profanity per type of user")
+    ax.set_ylabel("Average profanity / %")
+    ax.bar(*zip(*data), yerr=std)
+    ax.set_ylim(bottom=0)
     # plt.bar(*zip(*data))
+    removeSpines(ax)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -1363,6 +1367,9 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
     axs[2].tick_params(labelrotation=90)
     axs[2].set_ylim(bottom=0)
     plt.gcf().set_size_inches(10, 7.5)
+    removeSpines(axs[0])
+    removeSpines(axs[1])
+    removeSpines(axs[2])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -1431,12 +1438,14 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
             ("2302", 0),
             ("2303", 0),
         ]
-
-    plt.title("Namespaces that the top 500 users have edited")
-    plt.xticks(rotation=90)
+    fig, ax = plt.subplots()
+    ax.set_title("Namespaces that the top 500 users have edited")
+    labels = list(map(lambda x: x[0], data))
+    ax.set_xticklabels(labels=labels, rotation=90)
     # plt.ylabel("? (log)")
     # # plt.yscale("log")
-    plt.bar(*zip(*data))
+    ax.bar(*zip(*data))
+    removeSpines(ax)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -1551,7 +1560,8 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     axs[1].bar(*zip(*externalData))
     axs[1].set_title("Average added external links per type of user")
     plt.gcf().set_size_inches(5, 10)
-
+    removeSpines(axs[0])
+    removeSpines(axs[1])
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -1611,16 +1621,14 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
     ax.set_title("Number of Users per User Group")  # Add a title to the axes.
     ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     plt.gcf().set_size_inches(7, 7)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
     plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
     ax.set_xlabel("Number of Users (linear)")
     ax.set_xscale("linear")
 
     plt.gcf().set_size_inches(7, 7)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
 
@@ -1653,12 +1661,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         "deleted_sentiment",
     ]
 
-    all = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
-    inner join user
-    on user.id = edit.user_table_id
-    where user.blocked is not True
-    and user.user_special is not True
-    and user.ip_address is null;"""
+    all = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit;"""
     if not dryrun:
         cursor.execute(all,)
         allData = cursor.fetchall()
@@ -2075,14 +2078,10 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     # print(plotRange)
 
     plt.gcf().set_size_inches(9.5, 9.5)
-    axs[0].spines["top"].set_visible(False)
-    axs[0].spines["right"].set_visible(False)
-    axs[1].spines["top"].set_visible(False)
-    axs[1].spines["right"].set_visible(False)
-    axs[2].spines["top"].set_visible(False)
-    axs[2].spines["right"].set_visible(False)
-    axs[3].spines["top"].set_visible(False)
-    axs[3].spines["right"].set_visible(False)
+    removeSpines(axs[0])
+    removeSpines(axs[1])
+    removeSpines(axs[2])
+    removeSpines(axs[3])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -2154,7 +2153,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
-        data = [8705437, 173139, 1575, 20, 41452659, 2, 56590, 673]
+        data = [8747943, 173785, 1596, 21, 41452659, 2, 14084, 27]
 
     total = sum(data)
     data = list(map(lambda x: x / total, data))
@@ -2193,7 +2192,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
         with open(dataDir + str(i) + "-edits.txt", "w") as file:
             file.write(str(editsData))
     else:
-        editsData = [10321534, 737816, 2900975, 179876, 5078532, 0, 30798811, 133243]
+        editsData = [17536089, 847162, 2929584, 195019, 5078532, 0, 23584256, 23897]
 
     total = sum(editsData)
     editsData = list(map(lambda x: x / total, editsData))
@@ -2209,11 +2208,11 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
         y_pos_1 += v[0]
         y_pos_2 += v[1]
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(reversed(handles), reversed(labels), loc='center left')
+    ax.legend(reversed(handles), reversed(labels), loc="center left")
 
+    ax.set_ylim([0, 1])
     plt.gcf().set_size_inches(5, 10)
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    removeSpines(ax)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -2509,14 +2508,10 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
     axs[3].set_yticks(plotRange)
 
     plt.gcf().set_size_inches(9.5, 9.5)
-    axs[0].spines["top"].set_visible(False)
-    axs[0].spines["right"].set_visible(False)
-    axs[1].spines["top"].set_visible(False)
-    axs[1].spines["right"].set_visible(False)
-    axs[2].spines["top"].set_visible(False)
-    axs[2].spines["right"].set_visible(False)
-    axs[3].spines["top"].set_visible(False)
-    axs[3].spines["right"].set_visible(False)
+    removeSpines(axs[0])
+    removeSpines(axs[1])
+    removeSpines(axs[2])
+    removeSpines(axs[3])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -2582,6 +2577,11 @@ def threeFigureFormatter(
         groups.append(s[-3:])
         s = s[:-3]
     return s + ",".join(reversed(groups))
+
+
+def removeSpines(ax):
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
 
 
 def plot(plotDir: str = "../plots/", dryrun=False):
