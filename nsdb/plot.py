@@ -2093,21 +2093,55 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     (SELECT count(*) FROM user
     WHERE bot is not true and ip_address is not true and blocked is not true),
     (SELECT count(*) FROM user
-    WHERE bot is not true and ip_address is not true and blocked is true),
-    (SELECT count(*) FROM user
     WHERE bot is not true and ip_address is true and blocked is not true),
     (SELECT count(*) FROM user
+    WHERE bot is not true and ip_address is not true and blocked is true),
+    (SELECT count(*) FROM user
     WHERE bot is not true and ip_address is true and blocked is true);"""
-    columns = ["users", "blocked", "ip", "ip blocked"]
-    cursor.execute(query,)
-    data = cursor.fetchall()
-    data = list(*data)
-    with open(dataDir + str(i) + ".txt", "w") as file:
-        file.write(str(data))
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(*data)
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data))
+    else:
+        data = [8762027, 41358810, 173812, 93851]
 
-    plt.title("Comparison of blocked and unblocked IPs")
-    plt.bar([columns[0], columns[2]], [data[0], data[2]])
-    plt.bar([columns[1], columns[3]], [data[1], data[3]])
+    sumUser = data[0] + data[2]
+    sumIP = data[1] + data[3]
+    proportinateData = [data[0]/sumUser, data[1]/sumIP,data[2]/sumUser, data[3]/sumIP]
+
+    data = [data[i : i + 2] for i in range(0, len(data), 2)]
+
+    xticks = ["users", "ip"]
+    labels = ["non-blocked", "blocked"]
+
+    fig, axs = plt.subplots(2,1)
+    axs[0].set_title("Comparison of blocked and unblocked\nusers and IPs")
+    axs[0].set_ylabel("Number of Users")
+    y_pos_1 = y_pos_2 = 0
+    for k, v in enumerate(data):
+        abs_bottom = [y_pos_1, y_pos_2]
+        axs[0].bar(xticks, v, bottom=abs_bottom, label=labels[k])
+        y_pos_1 += v[0]
+        y_pos_2 += v[1]
+
+    axs[0].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    removeSpines(axs[0])
+
+    data = proportinateData
+    data = [data[i : i + 2] for i in range(0, len(data), 2)]
+    axs[1].set_title("Proportional")
+    axs[1].set_ylabel("Percent")
+    y_pos_1 = y_pos_2 = 0
+    for k, v in enumerate(data):
+        abs_bottom = [y_pos_1, y_pos_2]
+        axs[1].bar(xticks, v, bottom=abs_bottom, label=labels[k])
+        y_pos_1 += v[0]
+        y_pos_2 += v[1]
+
+    removeSpines(axs[1])
+    plt.gcf().set_size_inches(5, 10)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -2151,7 +2185,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
-        data = [8747943, 173785, 1596, 21, 41452659, 2, 14084, 27]
+        data = [8747943, 173785, 1596, 21, 41358810, 93851, 14084, 27]
 
     total = sum(data)
     data = list(map(lambda x: x / total, data))
@@ -2190,7 +2224,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
         with open(dataDir + str(i) + "-edits.txt", "w") as file:
             file.write(str(editsData))
     else:
-        editsData = [17536089, 847162, 2929584, 195019, 5078532, 0, 23584256, 23897]
+        editsData = [17536089, 847162, 2929584, 195019, 5070606, 7926, 23584256, 23897]
 
     total = sum(editsData)
     editsData = list(map(lambda x: x / total, editsData))
