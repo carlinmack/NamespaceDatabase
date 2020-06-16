@@ -5,10 +5,10 @@ import argparse
 import os
 
 import Database
+import matplotlib
+import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
-import matplotlib.font_manager as font_manager
-import matplotlib
 from cycler import cycler  # for mpl>2.2
 
 
@@ -28,7 +28,7 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(data))
     else:
         data = [("done", 76988), ("failed", 1418), ("failed again", 59)]
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_title("Status of parsing partitions")
     ax.set_xlabel("Status")
     ax.set_ylabel("Number of Partitions")
@@ -168,6 +168,8 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
 
     ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     removeSpines(ax)
+    plt.grid(color="#ccc", which="major", axis="x", linestyle="solid")
+    ax.set_axisbelow(True)
     plt.gcf().set_size_inches(8, 8)
     plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
@@ -756,7 +758,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     # Position of bars on x-axis
     ind = list(range(N))
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     # Width of a bar
     width = 0.3
@@ -883,12 +885,23 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     fig.suptitle("Distribution of number of edits per page across name spaces")
     axs[0, 0].set_title("page edits in main space")
     axs[0, 0].bar(columns, mainspaceData)
+    axs[0, 0].grid(color="#ccc", which="major", axis="y", linestyle="solid")
+    axs[0, 0].set_axisbelow(True)
+
     axs[0, 1].set_title("page edits in main talk space")
     axs[0, 1].bar(columns, mainspaceTalkData)
+    axs[0, 1].grid(color="#ccc", which="major", axis="y", linestyle="solid")
+    axs[0, 1].set_axisbelow(True)
+
     axs[1, 0].set_title("page edits in user space")
     axs[1, 0].bar(columns, userData)
+    axs[1, 0].grid(color="#ccc", which="major", axis="y", linestyle="solid")
+    axs[1, 0].set_axisbelow(True)
+
     axs[1, 1].set_title("page edits in user talk space")
     axs[1, 1].bar(columns, userTalkData)
+    axs[1, 1].grid(color="#ccc", which="major", axis="y", linestyle="solid")
+    axs[1, 1].set_axisbelow(True)
 
     # fig.tight_layout()
     plt.gcf().set_size_inches(11, 9)
@@ -1280,7 +1293,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     data.append(("ip blocked", ipAddressBlockedData))
     std.append(ipAddressBlockedStd)
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_title("Average profanity per type of user")
     ax.set_ylabel("Average profanity / %")
     ax.bar(*zip(*data), yerr=std)
@@ -1470,6 +1483,8 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
     # # plt.yscale("log")
     ax.bar(*zip(*data))
     removeSpines(ax)
+    plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
+    ax.set_axisbelow(True)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -1685,9 +1700,14 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         "deleted_sentiment",
     ]
 
-    all = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit;"""
+    allEdits = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit;"""
     if not dryrun:
-        cursor.execute(all,)
+        cursor.execute(allEdits,)
         allData = cursor.fetchall()
         allData = list(*allData)
         with open(dataDir + str(i) + "-all.txt", "w") as file:
