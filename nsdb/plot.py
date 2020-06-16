@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 import matplotlib.font_manager as font_manager
 import matplotlib
+from cycler import cycler  # for mpl>2.2
 
 
 def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
@@ -2604,6 +2605,23 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     if "Inter" in [f.name for f in font_manager.fontManager.ttflist]:
         matplotlib.rcParams["font.family"] = "Inter"
+
+    cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    print(cycle_colors)
+    matplotlib.rcParams["axes.prop_cycle"] = cycler(
+        color=[
+            "#2271d3",
+            "#f88b12",
+            "#198424",
+            "#db2b19",
+            "#7e69d2",
+            "#83361b",
+            "#e051ac",
+            "#727272",
+            "#bcbd22",
+            "#17becf",
+        ]
+    )
 
     # 0
     i = 0
