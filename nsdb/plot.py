@@ -1199,13 +1199,14 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
         userStd = 0.11028484312384287
 
     data.append(("users", userData))
-    std.append(userData)
+    std.append(userStd)
 
     blocked = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
     inner join user
     on edit.user_table_id = user.id
-    where user.blocked is true;"""
+    where user.blocked is true
+    and user.ip_address is not true;"""
     if not dryrun:
         cursor.execute(blocked,)
         blockedData = cursor.fetchall()
@@ -1218,7 +1219,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
         blockedStd = 0.12255422751902714
 
     data.append(("blocked", blockedData))
-    std.append(blockedData)
+    std.append(blockedStd)
 
     bots = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
@@ -1237,13 +1238,14 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
         botsStd = 0.08899117278773609
 
     data.append(("bots", botsData))
-    std.append(botsData)
+    std.append(botsStd)
 
     ipAddress = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
     from edit
     inner join user
     on edit.user_table_id = user.id
-    where user.ip_address is true;"""
+    where user.ip_address is true
+    and user.blocked is not true;"""
     if not dryrun:
         cursor.execute(ipAddress,)
         ipAddressData = cursor.fetchall()
@@ -1256,7 +1258,27 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
         ipAddressStd = 0.20379850302087404
 
     data.append(("ip", ipAddressData))
-    std.append(ipAddressData)
+    std.append(ipAddressStd)
+
+    ipAddressBlocked = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
+    from edit
+    inner join user
+    on edit.user_table_id = user.id
+    where user.ip_address is true
+    and user.blocked is true;"""
+    if not dryrun:
+        cursor.execute(ipAddressBlocked,)
+        ipAddressBlockedData = cursor.fetchall()
+        ipAddressBlockedStd = ipAddressBlockedData[0][1]
+        ipAddressBlockedData = ipAddressBlockedData[0][0]
+        with open(dataDir + str(i) + "-ipAddressBlocked.txt", "w") as file:
+            file.write(str(ipAddressBlockedData) + "\n" + str(ipAddressBlockedStd))
+    else:
+        ipAddressBlockedData = 0.0437
+        ipAddressBlockedStd = 0.20432362462698245
+
+    data.append(("ip blocked", ipAddressBlockedData))
+    std.append(ipAddressBlockedStd)
 
     fig, ax = plt.subplots()
     ax.set_title("Average profanity per type of user")
@@ -1771,7 +1793,8 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     ip = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
     inner join user
     on user.id = edit.user_table_id
-    where user.ip_address is True;"""
+    where user.ip_address is True
+    and user.blocked is not true;"""
     if not dryrun:
         cursor.execute(ip,)
         ipData = cursor.fetchall()
@@ -1780,27 +1803,63 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(ipData))
     else:
         ipData = [
-            478.8285,
-            540.5966,
-            75.7865,
-            25.4132,
-            12.7463,
-            2.9714,
-            1.0504,
+            478.6787,
+            540.9392,
+            75.8385,
+            25.4024,
+            12.7483,
+            2.9722,
+            1.0498,
             0.1154,
             0.0066,
             0.0002,
             0.0005,
-            0.10915863,
-            0.09347010,
-            0.04646092,
-            0.00952005,
-            0.08899534,
+            0.10915781,
+            0.09348089,
+            0.04645136,
+            0.00952301,
+            0.08899232,
             0.0434,
-            0.22376702,
-            0.1438,
-            0.05001974686845408,
-            0.008109401602654984,
+            0.22379311,
+            0.1437,
+            0.05003652881927706,
+            0.008112887395128948,
+        ]
+
+    ipBlocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    inner join user
+    on user.id = edit.user_table_id
+    where user.ip_address is True
+    and user.blocked is true;"""
+    if not dryrun:
+        cursor.execute(ipBlocked,)
+        ipBlockedData = cursor.fetchall()
+        ipBlockedData = list(*ipBlockedData)
+        with open(dataDir + str(i) + "-ipBlocked.txt", "w") as file:
+            file.write(str(ipBlockedData))
+    else:
+        ipBlockedData = [
+            574.6621,
+            321.4382,
+            42.5342,
+            32.2950,
+            11.4884,
+            2.4286,
+            1.4061,
+            0.1595,
+            0.0406,
+            0.0004,
+            0.0010,
+            0.10968559,
+            0.08657087,
+            0.05258113,
+            0.00762512,
+            0.09092609,
+            0.0437,
+            0.20707933,
+            0.2118,
+            0.039283604989237844,
+            0.005879388956523799,
         ]
 
     blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
@@ -1884,22 +1943,24 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[0].hlines(
         y=plotRange,
         xmin=[
-            min(a, b, c, d, e)
-            for a, b, c, d, e in zip(
+            min(a, b, c, d, e, f)
+            for a, b, c, d, e, f in zip(
                 data[:end],
                 specialData[:end],
                 blockedData[:end],
                 ipData[:end],
+                ipBlockedData[:end],
                 botData[:end],
             )
         ],
         xmax=[
-            max(a, b, c, d, e)
-            for a, b, c, d, e in zip(
+            max(a, b, c, d, e, f)
+            for a, b, c, d, e, f in zip(
                 data[:end],
                 specialData[:end],
                 blockedData[:end],
                 ipData[:end],
+                ipBlockedData[:end],
                 botData[:end],
             )
         ],
@@ -1919,6 +1980,9 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     )
     axs[0].scatter(botData[:2], plotRange, color="mediumaquamarine", label="bots")
     axs[0].scatter(ipData[:2], plotRange, color="skyblue", label="ip users")
+    axs[0].scatter(
+        ipBlockedData[:2], plotRange, color="hotpink", label="blocke ip users"
+    )
     axs[0].scatter(blockedData[:2], plotRange, color="orangered", label="blocked users")
     axs[0].set_yticklabels(columns[:2])
     axs[0].set_yticks(plotRange)
@@ -1933,22 +1997,24 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[1].hlines(
         y=plotRange,
         xmin=[
-            min(a, b, c, d, e)
-            for a, b, c, d, e in zip(
+            min(a, b, c, d, e, f)
+            for a, b, c, d, e, f in zip(
                 data[start:end],
                 specialData[start:end],
                 blockedData[start:end],
                 ipData[start:end],
+                ipBlockedData[start:end],
                 botData[start:end],
             )
         ],
         xmax=[
-            max(a, b, c, d, e)
-            for a, b, c, d, e in zip(
+            max(a, b, c, d, e, f)
+            for a, b, c, d, e, f in zip(
                 data[start:end],
                 specialData[start:end],
                 blockedData[start:end],
                 ipData[start:end],
+                ipBlockedData[start:end],
                 botData[start:end],
             )
         ],
@@ -1971,6 +2037,9 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     )
     axs[1].scatter(ipData[start:end], plotRange, color="skyblue", label="ip users")
     axs[1].scatter(
+        ipBlockedData[start:end], plotRange, color="hotpink", label="blocked ip users"
+    )
+    axs[1].scatter(
         blockedData[start:end], plotRange, color="orangered", label="blocked users"
     )
     axs[1].set_yticklabels(columns[start:end])
@@ -1983,22 +2052,24 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[2].hlines(
         y=plotRange,
         xmin=[
-            min(a, b, c, d, e)
-            for a, b, c, d, e in zip(
+            min(a, b, c, d, e, f)
+            for a, b, c, d, e, f in zip(
                 data[start:end],
                 specialData[start:end],
                 blockedData[start:end],
                 ipData[start:end],
+                ipBlockedData[start:end],
                 botData[start:end],
             )
         ],
         xmax=[
-            max(a, b, c, d, e)
-            for a, b, c, d, e in zip(
+            max(a, b, c, d, e, f)
+            for a, b, c, d, e, f in zip(
                 data[start:end],
                 specialData[start:end],
                 blockedData[start:end],
                 ipData[start:end],
+                ipBlockedData[start:end],
                 botData[start:end],
             )
         ],
@@ -2021,6 +2092,9 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     )
     axs[2].scatter(ipData[start:end], plotRange, color="skyblue", label="ip users")
     axs[2].scatter(
+        ipBlockedData[start:end], plotRange, color="hotpink", label="blocked ip users"
+    )
+    axs[2].scatter(
         blockedData[start:end], plotRange, color="orangered", label="blocked users"
     )
     axs[2].set_yticklabels(columns[start:end])
@@ -2033,22 +2107,24 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[3].hlines(
         y=plotRange,
         xmin=[
-            min(a, b, c, d, e)
-            for a, b, c, d, e in zip(
+            min(a, b, c, d, e, f)
+            for a, b, c, d, e, f in zip(
                 data[start:],
                 specialData[start:],
                 blockedData[start:],
                 ipData[start:],
+                ipBlockedData[start:],
                 botData[start:],
             )
         ],
         xmax=[
-            max(a, b, c, d, e)
-            for a, b, c, d, e in zip(
+            max(a, b, c, d, e, f)
+            for a, b, c, d, e, f in zip(
                 data[start:],
                 specialData[start:],
                 blockedData[start:],
                 ipData[start:],
+                ipBlockedData[start:],
                 botData[start:],
             )
         ],
@@ -2068,6 +2144,9 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     )
     axs[3].scatter(botData[start:], plotRange, color="mediumaquamarine", label="bots")
     axs[3].scatter(ipData[start:], plotRange, color="skyblue", label="ip users")
+    axs[3].scatter(
+        ipBlockedData[start:], plotRange, color="hotpink", label="blocked ip users"
+    )
     axs[3].scatter(
         blockedData[start:], plotRange, color="orangered", label="blocked users"
     )
@@ -2109,14 +2188,19 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
 
     sumUser = data[0] + data[2]
     sumIP = data[1] + data[3]
-    proportinateData = [data[0]/sumUser, data[1]/sumIP,data[2]/sumUser, data[3]/sumIP]
+    proportinateData = [
+        data[0] / sumUser,
+        data[1] / sumIP,
+        data[2] / sumUser,
+        data[3] / sumIP,
+    ]
 
     data = [data[i : i + 2] for i in range(0, len(data), 2)]
 
     xticks = ["users", "ip"]
     labels = ["non-blocked", "blocked"]
 
-    fig, axs = plt.subplots(2,1)
+    fig, axs = plt.subplots(2, 1)
     axs[0].set_title("Comparison of blocked and unblocked\nusers and IPs")
     axs[0].set_ylabel("Number of Users")
     y_pos_1 = y_pos_2 = 0
