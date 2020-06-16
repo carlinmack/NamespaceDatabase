@@ -698,12 +698,12 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
             file.write(str(userData) + "\n" + str(userStd))
     else:
         # userData = [554.73523706, 1895.69554062, 12669.22330022, 40912.15355312]
-        userData = [584.68424387, 1352.63700297, 4186.79704245, 7490.39812962]
+        userData = [585.04453404, 1353.55128065, 4190.04904727, 7496.67851755]
         userStd = [
-            4172.026442852001,
-            4943.701153194956,
-            10873.528895162885,
-            19310.972230041192,
+            4173.818169075838,
+            4945.720150565946,
+            10877.852434682092,
+            19318.9197993923,
         ]
 
     blocked = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
@@ -720,12 +720,12 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
             file.write(str(blockedData) + "\n" + str(blockedStd))
     else:
         # blockedData = [5.51123904, 215.49983126, 4457.78610197, 17759.69208272]
-        blockedData = [92.79879749, 303.09142600, 1582.28911081, 3231.75859999]
+        blockedData = [104.89630128, 315.44417069, 1522.00393320, 3044.11047520]
         blockedStd = [
-            1437.4337418350062,
-            1804.4136287010265,
-            5778.304638286785,
-            10743.635287170524,
+            1445.3397388692304,
+            1813.6419287313036,
+            5619.618614308308,
+            10367.92683510656,
         ]
 
     specialUsers = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
@@ -742,12 +742,12 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
             file.write(str(specialUsersData) + "\n" + str(specialUsersStd))
     else:
         # specialUsersData = [147.03132949, 1124.02555881, 13976.81447445, 45119.61085901]
-        specialUsersData = [192.15421342, 1462.58485847, 17093.34624816, 55476.52302954]
+        specialUsersData = [75.23881283, 608.03894083, 14312.48619327, 68101.25732456]
         specialUsersStd = [
-            2590.0629314313774,
-            3788.0370304857165,
-            17440.14473037299,
-            40756.72616459319,
+            1720.7292200635438,
+            2310.760460431426,
+            14440.439492053269,
+            41412.40758456633,
         ]
 
     # Numbers of pairs of bars you want
@@ -788,6 +788,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     plt.xticks(list(map(lambda x: x + (width * 2) / 2, ind)), columns)
 
     ax.set_ylim(bottom=0)
+    ax.set_title("Average time between talk page edits and account duration")
     ax.set_ylabel("Hours")
     plt.legend(loc="upper left")
 
@@ -2025,8 +2026,6 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[2].set_yticklabels(columns[start:end])
     axs[2].set_yticks(plotRange)
     axs[2].set_xlim(left=0)
-    # print(axs[1].get_ylim())
-    # axs[2].set_ylim([0.5, 3.25])
 
     start = 8
     end = 21
@@ -2075,8 +2074,6 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[3].set_yticklabels(columns[start:])
     axs[3].set_yticks(plotRange)
     axs[3].set_xlim(left=0)
-
-    # print(plotRange)
 
     plt.gcf().set_size_inches(9.5, 9.5)
     removeSpines(axs[0])
@@ -2528,8 +2525,7 @@ def booleanPieCharts(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(query,)
         data = cursor.fetchall()
         data = list(*data)
-        # data = list(map(lambda x: float(x), data))
-        # print(data)
+
         population = data.pop(0)
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data) + "\n" + str(population))
@@ -2555,7 +2551,6 @@ def booleanPieCharts(cursor, i, plotDir, dataDir, dryrun):
     # plot each pie chart in a separate subplot
     for key, value in enumerate(columns):
         axs[key].set_title(value)
-        print([population, data[key]])
         axs[key].pie([population, data[key]])
 
     axs[-1].axis("off")
@@ -2606,8 +2601,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     if "Inter" in [f.name for f in font_manager.fontManager.ttflist]:
         matplotlib.rcParams["font.family"] = "Inter"
 
-    cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    print(cycle_colors)
+    # cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
     matplotlib.rcParams["axes.prop_cycle"] = cycler(
         color=[
             "#2271d3",
