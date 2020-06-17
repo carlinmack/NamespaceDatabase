@@ -64,11 +64,17 @@
 ### 19 Average All Special
 ![plot](19-averageAllSpecial.png)
 
+### 20 Composition Of User IP
+![plot](21-compositionOfUserIP.png)
+
 ### 21 Composition Of User
 ![plot](21-compositionOfUser.png)
 
 ### 22 Aggregations
 ![plot](22-aggregations.png)
 
-### 23 Boolean Pie Charts
+### 23 Edit Booleans
 ![plot](23-booleanPieCharts.png)
+
+### 24 User Booleans
+![plot](24-userBooleans.png)

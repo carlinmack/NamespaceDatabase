@@ -2653,7 +2653,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
-def booleanPieCharts(cursor, i, plotDir, dataDir, dryrun):
+def editBooleans(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "booleanPieCharts"
     plt.figure()
 
@@ -2678,6 +2678,46 @@ def booleanPieCharts(cursor, i, plotDir, dataDir, dryrun):
         "reverted",
         "blanking",
     ]
+
+    # create a figure with two subplots
+    fig, axs = plt.subplots(2, 3)
+
+    fig.suptitle("Ratios of binary features")
+
+    axs = axs.ravel()
+
+    # plot each pie chart in a separate subplot
+    for key, value in enumerate(columns):
+        axs[key].set_title(value)
+        axs[key].pie([population, data[key]])
+
+    axs[-1].axis("off")
+
+    plt.gcf().set_size_inches(8, 6)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
+def userBooleans(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "userBooleans"
+    plt.figure()
+
+    query = """select count(*), sum(confirmed = 1), sum(autoconfirmed = 1), sum(user_special = 1), sum(bot = 1), sum(blocked = 1) from user;"""
+
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+        data = list(*data)
+
+        population = data.pop(0)
+        with open(dataDir + str(i) + ".txt", "w") as file:
+            file.write(str(data) + "\n" + str(population))
+    else:
+        data = [74469, 1603322, 14414, 1584, 267678]
+        population = 50390084
+
+    columns = ["confirmed", "autoconfirmed", "user_special", "bot", "blocked"]
 
     # create a figure with two subplots
     fig, axs = plt.subplots(2, 3)
@@ -2850,7 +2890,11 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 23
     i = i + 1
-    # booleanPieCharts(cursor, i, plotDir, dataDir, dryrun)
+    # editBooleans(cursor, i, plotDir, dataDir, dryrun)
+
+    # 24
+    i = i + 1
+    # userBooleans(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
