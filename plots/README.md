@@ -81,3 +81,6 @@
 
 ### 25 Talkpage Edits Over Time
 ![plot](25-talkpageEditsOverTime.png)
+
+### 26 Average All Epoch
+![plot](26-averageAllEpoch.png)

@@ -2783,6 +2783,235 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
+#
+def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "averageAllEpoch"
+    plt.figure()
+
+    columns = [
+        "added_length",
+        "deleted_length",
+        "del_words",
+        "comment_length",
+        "ins_longest_inserted_word",
+        "ins_longest_character_sequence",
+        "ins_internal_link",
+        "ins_external_link",
+        "blanking",
+        "comment_copyedit",
+        "comment_personal_life",
+        "comment_special_chars",
+        "ins_capitalization",
+        "ins_digits",
+        "ins_pronouns",
+        "ins_special_chars",
+        "ins_vulgarity",
+        "ins_whitespace",
+        "reverted",
+        "added_sentiment",
+        "deleted_sentiment",
+    ]
+
+    allEdits = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit;"""
+    if not dryrun:
+        cursor.execute(allEdits,)
+        allData = cursor.fetchall()
+        allData = list(*allData)
+        with open(dataDir + str(i) + "-all.txt", "w") as file:
+            file.write(str(allData))
+    else:
+        allData = [
+            442.0422,
+            439.0867,
+            58.0321,
+            49.1949,
+            10.6587,
+            1.8952,
+            1.6529,
+            0.1304,
+            0.0022,
+            0.0005,
+            0.0002,
+            0.11972271,
+            0.10387291,
+            0.02747601,
+            0.00610185,
+            0.12846018,
+            0.0143,
+            0.16946286,
+            0.0293,
+            0.03135975155021137,
+            0.0055170703440406196,
+        ]
+
+    before = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
+    where cast(edit_date as date) < '2010-09-01';"""
+    if not dryrun:
+        cursor.execute(before,)
+        beforeData = cursor.fetchall()
+        beforeData = list(*beforeData)
+        with open(dataDir + str(i) + "-before.txt", "w") as file:
+            file.write(str(beforeData))
+    else:
+        beforeData = [
+            479.8468,
+            576.8820,
+            78.3332,
+            44.2190,
+            10.3822,
+            1.9279,
+            1.7219,
+            0.1206,
+            0.0031,
+            0.0005,
+            0.0002,
+            0.12086085,
+            0.10419313,
+            0.02750613,
+            0.00671131,
+            0.12564456,
+            0.0182,
+            0.17842393,
+            0.0342,
+            0.0406774523917268,
+            0.0076446326158984374,
+        ]
+
+    after = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    where cast(edit_date as date) >= '2010-09-01';"""
+    if not dryrun:
+        cursor.execute(after,)
+        afterData = cursor.fetchall()
+        afterData = list(*afterData)
+        with open(dataDir + str(i) + "-after.txt", "w") as file:
+            file.write(str(afterData))
+    else:
+        afterData = [409.2529, 319.5716, 40.4241, 53.5107, 10.8985, 1.8669, 1.5930, 0.1389, 0.0015, 0.0005, 0.0003, 0.11873556, 0.10359516, 0.02744988, 0.00557324, 0.13090228, 0.0110, 0.16169059, 0.0251, 0.023278155069148418, 0.0036717546312976914]
+
+    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
+
+    fig.suptitle("Average of edit fields before and after the midpoint of the dataset")
+
+    start = 0
+    end = 2
+    plotRange = range(start, end)
+
+    axs[0].hlines(
+        y=plotRange,
+        xmin=[min(a, b) for a, b in zip(beforeData[:end], afterData[:end],)],
+        xmax=[max(a, b) for a, b in zip(beforeData[:end], afterData[:end],)],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[0].vlines(
+        x=allData[:2],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    axs[0].scatter(beforeData[:2], plotRange, color="skyblue", label="before 1st September 2010")
+    axs[0].scatter(afterData[:2], plotRange, color="orangered", label="after 1st September 2010")
+    axs[0].set_yticklabels(columns[:2])
+    axs[0].set_yticks(plotRange)
+    axs[0].legend(
+        loc="upper center", bbox_to_anchor=(0.5, 2), ncol=3, fancybox=True, shadow=True,
+    )
+
+    start = 3
+    end = 5
+    plotRange = range(1, end - start + 1)
+    axs[1].hlines(
+        y=plotRange,
+        xmin=[min(a, b) for a, b in zip(beforeData[start:end], afterData[start:end],)],
+        xmax=[max(a, b) for a, b in zip(beforeData[start:end], afterData[start:end],)],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[1].vlines(
+        x=allData[start:end],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    axs[1].scatter(beforeData[start:end], plotRange, color="skyblue", label="ip users")
+    axs[1].scatter(
+        afterData[start:end], plotRange, color="orangered", label="blocked users"
+    )
+    axs[1].set_yticklabels(columns[start:end])
+    axs[1].set_yticks(plotRange)
+
+    start = 5
+    end = 8
+    plotRange = range(1, end - start + 1)
+    axs[2].hlines(
+        y=plotRange,
+        xmin=[min(a, b) for a, b in zip(beforeData[start:end], afterData[start:end],)],
+        xmax=[max(a, b) for a, b in zip(beforeData[start:end], afterData[start:end],)],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[2].vlines(
+        x=allData[start:end],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    axs[2].scatter(beforeData[start:end], plotRange, color="skyblue", label="ip users")
+    axs[2].scatter(
+        afterData[start:end], plotRange, color="orangered", label="blocked users"
+    )
+    axs[2].set_yticklabels(columns[start:end])
+    axs[2].set_yticks(plotRange)
+    axs[2].set_xlim(left=0)
+
+    start = 8
+    end = 21
+    plotRange = range(1, end - start + 1)
+    axs[3].hlines(
+        y=plotRange,
+        xmin=[min(a, b) for a, b in zip(beforeData[start:end], afterData[start:end],)],
+        xmax=[max(a, b) for a, b in zip(beforeData[start:end], afterData[start:end],)],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[3].vlines(
+        x=allData[start:],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    axs[3].scatter(beforeData[start:], plotRange, color="skyblue", label="ip users")
+    axs[3].scatter(
+        afterData[start:], plotRange, color="orangered", label="blocked users"
+    )
+    axs[3].set_yticklabels(columns[start:])
+    axs[3].set_yticks(plotRange)
+    axs[3].set_xlim(left=0)
+
+    plt.gcf().set_size_inches(9.5, 9.5)
+    removeSpines(axs[0])
+    removeSpines(axs[1])
+    removeSpines(axs[2])
+    removeSpines(axs[3])
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
 # --------------------------------------------------------------------------------------
 
 
@@ -2943,6 +3172,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 25
     i = i + 1
     # talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun)
+
+    # 26
+    i = i + 1
+    # averageAllEpoch(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
