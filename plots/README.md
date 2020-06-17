@@ -78,3 +78,6 @@
 
 ### 24 User Booleans
 ![plot](24-userBooleans.png)
+
+### 25 Talkpage Edits Over Time
+![plot](25-talkpageEditsOverTime.png)

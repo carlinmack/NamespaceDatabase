@@ -2,7 +2,10 @@
 This script ....t
 """
 import argparse
+import csv
+import datetime
 import os
+from datetime import datetime as dt
 
 import Database
 import matplotlib
@@ -10,6 +13,7 @@ import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 from cycler import cycler  # for mpl>2.2
+from matplotlib.dates import DAILY
 
 
 def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
@@ -2682,7 +2686,7 @@ def editBooleans(cursor, i, plotDir, dataDir, dryrun):
     # create a figure with two subplots
     fig, axs = plt.subplots(2, 3)
 
-    fig.suptitle("Ratios of binary features")
+    fig.suptitle("Ratios of boolean features")
 
     axs = axs.ravel()
 
@@ -2722,7 +2726,7 @@ def userBooleans(cursor, i, plotDir, dataDir, dryrun):
     # create a figure with two subplots
     fig, axs = plt.subplots(2, 3)
 
-    fig.suptitle("Ratios of binary features")
+    fig.suptitle("Ratios of boolean features")
 
     axs = axs.ravel()
 
@@ -2734,6 +2738,46 @@ def userBooleans(cursor, i, plotDir, dataDir, dryrun):
     axs[-1].axis("off")
 
     plt.gcf().set_size_inches(8, 6)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
+def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "talkpageEditsOverTime"
+    plt.figure()
+
+    query = "select cast(edit_date as date) as date, count(*) from edit group by date;"
+
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+
+        with open(dataDir + str(i) + ".csv", "w") as file:
+            writer = csv.writer(file, delimiter=",")
+            for line in data:
+                writer.writerow(line)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            data = []
+            reader = csv.reader(file, delimiter=",")
+            for line in reader:
+                data.append(line)
+
+            data = list(map(lambda x: (dt.strptime(x[0], "%Y-%m-%d"), int(x[1])), data))
+
+    dates = list(map(lambda x: matplotlib.dates.date2num(x[0]), data))
+    values = [x[1] for x in data]
+    # print(dates)
+    # create a figure with two subplots
+    fig, ax = plt.subplots()
+
+    fig.suptitle("Talkpage edits over time")
+
+    ax.plot_date(dates, values, "C0-")
+    # loc = ax.xaxis.get_major_locator()
+    # loc.maxticks[DAILY] = 3
+    plt.gcf().set_size_inches(12, 7.5)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -2895,6 +2939,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 24
     i = i + 1
     # userBooleans(cursor, i, plotDir, dataDir, dryrun)
+
+    # 25
+    i = i + 1
+    # talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
