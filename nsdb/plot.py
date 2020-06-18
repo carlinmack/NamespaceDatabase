@@ -36,8 +36,8 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     ax.set_xlabel("Status")
     ax.set_ylabel("Number of Partitions")
     ax.bar(*zip(*data))
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    removeSpines(ax)
+
+    singlePlot(plt, ax, "y")
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -71,8 +71,8 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
     ax.set_xlabel("Number of edits by user")
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    removeSpines(ax)
+
+    singlePlot(plt, ax, "y")
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -106,8 +106,8 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
     ax.set_xlabel("Talk Page Edits")
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    removeSpines(ax)
+
+    singlePlot(plt, ax, "y")
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -169,18 +169,15 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     ax.set_xscale("log")
     ax.set_title("Number of Pages per namespace")  # Add a title to the axes.
 
-    ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    removeSpines(ax)
-    plt.grid(color="#ccc", which="major", axis="x", linestyle="solid")
-    ax.set_axisbelow(True)
     plt.gcf().set_size_inches(8, 8)
+    singlePlot(plt, ax, "x")
+
     plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
     ax.set_xlabel("Number of Pages (linear)")
     ax.set_xscale("linear")
+    singlePlot(plt, ax, "x")
 
-    ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    removeSpines(ax)
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
 
@@ -225,8 +222,8 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     ax.set_title("Namespaces that users edit")
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    removeSpines(ax)
+    
+    singlePlot(plt, ax, "y")
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -798,10 +795,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     plt.legend(loc="upper left")
 
     plt.gcf().set_size_inches(9, 7)
-    removeSpines(ax)
-    plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
-    ax.set_axisbelow(True)
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    singlePlot(plt, ax, "y")
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -1020,6 +1014,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
 
     # Finding the best position for legends and putting it
     removeSpines(ax)
+    showGrid(plt, ax, 'y')
     plt.gcf().set_size_inches(12, 7)
 
     plt.legend(loc="best")
@@ -1165,6 +1160,8 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     plt.xticks(list(map(lambda x: x + (width * 3) / 2, ind)), columns)
 
     removeSpines(ax)
+    plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
+    ax.set_axisbelow(True)
     plt.gcf().set_size_inches(12, 7)
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
@@ -1302,6 +1299,9 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     ax.bar(*zip(*data), yerr=std)
     ax.set_ylim(bottom=0)
     # plt.bar(*zip(*data))
+    
+    plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
+    ax.set_axisbelow(True)
     removeSpines(ax)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -1663,14 +1663,14 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
     ax.set_title("Number of Users per User Group")  # Add a title to the axes.
     ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     plt.gcf().set_size_inches(7, 7)
-    removeSpines(ax)
+    singlePlot(plt, ax, "x")
     plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
     ax.set_xlabel("Number of Users (linear)")
     ax.set_xscale("linear")
 
     plt.gcf().set_size_inches(7, 7)
-    removeSpines(ax)
+    singlePlot(plt, ax, "x")
     plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25, dpi=200)
 
 
@@ -2004,7 +2004,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     axs[0].scatter(botData[:2], plotRange, color="mediumaquamarine", label="bots")
     axs[0].scatter(ipData[:2], plotRange, color="skyblue", label="ip users")
     axs[0].scatter(
-        ipBlockedData[:2], plotRange, color="hotpink", label="blocke ip users"
+        ipBlockedData[:2], plotRange, color="hotpink", label="blocked56 ip users"
     )
     axs[0].scatter(blockedData[:2], plotRange, color="orangered", label="blocked users")
     axs[0].set_yticklabels(columns[:2])
@@ -2774,7 +2774,8 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
     ax.plot_date(dates, values, "C0-")
 
     plt.gcf().set_size_inches(12, 7.5)
-    removeSpines(ax)
+    
+    singlePlot(plt, ax, "y")
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -3209,6 +3210,17 @@ def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
 # --------------------------------------------------------------------------------------
 
 
+def singlePlot(plt, ax, axis):
+    removeSpines(ax)
+
+    if axis == "y":
+        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        showGrid(plt, ax, "y")
+    elif axis == "x":
+        ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        showGrid(plt, ax, "x")
+
+
 def threeFigureFormatter(
     x, pos
 ):  # formatter function takes tick label and tick position
@@ -3223,6 +3235,11 @@ def threeFigureFormatter(
 def removeSpines(ax):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
+
+
+def showGrid(plt, ax, axis):
+    plt.grid(color="#ccc", which="major", axis=axis, linestyle="solid")
+    ax.set_axisbelow(True)
 
 
 def plot(plotDir: str = "../plots/", dryrun=False):
