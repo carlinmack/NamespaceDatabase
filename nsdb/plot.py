@@ -3,16 +3,16 @@ This script ....t
 """
 import argparse
 import csv
-import datetime
 import os
 from datetime import datetime as dt
 
-import Database
 import matplotlib
 import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
-from cycler import cycler  # for mpl>2.2
+from cycler import cycler
+
+import Database
 
 
 def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
@@ -66,7 +66,7 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
     total = sum(data)
     data = list(map(lambda x: x * 100 / total, data))
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_title("Distribution of edits in main space")
     ax.set_xlabel("Number of edits by user")
     ax.set_ylabel("Percentage")
@@ -101,7 +101,7 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
     total = sum(data)
     data = list(map(lambda x: x * 100 / total, data))
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_title("Distribution of edits in talk space")
     ax.set_xlabel("Talk Page Edits")
     ax.set_ylabel("Percentage")
@@ -162,7 +162,7 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
             ("2301", 1),
         ]
 
-    fig, ax = plt.subplots()  # Create a figure and an axes.
+    _, ax = plt.subplots()  # Create a figure and an axes.
     ax.barh(*zip(*data))
     ax.set_ylabel("Namespace")  # Add an x-label to the axes.
     ax.set_xlabel("Number of Pages (log)")  # Add a y-label to the axes.
@@ -218,11 +218,11 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
         data = [1824008, 47503455, 1058214, 4407]
     data = list(map(lambda x: x * 100 / totalUsers, data))
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_title("Namespaces that users edit")
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
-    
+
     singlePlot(plt, ax, "y")
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
@@ -655,7 +655,7 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         blockedData = [16578, 154823, 2417, 15]
     plt.title("Namespaces that users edit")
 
-    fig, axs = plt.subplots(3)
+    _, axs = plt.subplots(3)
     axs[0].set_title("Namespaces that users edit")
     axs[0].bar(columns, userData)
     axs[1].set_title("Namespaces that bots edit")
@@ -980,7 +980,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         ipAddressData = [0.05001974686845408, 0.008109401602654984]
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     # Numbers of pairs of bars you want
     N = len(columns)
@@ -1014,7 +1014,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
 
     # Finding the best position for legends and putting it
     removeSpines(ax)
-    showGrid(plt, ax, 'y')
+    showGrid(plt, ax, "y")
     plt.gcf().set_size_inches(12, 7)
 
     plt.legend(loc="best")
@@ -1110,7 +1110,7 @@ def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         botsData = [0.005499846173827871, 0.004018131754929727]
 
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     # Numbers of pairs of bars you want
     N = len(columns)
@@ -1299,7 +1299,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     ax.bar(*zip(*data), yerr=std)
     ax.set_ylim(bottom=0)
     # plt.bar(*zip(*data))
-    
+
     plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
     ax.set_axisbelow(True)
     removeSpines(ax)
@@ -1312,7 +1312,17 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "averageAll"
     plt.figure()
 
-    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment), STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),STD(deleted_sentiment)  from edit;"""
+    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment), STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),
+    STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),
+    STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),
+    STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),
+    STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),
+    STD(deleted_sentiment)  from edit;"""
     columns = [
         "added_length",
         "deleted_length",
@@ -1478,7 +1488,7 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
             ("2302", 0),
             ("2303", 0),
         ]
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_title("Namespaces that the top 500 users have edited")
     labels = list(map(lambda x: x[0], data))
     ax.set_xticklabels(labels=labels, rotation=90)
@@ -1595,7 +1605,7 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     internalData.append(("ip", ipAddressInternalData))
     externalData.append(("ip", ipAddressExternalData))
 
-    fig, axs = plt.subplots(2, 1)
+    _, axs = plt.subplots(2, 1)
 
     axs[0].bar(*zip(*internalData))
     axs[0].set_title("Average added internal links per type of user")
@@ -1654,7 +1664,7 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
             ("templateeditor", 184),
         ]
 
-    fig, ax = plt.subplots()  # Create a figure and an axes.
+    _, ax = plt.subplots()  # Create a figure and an axes.
     ax.barh(*zip(*data))
     ax.invert_yaxis()
     ax.set_ylabel("User groups")  # Add an x-label to the axes.
@@ -1740,7 +1750,12 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.0055170703440406196,
         ]
 
-    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
     inner join user
     on user.id = edit.user_table_id
     where user.blocked is null
@@ -1778,7 +1793,11 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.006679179803724929,
         ]
 
-    special = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    special = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+    AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
     inner join user
     on user.id = edit.user_table_id
     where user.user_special is True;"""
@@ -1813,7 +1832,12 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.004687928593039355,
         ]
 
-    ip = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    ip = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
     inner join user
     on user.id = edit.user_table_id
     where user.ip_address is True
@@ -1849,7 +1873,12 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.008112887395128948,
         ]
 
-    ipBlocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    ipBlocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
     inner join user
     on user.id = edit.user_table_id
     where user.ip_address is True
@@ -1885,7 +1914,12 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.005879388956523799,
         ]
 
-    blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
     inner join user
     on user.id = edit.user_table_id
     where user.blocked is True;"""
@@ -1920,7 +1954,12 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.00475190706470203,
         ]
 
-    bot = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    bot = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
     inner join user
     on user.id = edit.user_table_id
     where user.bot is True;"""
@@ -2223,15 +2262,15 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     xticks = ["users", "ip"]
     labels = ["non-blocked", "blocked"]
 
-    fig, axs = plt.subplots(2, 1)
+    _, axs = plt.subplots(2, 1)
     axs[0].set_title("Comparison of blocked and unblocked\nusers and IPs")
     axs[0].set_ylabel("Number of Users")
-    y_pos_1 = y_pos_2 = 0
-    for k, v in enumerate(data):
-        abs_bottom = [y_pos_1, y_pos_2]
-        axs[0].bar(xticks, v, bottom=abs_bottom, label=labels[k])
-        y_pos_1 += v[0]
-        y_pos_2 += v[1]
+    yPosOne = yPosTwo = 0
+    for key, value in enumerate(data):
+        absBottom = [yPosOne, yPosTwo]
+        axs[0].bar(xticks, value, bottom=absBottom, label=labels[key])
+        yPosOne += value[0]
+        yPosTwo += value[1]
 
     axs[0].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     removeSpines(axs[0])
@@ -2240,12 +2279,12 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     data = [data[i : i + 2] for i in range(0, len(data), 2)]
     axs[1].set_title("Proportional")
     axs[1].set_ylabel("Percent")
-    y_pos_1 = y_pos_2 = 0
-    for k, v in enumerate(data):
-        abs_bottom = [y_pos_1, y_pos_2]
-        axs[1].bar(xticks, v, bottom=abs_bottom, label=labels[k])
-        y_pos_1 += v[0]
-        y_pos_2 += v[1]
+    yPosOne = yPosTwo = 0
+    for key, value in enumerate(data):
+        absBottom = [yPosOne, yPosTwo]
+        axs[1].bar(xticks, value, bottom=absBottom, label=labels[key])
+        yPosOne += value[0]
+        yPosTwo += value[1]
 
     removeSpines(axs[1])
     plt.gcf().set_size_inches(5, 10)
@@ -2259,22 +2298,22 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     plt.figure()
 
     query = """SELECT
-    (SELECT count(*) FROM user
-    WHERE bot is not true and ip_address is not true and blocked is not true and user_special is not true),
-    (SELECT count(*) FROM user
-    WHERE bot is not true and ip_address is not true and blocked is true and user_special is not true),
-    (SELECT count(*) FROM user
-    WHERE bot is true and ip_address is not true and blocked is not true and user_special is not true),
-    (SELECT count(*) FROM user
-    WHERE bot is true and ip_address is not true and blocked is true and user_special is not true),
-    (SELECT count(*) FROM user
-    WHERE bot is not true and ip_address is true and blocked is not true and user_special is not true),
-    (SELECT count(*) FROM user
-    WHERE bot is not true and ip_address is true and blocked is true and user_special is not true),
-    (SELECT count(*) FROM user
-    WHERE bot is not true and ip_address is not true and blocked is not true and user_special is true),
-    (SELECT count(*) FROM user
-    WHERE bot is not true and ip_address is not true and blocked is true and user_special is true);"""
+    (SELECT count(*) FROM user WHERE
+    bot is not true and ip_address is not true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM user WHERE
+    bot is not true and ip_address is not true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM user WHERE
+    bot is true and ip_address is not true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM user WHERE
+    bot is true and ip_address is not true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM user WHERE
+    bot is not true and ip_address is true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM user WHERE
+    bot is not true and ip_address is true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM user WHERE
+    bot is not true and ip_address is not true and blocked is not true and user_special is true),
+    (SELECT count(*) FROM user WHERE
+    bot is not true and ip_address is not true and blocked is true and user_special is true);"""
     columns = [
         "users",
         "blocked",
@@ -2298,22 +2337,22 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     data = list(map(lambda x: x / total, data))
 
     edits = """SELECT
-    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id
-    WHERE bot is not true and ip_address is not true and blocked is not true and user_special is not true),
-    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id
-    WHERE bot is not true and ip_address is not true and blocked is true and user_special is not true),
-    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id
-    WHERE bot is true and ip_address is not true and blocked is not true and user_special is not true),
-    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id
-    WHERE bot is true and ip_address is not true and blocked is true and user_special is not true),
-    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id
-    WHERE bot is not true and ip_address is true and blocked is not true and user_special is not true),
-    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id
-    WHERE bot is not true and ip_address is true and blocked is true and user_special is not true),
-    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id
-    WHERE bot is not true and ip_address is not true and blocked is not true and user_special is true),
-    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id
-    WHERE bot is not true and ip_address is not true and blocked is true and user_special is true);"""
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
+    bot is not true and ip_address is not true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
+    bot is not true and ip_address is not true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
+    bot is true and ip_address is not true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
+    bot is true and ip_address is not true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
+    bot is not true and ip_address is true and blocked is not true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
+    bot is not true and ip_address is true and blocked is true and user_special is not true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
+    bot is not true and ip_address is not true and blocked is not true and user_special is true),
+    (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
+    bot is not true and ip_address is not true and blocked is true and user_special is true);"""
     columns = [
         "users",
         "blocked",
@@ -2338,14 +2377,14 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
 
     data = list(zip(data, editsData))
     labels = ["distribution\nof users", "distribution\nof edits"]
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax.set_title("Distribution of users\nand how many edits on talkpages they make")
-    y_pos_1 = y_pos_2 = 0
-    for k, v in enumerate(data):
-        abs_bottom = [y_pos_1, y_pos_2]
-        ax.bar(labels, v, bottom=abs_bottom, label=columns[k])
-        y_pos_1 += v[0]
-        y_pos_2 += v[1]
+    yPosOne = yPosTwo = 0
+    for key, value in enumerate(data):
+        absBottom = [yPosOne, yPosTwo]
+        ax.bar(labels, value, bottom=absBottom, label=columns[key])
+        yPosOne += value[0]
+        yPosTwo += value[1]
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(reversed(handles), reversed(labels), loc="center left")
 
@@ -2400,7 +2439,12 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
     else:
         modesData = [0, 2, 1, 0, 11, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-    mins = """select MIN(added_length),MIN(deleted_length),MIN(del_words),MIN(comment_length),MIN(ins_longest_inserted_word),MIN(ins_longest_character_sequence),MIN(ins_internal_link),MIN(ins_external_link),MIN(blanking),MIN(comment_copyedit),MIN(comment_personal_life),MIN(comment_special_chars),MIN(ins_capitalization),MIN(ins_digits),MIN(ins_pronouns),MIN(ins_special_chars),MIN(ins_vulgarity),MIN(ins_whitespace),MIN(reverted),MIN(added_sentiment),MIN(deleted_sentiment) FROM edit;"""
+    mins = """select MIN(added_length),MIN(deleted_length),MIN(del_words),MIN(comment_length),
+    MIN(ins_longest_inserted_word),MIN(ins_longest_character_sequence),MIN(ins_internal_link),
+    MIN(ins_external_link),MIN(blanking),MIN(comment_copyedit),MIN(comment_personal_life),
+    MIN(comment_special_chars),MIN(ins_capitalization),MIN(ins_digits),MIN(ins_pronouns),
+    MIN(ins_special_chars),MIN(ins_vulgarity),MIN(ins_whitespace),MIN(reverted),MIN(added_sentiment),
+    MIN(deleted_sentiment) FROM edit;"""
     if not dryrun:
         cursor.execute(mins,)
         minsData = cursor.fetchall()
@@ -2432,7 +2476,12 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
             -1.0,
         ]
 
-    maxs = """select MAX(added_length),MAX(deleted_length),MAX(del_words),MAX(comment_length),MAX(ins_longest_inserted_word),MAX(ins_longest_character_sequence),MAX(ins_internal_link),MAX(ins_external_link),MAX(blanking),MAX(comment_copyedit),MAX(comment_personal_life),MAX(comment_special_chars),MAX(ins_capitalization),MAX(ins_digits),MAX(ins_pronouns),MAX(ins_special_chars),MAX(ins_vulgarity),MAX(ins_whitespace),MAX(reverted),MAX(added_sentiment),MAX(deleted_sentiment)  FROM edit;"""
+    maxs = """select MAX(added_length),MAX(deleted_length),MAX(del_words),MAX(comment_length),
+    MAX(ins_longest_inserted_word),MAX(ins_longest_character_sequence),MAX(ins_internal_link),
+    MAX(ins_external_link),MAX(blanking),MAX(comment_copyedit),MAX(comment_personal_life),
+    MAX(comment_special_chars),MAX(ins_capitalization),MAX(ins_digits),MAX(ins_pronouns),
+    MAX(ins_special_chars),MAX(ins_vulgarity),MAX(ins_whitespace),MAX(reverted),MAX(added_sentiment),
+    sMAX(deleted_sentiment)  FROM edit;"""
     if not dryrun:
         cursor.execute(maxs,)
         maxsData = cursor.fetchall()
@@ -2464,7 +2513,12 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
             1.0,
         ]
 
-    means = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment) from edit;"""
+    means = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment) from edit;"""
     if not dryrun:
         cursor.execute(means,)
         meansData = cursor.fetchall()
@@ -2496,7 +2550,12 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
             0.0055170703440406196,
         ]
 
-    stds = """select STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),STD(deleted_sentiment) from edit;"""
+    stds = """select STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),
+    STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),
+    STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),
+    STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),
+    STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),
+    STD(deleted_sentiment) from edit;"""
     if not dryrun:
         cursor.execute(stds,)
         stdsData = cursor.fetchall()
@@ -2660,7 +2719,8 @@ def editBooleans(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "booleanPieCharts"
     plt.figure()
 
-    query = """select count(*), sum(comment_copyedit = 1), sum(comment_personal_life = 1), sum(ins_vulgarity = 1), sum(reverted = 1), sum(blanking = 1) from edit;"""
+    query = """select count(*), sum(comment_copyedit = 1), sum(comment_personal_life = 1),
+    sum(ins_vulgarity = 1), sum(reverted = 1), sum(blanking = 1) from edit;"""
 
     if not dryrun:
         cursor.execute(query,)
@@ -2706,7 +2766,8 @@ def userBooleans(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "userBooleans"
     plt.figure()
 
-    query = """select count(*), sum(confirmed = 1), sum(autoconfirmed = 1), sum(user_special = 1), sum(bot = 1), sum(blocked = 1) from user;"""
+    query = """select count(*), sum(confirmed = 1), sum(autoconfirmed = 1), sum(user_special = 1),
+    sum(bot = 1), sum(blocked = 1) from user;"""
 
     if not dryrun:
         cursor.execute(query,)
@@ -2767,14 +2828,13 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
 
     dates = list(map(lambda x: matplotlib.dates.date2num(x[0]), data))
     values = [x[1] for x in data]
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
 
     ax.set_title("Talkpage edits over time")
 
     ax.plot_date(dates, values, "C0-")
 
     plt.gcf().set_size_inches(12, 7.5)
-    
     singlePlot(plt, ax, "y")
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
@@ -2885,7 +2945,12 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun):
             0.0076446326158984374,
         ]
 
-    after = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    after = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
     where cast(edit_date as date) >= '2010-09-01';"""
     if not dryrun:
         cursor.execute(after,)
@@ -3064,13 +3129,13 @@ def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun):
         "deleted_sentiment",
     ]
 
-    query = """select YEAR(edit_date), MONTH(edit_date), AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit
-    GROUP BY YEAR(edit_date), MONTH(edit_date) 
+    query = """select YEAR(edit_date), MONTH(edit_date), AVG(added_length),AVG(deleted_length),
+    AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
+    AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),
+    AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),
+    AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),
+    AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    GROUP BY YEAR(edit_date), MONTH(edit_date)
     order by YEAR(edit_date), MONTH(edit_date) ;"""
 
     if not dryrun:
@@ -3101,7 +3166,7 @@ def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun):
 
     values = list(map(lambda x: x[2:], data))
 
-    fig, axs = plt.subplots(4, 1)
+    _, axs = plt.subplots(4, 1)
 
     axs[0].set_title("Talkpage edits over time")
 
@@ -3153,13 +3218,13 @@ def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
         "deleted_sentiment",
     ]
 
-    query = """select YEAR(edit_date), AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit
-    GROUP BY YEAR(edit_date) 
+    query = """select YEAR(edit_date), AVG(added_length),AVG(deleted_length),AVG(del_words),
+    AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
+    AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),
+    AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),
+    AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),
+    AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
+    GROUP BY YEAR(edit_date)
     order by YEAR(edit_date) ;"""
 
     if not dryrun:
@@ -3183,7 +3248,7 @@ def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
 
     values = list(map(lambda x: x[1:], data))
 
-    fig, axs = plt.subplots(4, 1)
+    _, axs = plt.subplots(4, 1)
 
     axs[0].set_title("Talkpage edits by averaged by year")
 
@@ -3210,20 +3275,21 @@ def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
 # --------------------------------------------------------------------------------------
 
 
-def singlePlot(plt, ax, axis):
+def singlePlot(pltObj, ax, axis):
     removeSpines(ax)
 
     if axis == "y":
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        showGrid(plt, ax, "y")
+        showGrid(pltObj, ax, "y")
     elif axis == "x":
         ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        showGrid(plt, ax, "x")
+        showGrid(pltObj, ax, "x")
 
 
-def threeFigureFormatter(
-    x, pos
-):  # formatter function takes tick label and tick position
+# formatter function takes tick label and tick position
+def threeFigureFormatter(x, pos):
+    if pos:
+        pass # appeasing the linter
     s = "%d" % x
     groups = []
     while s and s[-1].isdigit():
@@ -3237,8 +3303,8 @@ def removeSpines(ax):
     ax.spines["right"].set_visible(False)
 
 
-def showGrid(plt, ax, axis):
-    plt.grid(color="#ccc", which="major", axis=axis, linestyle="solid")
+def showGrid(pltObj, ax, axis):
+    pltObj.grid(color="#ccc", which="major", axis=axis, linestyle="solid")
     ax.set_axisbelow(True)
 
 
@@ -3256,9 +3322,9 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     else:
         cursor = 0
 
-    font_files = font_manager.findSystemFonts(fontpaths=["./"])
-    for font_file in font_files:
-        font_manager.fontManager.addfont(font_file)
+    fontFiles = font_manager.findSystemFonts(fontpaths=["./"])
+    for fontFile in fontFiles:
+        font_manager.fontManager.addfont(fontFile)
 
     if "Inter" in [f.name for f in font_manager.fontManager.ttflist]:
         matplotlib.rcParams["font.family"] = "Inter"
@@ -3286,7 +3352,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 1
     i = i + 1
-    # distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun)
+    distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun)
 
     # 2
     i = i + 1
