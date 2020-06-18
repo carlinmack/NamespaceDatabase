@@ -13,7 +13,6 @@ import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 from cycler import cycler  # for mpl>2.2
-from matplotlib.dates import DAILY
 
 
 def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
@@ -2768,15 +2767,11 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
 
     dates = list(map(lambda x: matplotlib.dates.date2num(x[0]), data))
     values = [x[1] for x in data]
-    # print(dates)
-    # create a figure with two subplots
     fig, ax = plt.subplots()
 
     fig.suptitle("Talkpage edits over time")
 
     ax.plot_date(dates, values, "C0-")
-    # loc = ax.xaxis.get_major_locator()
-    # loc.maxticks[DAILY] = 3
     plt.gcf().set_size_inches(12, 7.5)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
@@ -2896,7 +2891,29 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun):
         with open(dataDir + str(i) + "-after.txt", "w") as file:
             file.write(str(afterData))
     else:
-        afterData = [409.2529, 319.5716, 40.4241, 53.5107, 10.8985, 1.8669, 1.5930, 0.1389, 0.0015, 0.0005, 0.0003, 0.11873556, 0.10359516, 0.02744988, 0.00557324, 0.13090228, 0.0110, 0.16169059, 0.0251, 0.023278155069148418, 0.0036717546312976914]
+        afterData = [
+            409.2529,
+            319.5716,
+            40.4241,
+            53.5107,
+            10.8985,
+            1.8669,
+            1.5930,
+            0.1389,
+            0.0015,
+            0.0005,
+            0.0003,
+            0.11873556,
+            0.10359516,
+            0.02744988,
+            0.00557324,
+            0.13090228,
+            0.0110,
+            0.16169059,
+            0.0251,
+            0.023278155069148418,
+            0.0036717546312976914,
+        ]
 
     fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
 
@@ -2920,8 +2937,12 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
-    axs[0].scatter(beforeData[:2], plotRange, color="skyblue", label="before 1st September 2010")
-    axs[0].scatter(afterData[:2], plotRange, color="orangered", label="after 1st September 2010")
+    axs[0].scatter(
+        beforeData[:2], plotRange, color="skyblue", label="before 1st September 2010"
+    )
+    axs[0].scatter(
+        afterData[:2], plotRange, color="orangered", label="after 1st September 2010"
+    )
     axs[0].set_yticklabels(columns[:2])
     axs[0].set_yticks(plotRange)
     axs[0].legend(
@@ -3007,6 +3028,95 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun):
     removeSpines(axs[1])
     removeSpines(axs[2])
     removeSpines(axs[3])
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
+def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "averageFeaturesOverTime"
+    plt.figure()
+
+    columns = [
+        "added_length",
+        "deleted_length",
+        "del_words",
+        "comment_length",
+        "ins_longest_inserted_word",
+        "ins_longest_character_sequence",
+        "ins_internal_link",
+        "ins_external_link",
+        "blanking",
+        "comment_copyedit",
+        "comment_personal_life",
+        "comment_special_chars",
+        "ins_capitalization",
+        "ins_digits",
+        "ins_pronouns",
+        "ins_special_chars",
+        "ins_vulgarity",
+        "ins_whitespace",
+        "reverted",
+        "added_sentiment",
+        "deleted_sentiment",
+    ]
+
+    query = """select YEAR(edit_date), MONTH(edit_date), AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
+    GROUP BY YEAR(edit_date), MONTH(edit_date) 
+    order by YEAR(edit_date), MONTH(edit_date) ;"""
+
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+
+        with open(dataDir + str(i) + ".csv", "w") as file:
+            writer = csv.writer(file, delimiter=",")
+            for line in data:
+                writer.writerow(line)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            data = []
+            reader = csv.reader(file, delimiter=",")
+            for line in reader:
+                data.append(line)
+
+            data = list(map(lambda x: tuple(map(float, x)), data))
+
+    dates = list(
+        map(
+            lambda x: matplotlib.dates.datestr2num(
+                str(int(x[0])) + "-" + str(int(x[1]))
+            ),
+            data,
+        )
+    )
+
+    values = list(map(lambda x: x[2:], data))
+
+    fig, axs = plt.subplots(4, 1)
+
+    axs[0].set_title("Talkpage edits over time")
+    print(len(dates), len(values[0]), len(columns))
+    colors = ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]
+    start = [0, 3, 5, 8]
+    end = [2, 5, 8, 21]
+    for j in range(4):
+        for i in range(start[j], end[j]):
+            axs[j].plot_date(
+                dates,
+                list(map(lambda x: x[i], values)),
+                "C0-",
+                label=columns[i],
+                c=colors[i % 10],
+            )
+        axs[j].legend(loc="best")
+        removeSpines(axs[j])
+    plt.gcf().set_size_inches(20, 15)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -3176,6 +3286,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 26
     i = i + 1
     # averageAllEpoch(cursor, i, plotDir, dataDir, dryrun)
+
+    # 27
+    i = i + 1
+    # averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()

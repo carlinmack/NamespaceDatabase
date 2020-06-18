@@ -84,3 +84,6 @@
 
 ### 26 Average All Epoch
 ![plot](26-averageAllEpoch.png)
+
+### 27 Average Features Over Time
+![plot](27-averageFeaturesOverTime.png)
