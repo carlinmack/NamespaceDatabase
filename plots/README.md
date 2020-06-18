@@ -87,3 +87,6 @@
 
 ### 27 Average Features Over Time
 ![plot](27-averageFeaturesOverTime.png)
+
+### 28 Average Features Over Year
+![plot](28-averageFeaturesOverYear.png)

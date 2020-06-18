@@ -2769,10 +2769,12 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
     values = [x[1] for x in data]
     fig, ax = plt.subplots()
 
-    fig.suptitle("Talkpage edits over time")
+    ax.set_title("Talkpage edits over time")
 
     ax.plot_date(dates, values, "C0-")
+
     plt.gcf().set_size_inches(12, 7.5)
+    removeSpines(ax)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -3101,10 +3103,92 @@ def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun):
     fig, axs = plt.subplots(4, 1)
 
     axs[0].set_title("Talkpage edits over time")
-    print(len(dates), len(values[0]), len(columns))
+
     colors = ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]
     start = [0, 3, 5, 8]
-    end = [2, 5, 8, 21]
+    end = [3, 5, 8, 21]
+    for j in range(4):
+        for i in range(start[j], end[j]):
+            axs[j].plot_date(
+                dates,
+                list(map(lambda x: x[i], values)),
+                "C0-",
+                label=columns[i],
+                c=colors[i % 10],
+            )
+        axs[j].legend(loc="best")
+        removeSpines(axs[j])
+    plt.gcf().set_size_inches(20, 15)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
+def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "averageFeaturesOverYear"
+    plt.figure()
+
+    columns = [
+        "added_length",
+        "deleted_length",
+        "del_words",
+        "comment_length",
+        "ins_longest_inserted_word",
+        "ins_longest_character_sequence",
+        "ins_internal_link",
+        "ins_external_link",
+        "blanking",
+        "comment_copyedit",
+        "comment_personal_life",
+        "comment_special_chars",
+        "ins_capitalization",
+        "ins_digits",
+        "ins_pronouns",
+        "ins_special_chars",
+        "ins_vulgarity",
+        "ins_whitespace",
+        "reverted",
+        "added_sentiment",
+        "deleted_sentiment",
+    ]
+
+    query = """select YEAR(edit_date), AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
+    GROUP BY YEAR(edit_date) 
+    order by YEAR(edit_date) ;"""
+
+    if not dryrun:
+        cursor.execute(query,)
+        data = cursor.fetchall()
+
+        with open(dataDir + str(i) + ".csv", "w") as file:
+            writer = csv.writer(file, delimiter=",")
+            for line in data:
+                writer.writerow(line)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            data = []
+            reader = csv.reader(file, delimiter=",")
+            for line in reader:
+                data.append(line)
+
+            data = list(map(lambda x: tuple(map(float, x)), data))
+
+    dates = list(map(lambda x: matplotlib.dates.datestr2num(str(int(x[0]))), data,))
+
+    values = list(map(lambda x: x[1:], data))
+
+    fig, axs = plt.subplots(4, 1)
+
+    axs[0].set_title("Talkpage edits by averaged by year")
+
+    colors = ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]
+    start = [0, 3, 5, 8]
+    end = [3, 5, 8, 21]
     for j in range(4):
         for i in range(start[j], end[j]):
             axs[j].plot_date(
@@ -3290,6 +3374,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 27
     i = i + 1
     # averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun)
+
+    # 28
+    i = i + 1
+    # averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
