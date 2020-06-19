@@ -453,7 +453,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-mainspace-user.txt", "w") as file:
             file.write(str(mainspaceUserData))
     else:
-        mainspaceUserData = [1062617, 23477689, 22217652, 3267197, 363346]
+        mainspaceUserData = [187156, 3040977, 4133614, 1176582, 223369]
 
     mainspaceBot = """SELECT
     (SELECT count(*) FROM user WHERE bot is true
@@ -473,7 +473,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-mainspace-bot.txt", "w") as file:
             file.write(str(mainspaceBotData))
     else:
-        mainspaceBotData = [340, 101, 272, 211, 995]
+        mainspaceBotData = [4, 101, 272, 211, 996]
 
     mainspaceBlocked = """SELECT
     (SELECT count(*) FROM user WHERE blocked is true
@@ -493,7 +493,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-mainspace-blocked.txt", "w") as file:
             file.write(str(mainspaceBlockedData))
     else:
-        mainspaceBlockedData = [2432, 50266, 82503, 32119, 6513]
+        mainspaceBlockedData = [3851, 95484, 123939, 37727, 6677]
 
     mainspaceIp = """SELECT
     (SELECT count(*) FROM user WHERE ip_address is true
@@ -513,7 +513,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-mainspace-ip.txt", "w") as file:
             file.write(str(mainspaceIpData))
     else:
-        mainspaceIpData = [2432, 50266, 82503, 32119, 6513]
+        mainspaceIpData = [872725, 20386443, 18001533, 2058493, 133467]
 
     talkspaceUser = """SELECT
     (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
@@ -533,7 +533,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-talkspace-user.txt", "w") as file:
             file.write(str(talkspaceUserData))
     else:
-        talkspaceUserData = [47506831, 1585186, 1092212, 169881, 34391]
+        talkspaceUserData = [7887493, 340977, 385875, 115498, 31855]
 
     talkspaceBot = """SELECT
     (SELECT count(*) FROM user WHERE bot is true
@@ -553,7 +553,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-talkspace-bot.txt", "w") as file:
             file.write(str(talkspaceBotData))
     else:
-        talkspaceBotData = [1367, 63, 119, 103, 267]
+        talkspaceBotData = [1031, 63, 119, 103, 268]
 
     talkspaceBlocked = """SELECT
     (SELECT count(*) FROM user WHERE blocked is true
@@ -573,7 +573,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-talkspace-blocked.txt", "w") as file:
             file.write(str(talkspaceBlockedData))
     else:
-        talkspaceBlockedData = [154838, 6404, 8635, 3173, 783]
+        talkspaceBlockedData = [245284, 8522, 9849, 3235, 788]
 
     talkspaceIp = """SELECT
     (SELECT count(*) FROM user WHERE ip_address is true
@@ -593,11 +593,11 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-talkspace-ip.txt", "w") as file:
             file.write(str(talkspaceIpData))
     else:
-        talkspaceIpData = [2432, 50266, 82503, 32119, 6513]
+        talkspaceIpData = [39464189, 1237805, 697702, 51210, 1755]
 
-    fig, axs = plt.subplots(4, 2)
+    _, axs = plt.subplots(4, 2)
     axs = axs.ravel()
-    types = ["users", "bots", "blocked", "ip"]
+    types = ["user","user", "bot","bot", "blocked","blocked", "ip","ip"]
     namespaces = ["main", "talk"]
     data = [
         mainspaceUserData,
@@ -610,15 +610,14 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         talkspaceIpData,
     ]
 
-    fig.suptitle("Distribution of edits across name spaces for bots and users")
-
+    # fig.suptitle("Distribution of edits across name spaces for bots and users")
     for i in range(8):
-        axs[i].set_title(types[i % 2] + " edits in " + namespaces[i % 4] + " space")
+        axs[i].set_title(types[i] + " edits in " + namespaces[i % 2] + " space")
         axs[i].bar(columns, data[i])
         axs[i].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
         removeSpines(axs[i])
 
-    plt.gcf().set_size_inches(9, 19)
+    plt.gcf().set_size_inches(12, 18)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
