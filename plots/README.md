@@ -65,7 +65,7 @@
 ![plot](19-averageAllSpecial.png)
 
 ### 20 Composition Of User IP
-![plot](21-compositionOfUserIP.png)
+![plot](20-compositionOfUserIP.png)
 
 ### 21 Composition Of User
 ![plot](21-compositionOfUser.png)
@@ -93,3 +93,6 @@
 
 ### 29 Namespaces Edited By User Groups
 ![plot](29-namespacesEditedByUserGroups.png)
+
+### 30 Talkpage Edits Time Averaged
+![plot](30-talkpageEditsTimeAveraged.png)
