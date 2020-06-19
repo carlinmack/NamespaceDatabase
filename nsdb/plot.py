@@ -436,15 +436,15 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
     mainspaceUser = """SELECT
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and number_of_edits > 1 and number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and number_of_edits > 10 and number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and number_of_edits > 100);"""
     if not dryrun:
         cursor.execute(mainspaceUser,)
@@ -495,16 +495,36 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         mainspaceBlockedData = [2432, 50266, 82503, 32119, 6513]
 
+    mainspaceIp = """SELECT
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and number_of_edits = 0),
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and number_of_edits = 1),
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and number_of_edits > 1 and number_of_edits <= 10),
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and number_of_edits > 10 and number_of_edits <= 100),
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and number_of_edits > 100);"""
+    if not dryrun:
+        cursor.execute(mainspaceIp,)
+        mainspaceIpData = cursor.fetchall()
+        mainspaceIpData = list(*mainspaceIpData)
+        with open(dataDir + str(i) + "-mainspace-ip.txt", "w") as file:
+            file.write(str(mainspaceIpData))
+    else:
+        mainspaceIpData = [2432, 50266, 82503, 32119, 6513]
+
     talkspaceUser = """SELECT
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and talkpage_number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and  talkpage_number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and  talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and  talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE bot is null
+    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and  talkpage_number_of_edits > 100);"""
     if not dryrun:
         cursor.execute(talkspaceUser,)
@@ -555,35 +575,50 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     else:
         talkspaceBlockedData = [154838, 6404, 8635, 3173, 783]
 
-    fig, axs = plt.subplots(2, 3)
-    threeFigures = tkr.FuncFormatter(threeFigureFormatter)
-    fig.suptitle("Distribution of edits across name spaces for bots and users")
-    axs[0, 0].set_title("user edits in main space")
-    axs[0, 0].bar(columns, mainspaceUserData)
-    axs[0, 0].yaxis.set_major_formatter(threeFigures)
-    axs[0, 1].set_title("bot edits in main space")
-    axs[0, 1].bar(columns, mainspaceBotData)
-    axs[0, 1].yaxis.set_major_formatter(threeFigures)
-    axs[0, 2].set_title("blocked edits in main space")
-    axs[0, 2].bar(columns, mainspaceBlockedData)
-    axs[0, 2].yaxis.set_major_formatter(threeFigures)
-    axs[1, 0].set_title("user edits in talk space")
-    axs[1, 0].bar(columns, talkspaceUserData)
-    axs[1, 0].yaxis.set_major_formatter(threeFigures)
-    axs[1, 1].set_title("bot edits in talk space")
-    axs[1, 1].bar(columns, talkspaceBotData)
-    axs[1, 1].yaxis.set_major_formatter(threeFigures)
-    axs[1, 2].set_title("blocked edits in talk space")
-    axs[1, 2].bar(columns, talkspaceBlockedData)
-    axs[1, 2].yaxis.set_major_formatter(threeFigures)
+    talkspaceIp = """SELECT
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and talkpage_number_of_edits = 0),
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and talkpage_number_of_edits = 1),
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
+    (SELECT count(*) FROM user WHERE ip_address is true
+    and talkpage_number_of_edits > 100);"""
+    if not dryrun:
+        cursor.execute(talkspaceIp,)
+        talkspaceIpData = cursor.fetchall()
+        talkspaceIpData = list(*talkspaceIpData)
+        with open(dataDir + str(i) + "-talkspace-ip.txt", "w") as file:
+            file.write(str(talkspaceIpData))
+    else:
+        talkspaceIpData = [2432, 50266, 82503, 32119, 6513]
 
-    plt.gcf().set_size_inches(19, 9)
-    removeSpines(axs[0, 0])
-    removeSpines(axs[0, 1])
-    removeSpines(axs[0, 2])
-    removeSpines(axs[1, 0])
-    removeSpines(axs[1, 1])
-    removeSpines(axs[1, 2])
+    fig, axs = plt.subplots(4, 2)
+    axs = axs.ravel()
+    types = ["users", "bots", "blocked", "ip"]
+    namespaces = ["main", "talk"]
+    data = [
+        mainspaceUserData,
+        talkspaceUserData,
+        mainspaceBotData,
+        talkspaceBotData,
+        mainspaceBlockedData,
+        talkspaceBlockedData,
+        mainspaceIpData,
+        talkspaceIpData,
+    ]
+
+    fig.suptitle("Distribution of edits across name spaces for bots and users")
+
+    for i in range(8):
+        axs[i].set_title(types[i % 2] + " edits in " + namespaces[i % 4] + " space")
+        axs[i].bar(columns, data[i])
+        axs[i].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        removeSpines(axs[i])
+
+    plt.gcf().set_size_inches(9, 19)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -616,7 +651,7 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-user.txt", "w") as file:
             file.write(str(userData))
     else:
-        userData = [1823460, 47502424, 1058210, 4407]
+        userData = [1823459, 47502424, 1058210, 4407]
 
     bots = """SELECT
     (select count(*) as target from user
@@ -634,7 +669,7 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-bot.txt", "w") as file:
             file.write(str(botData))
     else:
-        botData = [548, 1031, 4, 336]
+        botData = [549, 1031, 4, 0]
 
     blocked = """SELECT
     (select count(*) as target from user
@@ -652,25 +687,39 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         with open(dataDir + str(i) + "-blocked.txt", "w") as file:
             file.write(str(blockedData))
     else:
-        blockedData = [16578, 154823, 2417, 15]
-    plt.title("Namespaces that users edit")
+        blockedData = [18557, 245270, 3837, 14]
 
-    _, axs = plt.subplots(3)
-    axs[0].set_title("Namespaces that users edit")
-    axs[0].bar(columns, userData)
-    axs[1].set_title("Namespaces that bots edit")
-    axs[1].bar(columns, botData)
-    axs[2].set_title("Namespaces that blocked edit")
-    axs[2].bar(columns, blockedData)
+    ip = """SELECT
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and ip_address is true),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and ip_address is true),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and ip_address is true),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and ip_address is true);"""
+    if not dryrun:
+        cursor.execute(ip,)
+        ipData = cursor.fetchall()
+        ipData = list(*ipData)
+        with open(dataDir + str(i) + "-ip.txt", "w") as file:
+            file.write(str(ipData))
+    else:
+        ipData = [1116049, 39463887, 872423, 302]
+
+    _, axs = plt.subplots(2, 2)
+    axs = axs.ravel()
+    types = ["users", "bots", "blocked", "ip"]
+    data = [userData, botData, blockedData, ipData]
+
+    for i in range(4):
+        axs[i].set_title("Namespaces that " + types[i] + " edit")
+        axs[i].bar(columns, data[i])
+        axs[i].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        removeSpines(axs[i])
+
     # fig.tight_layout()
-    plt.gcf().set_size_inches(10, 17.5)
-
-    axs[0].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    axs[1].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    axs[2].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    removeSpines(axs[0])
-    removeSpines(axs[1])
-    removeSpines(axs[2])
+    plt.gcf().set_size_inches(14, 14)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -1994,14 +2043,13 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.004024606970162133,
         ]
 
-    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
-
-    fig.suptitle("Average of all integer edit fields")
+    _, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
 
     start = 0
     end = 2
     plotRange = range(start, end)
 
+    axs[0].set_title("Average of all integer edit fields")
     axs[0].hlines(
         y=plotRange,
         xmin=[
@@ -2744,10 +2792,9 @@ def editBooleans(cursor, i, plotDir, dataDir, dryrun):
 
     # create a figure with two subplots
     fig, axs = plt.subplots(2, 3)
+    axs = axs.ravel()
 
     fig.suptitle("Ratios of boolean features")
-
-    axs = axs.ravel()
 
     # plot each pie chart in a separate subplot
     for key, value in enumerate(columns):
@@ -3272,6 +3319,341 @@ def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
+def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "namespacesEditedByUserGroups"
+    plt.figure()
+    columns = [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "-1",
+        "-2",
+        "100",
+        "101",
+        "118",
+        "119",
+        "710",
+        "711",
+        "828",
+        "829",
+        "108",
+        "109",
+        "446",
+        "447",
+        "2300",
+        "2301",
+        "2302",
+        "2303",
+    ]
+
+    # https://stackoverflow.com/questions/28620904/how-to-count-unique-set-values-in-mysql
+    count = "SELECT COUNT(*) FROM user"
+    all = """SELECT COUNT(user.namespaces) FROM
+    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces'),
+    ',', @r:=@r+1), ',', -1)) AS namespaces
+    FROM (SELECT @r:=0) deriv1,
+    (SELECT ID FROM information_schema.COLLATIONS) deriv2
+    HAVING @r <=
+    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+    FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+    LEFT OUTER JOIN (SELECT namespaces FROM user) user
+    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+    GROUP BY set_list.namespaces
+    ;"""
+    if not dryrun:
+        cursor.execute(all,)
+        allData = cursor.fetchall()
+
+        cursor.execute(count,)
+        total = cursor.fetchall()[0][0]
+        allData = list(map(lambda x: x[0] / total, allData))
+        with open(dataDir + str(i) + "-all.csv", "w") as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(allData)
+    else:
+        with open(dataDir + str(i) + "-all.csv", "r") as file:
+            allData = []
+            reader = csv.reader(file, delimiter=',')
+            for line in reader:
+                allData.append(line)
+            allData = allData[0]
+            allData = list(map(float, allData))
+
+    count = "SELECT COUNT(*) FROM user where bot is null and blocked is null and ip_address is null"
+    users = """SELECT COUNT(user.namespaces) FROM
+    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces'),
+    ',', @r:=@r+1), ',', -1)) AS namespaces
+    FROM (SELECT @r:=0) deriv1,
+    (SELECT ID FROM information_schema.COLLATIONS) deriv2
+    HAVING @r <=
+    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+    FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+    LEFT OUTER JOIN (SELECT namespaces FROM user
+        where bot is null and blocked is null and ip_address is null) user
+    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+    GROUP BY set_list.namespaces
+    ;"""
+    if not dryrun:
+        cursor.execute(users,)
+        usersData = cursor.fetchall()
+        cursor.execute(count,)
+        total = cursor.fetchall()[0][0]
+        usersData = list(map(lambda x: x[0] / total, usersData))
+        with open(dataDir + str(i) + "-user.csv", "w") as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(usersData)
+    else:
+        with open(dataDir + str(i) + "-user.csv", "r") as file:
+            usersData = []
+            reader = csv.reader(file, delimiter=',')
+            for line in reader:
+                usersData.append(line)
+            usersData = usersData[0]
+            usersData = list(map(float, usersData))
+
+    count = "SELECT COUNT(*) FROM user where user_special is true"
+    specialUsers = """SELECT COUNT(user.namespaces) FROM
+    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces'),
+    ',', @r:=@r+1), ',', -1)) AS namespaces
+    FROM (SELECT @r:=0) deriv1,
+    (SELECT ID FROM information_schema.COLLATIONS) deriv2
+    HAVING @r <=
+    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+    FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+    LEFT OUTER JOIN (SELECT namespaces FROM user
+        where user_special is true) user
+    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+    GROUP BY set_list.namespaces
+    ;"""
+    if not dryrun:
+        cursor.execute(specialUsers,)
+        specialUsersData = cursor.fetchall()
+        cursor.execute(count,)
+        total = cursor.fetchall()[0][0]
+        specialUsersData = list(map(lambda x: x[0] / total, specialUsersData))
+        with open(dataDir + str(i) + "-special.csv", "w") as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(specialUsersData)
+    else:
+        with open(dataDir + str(i) + "-special.csv", "r") as file:
+            specialUsersData = []
+            reader = csv.reader(file, delimiter=',')
+            for line in reader:
+                specialUsersData.append(line)
+            specialUsersData = specialUsersData[0]
+            specialUsersData = list(map(float, specialUsersData))
+
+    count = "SELECT COUNT(*) FROM user where bot is true"
+    bots = """SELECT COUNT(user.namespaces) FROM
+    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces'),
+    ',', @r:=@r+1), ',', -1)) AS namespaces
+    FROM (SELECT @r:=0) deriv1,
+    (SELECT ID FROM information_schema.COLLATIONS) deriv2
+    HAVING @r <=
+    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+    FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+    LEFT OUTER JOIN (SELECT namespaces FROM user
+        where bot is true) user
+    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+    GROUP BY set_list.namespaces
+    ;"""
+    if not dryrun:
+        cursor.execute(bots,)
+        botsData = cursor.fetchall()
+        cursor.execute(count,)
+        total = cursor.fetchall()[0][0]
+        botsData = list(map(lambda x: x[0] / total, botsData))
+        with open(dataDir + str(i) + "-bots.csv", "w") as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(botsData)
+    else:
+        with open(dataDir + str(i) + "-bots.csv", "r") as file:
+            botsData = []
+            reader = csv.reader(file, delimiter=',')
+            for line in reader:
+                botsData.append(line)
+            botsData = botsData[0]
+            botsData = list(map(float, botsData))
+
+    count = "SELECT COUNT(*) FROM user where blocked is true and ip_address is null"
+    blocked = """SELECT COUNT(user.namespaces) FROM
+    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces'),
+    ',', @r:=@r+1), ',', -1)) AS namespaces
+    FROM (SELECT @r:=0) deriv1,
+    (SELECT ID FROM information_schema.COLLATIONS) deriv2
+    HAVING @r <=
+    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+    FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+    LEFT OUTER JOIN (SELECT namespaces FROM user
+        where blocked is true and ip_address is null) user
+    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+    GROUP BY set_list.namespaces
+    ;"""
+    if not dryrun:
+        cursor.execute(blocked,)
+        blockedData = cursor.fetchall()
+        cursor.execute(count,)
+        total = cursor.fetchall()[0][0]
+        blockedData = list(map(lambda x: x[0] / total, blockedData))
+        with open(dataDir + str(i) + "-blocked.csv", "w") as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(blockedData)
+    else:
+        with open(dataDir + str(i) + "-blocked.csv", "r") as file:
+            print(dataDir + str(i) + "-blocked.csv")
+            blockedData = []
+            reader = csv.reader(file, delimiter=',')
+            for line in reader:
+                blockedData.append(line)
+            blockedData = blockedData[0]
+            blockedData = list(map(float, blockedData))
+
+    count = "SELECT COUNT(*) FROM user where ip_address is true"
+    ip = """SELECT COUNT(user.namespaces) FROM
+    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces'),
+    ',', @r:=@r+1), ',', -1)) AS namespaces
+    FROM (SELECT @r:=0) deriv1,
+    (SELECT ID FROM information_schema.COLLATIONS) deriv2
+    HAVING @r <=
+    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+    FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+    LEFT OUTER JOIN (SELECT namespaces FROM user
+        where ip_address is true) user
+    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+    GROUP BY set_list.namespaces
+    ;"""
+    if not dryrun:
+        cursor.execute(ip,)
+        ipData = cursor.fetchall()
+        cursor.execute(count,)
+        total = cursor.fetchall()[0][0]
+        ipData = list(map(lambda x: x[0] / total, ipData))
+        with open(dataDir + str(i) + "-ip.csv", "w") as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(ipData)
+    else:
+        with open(dataDir + str(i) + "-ip.csv", "r") as file:
+            ipData = []
+            reader = csv.reader(file, delimiter=',')
+            for line in reader:
+                ipData.append(line)
+            ipData = ipData[0]
+            ipData = list(map(float, ipData))
+   
+    count = "SELECT COUNT(*) FROM user where blocked is true and ip_address is true"
+    ipBlocked = """SELECT COUNT(user.namespaces) FROM
+    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces'),
+    ',', @r:=@r+1), ',', -1)) AS namespaces
+    FROM (SELECT @r:=0) deriv1,
+    (SELECT ID FROM information_schema.COLLATIONS) deriv2
+    HAVING @r <=
+    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+    FROM information_schema.columns
+    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+    LEFT OUTER JOIN (SELECT namespaces FROM user
+        where blocked is true and ip_address is true) user
+    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+    GROUP BY set_list.namespaces
+    ;"""
+    if not dryrun:
+        cursor.execute(ipBlocked,)
+        ipBlockedData = cursor.fetchall()
+        cursor.execute(count,)
+        total = cursor.fetchall()[0][0]
+        ipBlockedData = list(map(lambda x: x[0] / total, ipBlockedData))
+        with open(dataDir + str(i) + "-ip-blocked.csv", "w") as file:
+            writer = csv.writer(file, delimiter=',')
+            writer.writerow(ipBlockedData)
+    else:
+        with open(dataDir + str(i) + "-ip-blocked.csv", "r") as file:
+            ipBlockedData = []
+            reader = csv.reader(file, delimiter=',')
+            for line in reader:
+                ipBlockedData.append(line)
+            ipBlockedData = ipBlockedData[0]
+            ipBlockedData = list(map(float, ipBlockedData))
+
+    _, ax = plt.subplots()
+
+    start = 0
+    end = len(usersData)
+    plotRange = range(start, end)
+
+    ax.set_title("Namespaces Edited By Different Groups of Users")
+    ax.hlines(
+        y=plotRange,
+        xmin=[
+            min(a, b, c, d)
+            for a, b, c, d in zip(
+                specialUsersData[start:end],
+                botsData[start:end],
+                blockedData[start:end],
+                ipBlockedData[start:end],
+            )
+        ],
+        xmax=specialUsersData[start:end],
+        color="grey",
+        alpha=0.4,
+    )
+    ax.vlines(
+        x=allData[start:end],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    ax.scatter(usersData, plotRange, color="navy", label="all users")
+    ax.scatter(specialUsersData, plotRange, color="gold", label="users with privileges")
+    ax.scatter(botsData, plotRange, color="mediumaquamarine", label="bots")
+    ax.scatter(ipData, plotRange, color="skyblue", label="ip users")
+    ax.scatter(blockedData, plotRange, color="orangered", label="blocked users")
+    ax.scatter(ipBlockedData, plotRange, color="hotpink", label="blocked ip users")
+    ax.set_yticklabels(columns[start:end])
+    ax.set_yticks(plotRange)
+    ax.legend(
+        loc="upper center", bbox_to_anchor=(0.5, 1), ncol=3, fancybox=True, shadow=True,
+    )
+
+    plt.gcf().set_size_inches(9.5, 9.5)
+    removeSpines(ax)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
 # --------------------------------------------------------------------------------------
 
 
@@ -3289,7 +3671,7 @@ def singlePlot(pltObj, ax, axis):
 # formatter function takes tick label and tick position
 def threeFigureFormatter(x, pos):
     if pos:
-        pass # appeasing the linter
+        pass  # appeasing the linter
     s = "%d" % x
     groups = []
     while s and s[-1].isdigit():
@@ -3352,7 +3734,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     # 1
     i = i + 1
-    distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun)
+    # distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun)
 
     # 2
     i = i + 1
@@ -3461,6 +3843,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 28
     i = i + 1
     # averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun)
+
+    # 29
+    i = i + 1
+    # namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()

@@ -90,3 +90,6 @@
 
 ### 28 Average Features Over Year
 ![plot](28-averageFeaturesOverYear.png)
+
+### 29 Namespaces Edited By User Groups
+![plot](29-namespacesEditedByUserGroups.png)
