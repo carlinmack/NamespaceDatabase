@@ -96,3 +96,6 @@
 
 ### 30 Talkpage Edits Time Averaged
 ![plot](30-talkpageEditsTimeAveraged.png)
+
+### 31 Talkpage Edits Over Time No Bots
+![plot](31-talkpageEditsOverTimeNoBots.png.png)
