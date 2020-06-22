@@ -164,6 +164,45 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
             ("2301", 1),
         ]
 
+    mapping = {
+        "0": "Main",
+        "1": "Talk",
+        "2": "User",
+        "3": "User Talk",
+        "4": "Wikipedia",
+        "5": "Wikipedia Talk",
+        "6": "File",
+        "7": "FIle Talk",
+        "8": "MediaWiki",
+        "9": "MediaWiki Talk",
+        "10": "Template",
+        "11": "Template Talk",
+        "12": "Help",
+        "13": "Help Talk",
+        "14": "Category",
+        "15": "Category Talk",
+        "100": "Special",
+        "101": "Media",
+        "108": "Portal",
+        "109": "Portal Talk",
+        "118": "Draft",
+        "119": "Draft Talk",
+        "710": "TimedText",
+        "711": "TimedText Talk",
+        "828": "Module",
+        "829": "Module Talk",
+        "108": "Book",
+        "109": "Book Talk",
+        "446": "Education Program",
+        "447": "Education Program Talk",
+        "2300": "Gadget",
+        "2301": "Gadget Talk",
+        "2302": "Gadget Definition",
+        "2303": "Gadget Definition Talk",
+    }
+
+    data = list(map(lambda x: (mapping[x[0]], x[1]), data))
+
     _, ax = plt.subplots()  # Create a figure and an axes.
     ax.barh(*zip(*data))
     ax.set_ylabel("Namespace")  # Add an x-label to the axes.
@@ -1455,15 +1494,12 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun):
     fig, axs = plt.subplots(1, 3, gridspec_kw={"width_ratios": [3, 5, 13]})
 
     fig.suptitle("Average of all integer edit fields")
-    # axs[0, 0].set_title("user edits in main space")
     axs[0].bar(columns[:3], data[:3], yerr=dataStd[:3])
     axs[0].tick_params(labelrotation=90)
     axs[0].set_ylim(bottom=0)
-    # axs[1].set_title("bot edits in main space")
     axs[1].bar(columns[3:8], data[3:8], yerr=dataStd[3:8])
     axs[1].tick_params(labelrotation=90)
     axs[1].set_ylim(bottom=0)
-    # axs[0, 2].set_title("blocked edits in main space")
     axs[2].bar(columns[8:], data[8:], yerr=dataStd[8:])
     axs[2].tick_params(labelrotation=90)
     axs[2].set_ylim(bottom=0)
@@ -1539,6 +1575,48 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
             ("2302", 0),
             ("2303", 0),
         ]
+
+    mapping = {
+        "0": "Main",
+        "1": "Talk",
+        "2": "User",
+        "3": "User Talk",
+        "4": "Wikipedia",
+        "5": "Wikipedia Talk",
+        "6": "File",
+        "7": "FIle Talk",
+        "8": "MediaWiki",
+        "9": "MediaWiki Talk",
+        "10": "Template",
+        "11": "Template Talk",
+        "12": "Help",
+        "13": "Help Talk",
+        "14": "Category",
+        "15": "Category Talk",
+        "100": "Special",
+        "101": "Media",
+        "108": "Portal",
+        "109": "Portal Talk",
+        "118": "Draft",
+        "119": "Draft Talk",
+        "710": "TimedText",
+        "711": "TimedText Talk",
+        "828": "Module",
+        "829": "Module Talk",
+        "108": "Book",
+        "109": "Book Talk",
+        "446": "Education Program",
+        "447": "Education Program Talk",
+        "2300": "Gadget",
+        "2301": "Gadget Talk",
+        "2302": "Gadget Definition",
+        "2303": "Gadget Definition Talk",
+        "-1": "Special",
+        "-2": "Media",
+    }
+
+    data = list(map(lambda x: (mapping[x[0]], x[1]), data))
+
     _, ax = plt.subplots()
     ax.set_title("Namespaces that the top 500 users have edited")
     labels = list(map(lambda x: x[0], data))
@@ -1823,27 +1901,27 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(data))
     else:
         data = [
-            525.9844,
-            427.2599,
-            58.6059,
-            37.0737,
-            10.5163,
-            1.8895,
-            1.7960,
-            0.1359,
-            0.0029,
-            0.0005,
+            482.2263,
+            384.6865,
+            52.4005,
+            37.8249,
+            10.3969,
+            1.8504,
+            1.7145,
+            0.1331,
+            0.0024,
+            0.0007,
             0.0003,
-            0.11632597,
-            0.10173668,
-            0.02940640,
-            0.00933118,
-            0.10858162,
-            0.0192,
-            0.18442976,
-            0.0325,
-            0.05423712919836253,
-            0.006679179803724929,
+            0.11470288,
+            0.10220409,
+            0.02810473,
+            0.00839849,
+            0.11358946,
+            0.0167,
+            0.17759977,
+            0.0243,
+            0.048819411249298277,
+            0.005998387005003988,
         ]
 
     special = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
@@ -1862,27 +1940,27 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(specialData))
     else:
         specialData = [
-            398.5122,
-            392.4957,
-            50.8446,
-            52.4496,
-            10.5209,
-            1.7682,
-            1.6357,
-            0.1278,
+            440.9023,
+            462.0706,
+            60.3628,
+            47.2563,
+            10.3737,
+            1.7691,
+            1.7508,
+            0.1538,
             0.0016,
             0.0006,
-            0.0002,
-            0.11922957,
-            0.10697243,
-            0.02570266,
-            0.00522568,
-            0.13717350,
-            0.0093,
-            0.15875237,
-            0.0148,
-            0.02470609377917194,
-            0.004687928593039355,
+            0.0001,
+            0.11234557,
+            0.10580707,
+            0.02121139,
+            0.00586263,
+            0.13506474,
+            0.0100,
+            0.15924664,
+            0.0100,
+            0.02477164276923664,
+            0.0053575857156795016,
         ]
 
     ip = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
@@ -1984,27 +2062,27 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(blockedData))
     else:
         blockedData = [
-            376.9058,
-            374.0861,
-            49.9100,
-            48.6153,
-            9.6661,
-            1.7168,
-            1.3400,
-            0.1222,
-            0.0022,
+            378.3652,
+            373.6976,
+            49.8555,
+            48.4949,
+            9.6795,
+            1.7220,
+            1.3405,
+            0.1225,
+            0.0025,
             0.0005,
             0.0002,
-            0.12568887,
-            0.10028163,
-            0.01931273,
-            0.00505370,
-            0.12080836,
-            0.0153,
-            0.16692144,
-            0.0281,
-            0.027887433037106706,
-            0.00475190706470203,
+            0.12557076,
+            0.10018044,
+            0.01955825,
+            0.00507267,
+            0.12058783,
+            0.0155,
+            0.16721780,
+            0.0295,
+            0.027971535199568475,
+            0.004760227724098624,
         ]
 
     bot = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
@@ -2047,13 +2125,13 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             0.004024606970162133,
         ]
 
-    _, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
+    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
 
     start = 0
     end = 2
     plotRange = range(start, end)
 
-    axs[0].set_title("Average of all integer edit fields")
+    fig.suptitle("Average of all integer edit fields")
     axs[0].hlines(
         y=plotRange,
         xmin=[
@@ -2093,9 +2171,9 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         specialData[:2], plotRange, color="gold", label="users with privileges"
     )
     axs[0].scatter(botData[:2], plotRange, color="mediumaquamarine", label="bots")
-    axs[0].scatter(ipData[:2], plotRange, color="skyblue", label="ip users")
+    axs[0].scatter(ipData[:2], plotRange, color="skyblue", label="IP users")
     axs[0].scatter(
-        ipBlockedData[:2], plotRange, color="hotpink", label="blocked56 ip users"
+        ipBlockedData[:2], plotRange, color="hotpink", label="blocked IP users"
     )
     axs[0].scatter(blockedData[:2], plotRange, color="orangered", label="blocked users")
     axs[0].set_yticklabels(columns[:2])
@@ -2142,23 +2220,14 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
-    axs[1].scatter(data[start:end], plotRange, color="navy", label="all users")
-    axs[1].scatter(
-        specialData[start:end], plotRange, color="gold", label="users with privileges"
-    )
-    axs[1].scatter(
-        botData[start:end], plotRange, color="mediumaquamarine", label="bots"
-    )
-    axs[1].scatter(ipData[start:end], plotRange, color="skyblue", label="ip users")
-    axs[1].scatter(
-        ipBlockedData[start:end], plotRange, color="hotpink", label="blocked ip users"
-    )
-    axs[1].scatter(
-        blockedData[start:end], plotRange, color="orangered", label="blocked users"
-    )
+    axs[1].scatter(data[start:end], plotRange, color="navy")
+    axs[1].scatter(specialData[start:end], plotRange, color="gold")
+    axs[1].scatter(botData[start:end], plotRange, color="mediumaquamarine")
+    axs[1].scatter(ipData[start:end], plotRange, color="skyblue")
+    axs[1].scatter(ipBlockedData[start:end], plotRange, color="hotpink")
+    axs[1].scatter(blockedData[start:end], plotRange, color="orangered")
     axs[1].set_yticklabels(columns[start:end])
     axs[1].set_yticks(plotRange)
-    # axs[1].set_ylim([0.5, 2.25])
 
     start = 5
     end = 8
@@ -2197,20 +2266,16 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
-    axs[2].scatter(data[start:end], plotRange, color="navy", label="all users")
+    axs[2].scatter(data[start:end], plotRange, color="navy")
     axs[2].scatter(
         specialData[start:end], plotRange, color="gold", label="users with privileges"
     )
     axs[2].scatter(
         botData[start:end], plotRange, color="mediumaquamarine", label="bots"
     )
-    axs[2].scatter(ipData[start:end], plotRange, color="skyblue", label="ip users")
-    axs[2].scatter(
-        ipBlockedData[start:end], plotRange, color="hotpink", label="blocked ip users"
-    )
-    axs[2].scatter(
-        blockedData[start:end], plotRange, color="orangered", label="blocked users"
-    )
+    axs[2].scatter(ipData[start:end], plotRange, color="skyblue")
+    axs[2].scatter(ipBlockedData[start:end], plotRange, color="hotpink")
+    axs[2].scatter(blockedData[start:end], plotRange, color="orangered")
     axs[2].set_yticklabels(columns[start:end])
     axs[2].set_yticks(plotRange)
     axs[2].set_xlim(left=0)
@@ -2252,18 +2317,12 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
-    axs[3].scatter(data[start:], plotRange, color="navy", label="all users")
-    axs[3].scatter(
-        specialData[start:], plotRange, color="gold", label="users with privileges"
-    )
-    axs[3].scatter(botData[start:], plotRange, color="mediumaquamarine", label="bots")
-    axs[3].scatter(ipData[start:], plotRange, color="skyblue", label="ip users")
-    axs[3].scatter(
-        ipBlockedData[start:], plotRange, color="hotpink", label="blocked ip users"
-    )
-    axs[3].scatter(
-        blockedData[start:], plotRange, color="orangered", label="blocked users"
-    )
+    axs[3].scatter(data[start:], plotRange, color="navy")
+    axs[3].scatter(specialData[start:], plotRange, color="gold")
+    axs[3].scatter(botData[start:], plotRange, color="mediumaquamarine")
+    axs[3].scatter(ipData[start:], plotRange, color="skyblue")
+    axs[3].scatter(ipBlockedData[start:], plotRange, color="hotpink")
+    axs[3].scatter(blockedData[start:], plotRange, color="orangered")
     axs[3].set_yticklabels(columns[start:])
     axs[3].set_yticks(plotRange)
     axs[3].set_xlim(left=0)
@@ -2689,10 +2748,8 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
         ymax=list(map(lambda x: x + 0.5, plotRange)),
         color="black",
     )
-    axs[1].scatter(
-        stdsData[start:end], plotRange, color="skyblue", label="Standard Deviation"
-    )
-    axs[1].scatter(meansData[start:end], plotRange, color="black", label="Mode")
+    axs[1].scatter(stdsData[start:end], plotRange, color="skyblue")
+    axs[1].scatter(meansData[start:end], plotRange, color="black")
     axs[1].set_yticklabels(columns[start:end])
     axs[1].set_yticks(plotRange)
     axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
@@ -2714,9 +2771,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
         ymax=list(map(lambda x: x + 0.5, plotRange)),
         color="black",
     )
-    axs[2].scatter(
-        stdsData[start:end], plotRange, color="skyblue", label="Standard Deviation"
-    )
+    axs[2].scatter(stdsData[start:end], plotRange, color="skyblue")
     invertedStds = list(
         map(
             lambda x: max(2 * x[0] - x[1], 0),
@@ -2724,7 +2779,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
         )
     )
     axs[2].scatter(invertedStds, plotRange, color="skyblue")
-    axs[2].scatter(meansData[start:end], plotRange, color="black", label="Mode")
+    axs[2].scatter(meansData[start:end], plotRange, color="black")
     axs[2].set_yticklabels(columns[start:end])
     axs[2].set_yticks(plotRange)
 
@@ -2745,10 +2800,8 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
         ymax=list(map(lambda x: x + 0.5, plotRange)),
         color="black",
     )
-    axs[3].scatter(meansData[start:end], plotRange, color="black", label="Mode")
-    axs[3].scatter(
-        stdsData[start:end], plotRange, color="skyblue", label="Standard Deviation"
-    )
+    axs[3].scatter(meansData[start:end], plotRange, color="black")
+    axs[3].scatter(stdsData[start:end], plotRange, color="skyblue")
     invertedStds = list(
         map(lambda x: 2 * x[0] - x[1], zip(meansData[start:end], stdsData[start:end]))
     )
@@ -3083,10 +3136,8 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
-    axs[1].scatter(beforeData[start:end], plotRange, color="skyblue", label="ip users")
-    axs[1].scatter(
-        afterData[start:end], plotRange, color="orangered", label="blocked users"
-    )
+    axs[1].scatter(beforeData[start:end], plotRange, color="skyblue")
+    axs[1].scatter(afterData[start:end], plotRange, color="orangered")
     axs[1].set_yticklabels(columns[start:end])
     axs[1].set_yticks(plotRange)
 
@@ -3107,10 +3158,8 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
-    axs[2].scatter(beforeData[start:end], plotRange, color="skyblue", label="ip users")
-    axs[2].scatter(
-        afterData[start:end], plotRange, color="orangered", label="blocked users"
-    )
+    axs[2].scatter(beforeData[start:end], plotRange, color="skyblue")
+    axs[2].scatter(afterData[start:end], plotRange, color="orangered")
     axs[2].set_yticklabels(columns[start:end])
     axs[2].set_yticks(plotRange)
     axs[2].set_xlim(left=0)
@@ -3132,10 +3181,8 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun):
         color="grey",
         alpha=0.4,
     )
-    axs[3].scatter(beforeData[start:], plotRange, color="skyblue", label="ip users")
-    axs[3].scatter(
-        afterData[start:], plotRange, color="orangered", label="blocked users"
-    )
+    axs[3].scatter(beforeData[start:], plotRange, color="skyblue")
+    axs[3].scatter(afterData[start:], plotRange, color="orangered")
     axs[3].set_yticklabels(columns[start:])
     axs[3].set_yticks(plotRange)
     axs[3].set_xlim(left=0)
@@ -3325,40 +3372,40 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "namespacesEditedByUserGroups"
     plt.figure()
     columns = [
-        "0",
-        "1",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "11",
-        "12",
-        "13",
-        "14",
-        "15",
-        "-1",
-        "-2",
-        "100",
-        "101",
-        "118",
-        "119",
-        "710",
-        "711",
-        "828",
-        "829",
-        "108",
-        "109",
-        "446",
-        "447",
-        "2300",
-        "2301",
-        "2302",
-        "2303",
+        "Main",
+        "Talk",
+        "User",
+        "User Talk",
+        "Wikipedia",
+        "Wikipedia Talk",
+        "File",
+        "FIle Talk",
+        "MediaWiki",
+        "MediaWiki Talk",
+        "Template",
+        "Template Talk",
+        "Help",
+        "Help Talk",
+        "Category",
+        "Category Talk",
+        "Special",
+        "Media",
+        "Portal",
+        "Portal Talk",
+        "Draft",
+        "Draft Talk",
+        "TimedText",
+        "TimedText Talk",
+        "Module",
+        "Module Talk",
+        "Book",
+        "Book Talk",
+        "Education Program",
+        "Education Program Talk",
+        "Gadget",
+        "Gadget Talk",
+        "Gadget Definition",
+        "Gadget Definition Talk",
     ]
 
     # https://stackoverflow.com/questions/28620904/how-to-count-unique-set-values-in-mysql
@@ -3640,9 +3687,9 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
     ax.scatter(usersData, plotRange, color="navy", label="all users")
     ax.scatter(specialUsersData, plotRange, color="gold", label="users with privileges")
     ax.scatter(botsData, plotRange, color="mediumaquamarine", label="bots")
-    ax.scatter(ipData, plotRange, color="skyblue", label="ip users")
+    ax.scatter(ipData, plotRange, color="skyblue", label="IP users")
     ax.scatter(blockedData, plotRange, color="orangered", label="blocked users")
-    ax.scatter(ipBlockedData, plotRange, color="hotpink", label="blocked ip users")
+    ax.scatter(ipBlockedData, plotRange, color="hotpink", label="blocked IP users")
     ax.set_yticklabels(columns[start:end])
     ax.set_yticks(plotRange)
     ax.legend(
@@ -3924,6 +3971,90 @@ def sentimentBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     plt.close()
 
 
+def talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "talkpageEditsTimeAveraged"
+    plt.figure()
+
+    years = """select Year(edit_date) as date, count(*) from edit join user
+    on edit.user_table_id = user.id
+    where user.bot is not True and
+    Year(edit_date) > 2001 and Year(edit_date) < 2020 GROUP BY YEAR(edit_date)
+    order by YEAR(edit_date) ;"""
+
+    if not dryrun:
+        cursor.execute(years,)
+        yearsData = cursor.fetchall()
+
+        with open(dataDir + str(i) + "-years.csv", "w") as file:
+            writer = csv.writer(file, delimiter=",")
+            for line in yearsData:
+                writer.writerow(line)
+    else:
+        with open(dataDir + str(i) + "-years.csv", "r") as file:
+            yearsData = []
+            reader = csv.reader(file, delimiter=",")
+            for line in reader:
+                yearsData.append(line)
+
+            yearsData = list(map(lambda x: tuple(map(float, x)), yearsData))
+
+    months = """select Year(edit_date), Month(edit_date) as date, count(*) from edit join user
+    on edit.user_table_id = user.id
+    where user.bot is not True 
+    GROUP BY YEAR(edit_date), Month(edit_date)
+    order by YEAR(edit_date), Month(edit_date);"""
+
+    if not dryrun:
+        cursor.execute(months,)
+        monthsData = cursor.fetchall()
+
+        with open(dataDir + str(i) + "-months.csv", "w") as file:
+            writer = csv.writer(file, delimiter=",")
+            for line in monthsData:
+                writer.writerow(line)
+    else:
+        with open(dataDir + str(i) + "-months.csv", "r") as file:
+            monthsData = []
+            reader = csv.reader(file, delimiter=",")
+            for line in reader:
+                monthsData.append(line)
+
+            monthsData = list(map(lambda x: tuple(map(float, x)), monthsData))
+
+    datesYears = list(
+        map(lambda x: matplotlib.dates.datestr2num(str(int(x[0]))), yearsData)
+    )
+    datesMonths = list(
+        map(
+            lambda x: matplotlib.dates.datestr2num(
+                str(int(x[0])) + "-" + str(int(x[1]))
+            ),
+            monthsData,
+        )
+    )
+    valuesYears = [x[1] for x in yearsData]
+    valuesMonths = [x[2] for x in monthsData]
+
+    _, ax = plt.subplots()
+
+    ax.set_title("Talkpage edits over time excluding bots")
+    ax.set_ylabel("Edits per Year")
+
+    ax.plot_date(datesYears, valuesYears, "C0-")
+    ax2 = ax.twinx()
+    ax2.plot_date(datesMonths, valuesMonths, "C0-", alpha=0.4)
+    ax2.set_ylabel("Edits per Month")
+
+    plt.gcf().set_size_inches(12, 7.5)
+    ax.spines["top"].set_visible(False)
+    ax2.spines["top"].set_visible(False)
+    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    ax2.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
 # --------------------------------------------------------------------------------------
 
 
@@ -4129,6 +4260,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # 32
     i = i + 1
     # sentimentBlockedIP(cursor, i, plotDir, dataDir, dryrun)
+
+    # 33
+    i = i + 1
+    # talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
