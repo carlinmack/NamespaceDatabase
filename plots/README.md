@@ -102,3 +102,9 @@
 
 ### 32 Sentiment Blocked IP
 ![plot](32-sentimentBlockedIP.png)
+
+### 33 Talkpage Edits Time Averaged No Bots
+![plot](33-talkpageEditsTimeAveragedNoBots.png)
+
+### 32 Talkpage Edits Time Groups
+![plot](34-talkpageEditsTimeGroups.png)
