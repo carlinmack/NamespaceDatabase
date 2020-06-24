@@ -11,6 +11,7 @@ import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 from cycler import cycler
+import time
 
 import Database
 
@@ -1827,9 +1828,17 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
             ("sysop", 1140),
             ("templateeditor", 184),
         ]
-
+    colors = (
+        ["gold"] * 4
+        + ["mediumaquamarine"]
+        + ["gold"] * 2
+        + ["mediumpurple"]
+        + ["gold"] * 3
+        + ["mediumpurple"]
+        + ["gold"] * 15
+    )
     _, ax = plt.subplots()  # Create a figure and an axes.
-    ax.barh(*zip(*data), color="gold")
+    ax.barh(*zip(*data), color=colors)
     ax.invert_yaxis()
     ax.set_ylabel("User groups")  # Add an x-label to the axes.
     ax.set_xlabel("Number of Users (log)")  # Add a y-label to the axes.
@@ -2953,10 +2962,7 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(query,)
         data = cursor.fetchall()
 
-        with open(dataDir + str(i) + ".csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            for line in data:
-                writer.writerow(line)
+        writeCSV(dataDir + str(i) + ".csv", data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
             data = []
@@ -3275,10 +3281,7 @@ def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(query,)
         data = cursor.fetchall()
 
-        with open(dataDir + str(i) + ".csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            for line in data:
-                writer.writerow(line)
+        writeCSV(dataDir + str(i) + ".csv", data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
             data = []
@@ -3364,10 +3367,7 @@ def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(query,)
         data = cursor.fetchall()
 
-        with open(dataDir + str(i) + ".csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            for line in data:
-                writer.writerow(line)
+        writeCSV(dataDir + str(i) + ".csv", data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
             data = []
@@ -3469,9 +3469,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(count,)
         total = cursor.fetchall()[0][0]
         allUsersData = list(map(lambda x: x[0] / total, allUsersData))
-        with open(dataDir + str(i) + "-all.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            writer.writerow(allUsersData)
+        
+        writeCSV(dataDir + str(i) + "-all.csv", [allUsersData])
     else:
         with open(dataDir + str(i) + "-all.csv", "r") as file:
             allUsersData = []
@@ -3504,9 +3503,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(count,)
         total = cursor.fetchall()[0][0]
         usersData = list(map(lambda x: x[0] / total, usersData))
-        with open(dataDir + str(i) + "-user.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            writer.writerow(usersData)
+        
+        writeCSV(dataDir + str(i) + "-user.csv", [usersData])
     else:
         with open(dataDir + str(i) + "-user.csv", "r") as file:
             usersData = []
@@ -3539,9 +3537,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(count,)
         total = cursor.fetchall()[0][0]
         specialUsersData = list(map(lambda x: x[0] / total, specialUsersData))
-        with open(dataDir + str(i) + "-special.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            writer.writerow(specialUsersData)
+        
+        writeCSV(dataDir + str(i) + "-special.csv", [specialUsersData])
     else:
         with open(dataDir + str(i) + "-special.csv", "r") as file:
             specialUsersData = []
@@ -3564,7 +3561,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
     FROM information_schema.columns
     WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
     LEFT OUTER JOIN (SELECT namespaces FROM user
-        where bot is true) user
+        where bot is true and (number_of_edits > 0 or 
+    talkpage_number_of_edits > 0)) user
     ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
     GROUP BY set_list.namespaces
     ;"""
@@ -3574,9 +3572,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(count,)
         total = cursor.fetchall()[0][0]
         botsData = list(map(lambda x: x[0] / total, botsData))
-        with open(dataDir + str(i) + "-bots.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            writer.writerow(botsData)
+        
+        writeCSV(dataDir + str(i) + "-bots.csv", [botsData])
     else:
         with open(dataDir + str(i) + "-bots.csv", "r") as file:
             botsData = []
@@ -3608,10 +3605,9 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         blockedData = cursor.fetchall()
         cursor.execute(count,)
         total = cursor.fetchall()[0][0]
-        blockedData = list(map(lambda x: x[0] / total, blockedData))
-        with open(dataDir + str(i) + "-blocked.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            writer.writerow(blockedData)
+        blockedData = list(map(lambda x: x[0] / total, ))
+        
+        writeCSV(dataDir + str(i) + "-blocked.csv", [blockedData])
     else:
         with open(dataDir + str(i) + "-blocked.csv", "r") as file:
             print(dataDir + str(i) + "-blocked.csv")
@@ -3645,9 +3641,7 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(count,)
         total = cursor.fetchall()[0][0]
         ipData = list(map(lambda x: x[0] / total, ipData))
-        with open(dataDir + str(i) + "-ip.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            writer.writerow(ipData)
+        writeCSV(dataDir + str(i) + "-ip.csv", [ipData])
     else:
         with open(dataDir + str(i) + "-ip.csv", "r") as file:
             ipData = []
@@ -3680,9 +3674,7 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(count,)
         total = cursor.fetchall()[0][0]
         ipBlockedData = list(map(lambda x: x[0] / total, ipBlockedData))
-        with open(dataDir + str(i) + "-ip-blocked.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            writer.writerow(ipBlockedData)
+        writeCSV(dataDir + str(i) + "-ip-blocked.csv", [ipBlockedData])
     else:
         with open(dataDir + str(i) + "-ip-blocked.csv", "r") as file:
             ipBlockedData = []
@@ -3752,10 +3744,7 @@ def talkpageEditsTimeAveraged(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(years,)
         yearsData = cursor.fetchall()
 
-        with open(dataDir + str(i) + "-years.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            for line in yearsData:
-                writer.writerow(line)
+        writeCSV(dataDir + str(i) + "-years.csv", yearsData)
     else:
         with open(dataDir + str(i) + "-years.csv", "r") as file:
             yearsData = []
@@ -3773,10 +3762,7 @@ def talkpageEditsTimeAveraged(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(months,)
         monthsData = cursor.fetchall()
 
-        with open(dataDir + str(i) + "-months.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            for line in monthsData:
-                writer.writerow(line)
+        writeCSV(dataDir + str(i) + "-months.csv", monthsData)
     else:
         with open(dataDir + str(i) + "-months.csv", "r") as file:
             monthsData = []
@@ -3832,10 +3818,7 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(query,)
         data = cursor.fetchall()
 
-        with open(dataDir + str(i) + ".csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            for line in data:
-                writer.writerow(line)
+        writeCSV(dataDir, i, data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
             data = []
@@ -4022,10 +4005,7 @@ def talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(years,)
         yearsData = cursor.fetchall()
 
-        with open(dataDir + str(i) + "-years.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            for line in yearsData:
-                writer.writerow(line)
+        writeCSV(dataDir + str(i) + "-years.csv", yearsData)
     else:
         with open(dataDir + str(i) + "-years.csv", "r") as file:
             yearsData = []
@@ -4045,10 +4025,7 @@ def talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(months,)
         monthsData = cursor.fetchall()
 
-        with open(dataDir + str(i) + "-months.csv", "w") as file:
-            writer = csv.writer(file, delimiter=",")
-            for line in monthsData:
-                writer.writerow(line)
+        writeCSV(dataDir + str(i) + "-months.csv", monthsData)
     else:
         with open(dataDir + str(i) + "-months.csv", "r") as file:
             monthsData = []
@@ -4092,18 +4069,13 @@ def talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
-# select *
-# from edit t1
-# join user
-#     on t1.user_table_id = user.id
-# where user.blocked is true and ip_address is null
-# and t1.edit_date >= (select edit_date from edit t2
-#                   where t2.user_table_id = t1.user_table_id
-#                   order by edit_date desc
-#                   limit 4,1) limit 10 \G
-
 # --------------------------------------------------------------------------------------
 
+def writeCSV(fileName, data):
+    with open(fileName, "w") as file:
+        writer = csv.writer(file, delimiter=",")
+        for line in data:
+            writer.writerow(line)
 
 def singlePlot(pltObj, ax, axis):
     removeSpines(ax)
@@ -4176,140 +4148,106 @@ def plot(plotDir: str = "../plots/", dryrun=False):
         ]
     )
 
-    # 0
-    i = 0
+    i = 0 # 0 - 5 seconds
     # partitionStatus(cursor, i, plotDir, dataDir, dryrun)
 
-    # 1
-    i = i + 1
+    i = i + 1 # 1 - 79 seconds
     # distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun)
 
-    # 2
-    i = i + 1
+    i = i + 1 # 2
     # distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun)
 
-    # 3
-    i = i + 1
+    i = i + 1 # 3
     # numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
-    # 4
-    i = i + 1
+    i = i + 1 # 4
     # editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun)
 
-    # 5
-    i = i + 1
+    i = i + 1 # 5
     # numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir, dryrun)
 
-    # 6
-    i = i + 1
+    i = i + 1 # 6
     # numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir, dryrun)
 
-    # 7
-    i = i + 1
+    i = i + 1 # 7
     # numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir, dryrun)
 
-    # 8
-    i = i + 1
+    i = i + 1 # 8
     # distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    # 9
-    i = i + 1
+    i = i + 1 # 9
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    # 10
-    i = i + 1
+    i = i + 1 # 10
     # editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    # 11
-    i = i + 1
+    i = i + 1 # 11
     # distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
-    # 12
-    i = i + 1
+    i = i + 1 # 12
     # sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun)
 
-    # 13
-    i = i + 1
+    i = i + 1 # 13
     # sentimentBots(cursor, i, plotDir, dataDir, dryrun)
 
-    # 14
-    i = i + 1
+    i = i + 1 # 14
     # profanityAll(cursor, i, plotDir, dataDir, dryrun)
 
-    # 15
-    i = i + 1
+    i = i + 1 # 15
     # averageAll(cursor, i, plotDir, dataDir, dryrun)
 
-    # 16
-    i = i + 1
+    i = i + 1 # 16
     # namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun)
 
-    # 17
-    i = i + 1
+    i = i + 1 # 17
     # internalExternalLinks(cursor, i, plotDir, dataDir, dryrun)
 
-    # 18
-    i = i + 1
+    i = i + 1 # 18
     # specialUsersPlot(cursor, i, plotDir, dataDir, dryrun)
 
-    # 19
-    i = i + 1
+    i = i + 1 # 19
     # averageAllSpecial(cursor, i, plotDir, dataDir, dryrun)
 
-    # 20
-    i = i + 1
+    i = i + 1 # 20
     # compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun)
 
-    # 21
-    i = i + 1
+    i = i + 1 # 21
     # compositionOfUser(cursor, i, plotDir, dataDir, dryrun)
 
-    # 22
-    i = i + 1
+    i = i + 1 # 22
     # aggregations(cursor, i, plotDir, dataDir, dryrun)
 
-    # 23
-    i = i + 1
+    i = i + 1 # 23
     # editBooleans(cursor, i, plotDir, dataDir, dryrun)
 
-    # 24
-    i = i + 1
+    i = i + 1 # 24
     # userBooleans(cursor, i, plotDir, dataDir, dryrun)
 
-    # 25
-    i = i + 1
+    i = i + 1 # 25
     # talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun)
 
-    # 26
-    i = i + 1
+    i = i + 1 # 26
     # averageAllEpoch(cursor, i, plotDir, dataDir, dryrun)
 
-    # 27
-    i = i + 1
+    i = i + 1 # 27
     # averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun)
 
-    # 28
-    i = i + 1
+    i = i + 1 # 28
     # averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun)
 
-    # 29
-    i = i + 1
+    i = i + 1 # 29 - 26 minutes
     # namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun)
 
-    # 30
-    i = i + 1
+    i = i + 1 # 30
     # talkpageEditsTimeAveraged(cursor, i, plotDir, dataDir, dryrun)
 
-    # 31
-    i = i + 1
+    i = i + 1 # 31
     # talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun)
 
-    # 32
-    i = i + 1
+    i = i + 1 # 32
     # sentimentBlockedIP(cursor, i, plotDir, dataDir, dryrun)
 
-    # 33
-    i = i + 1
+    i = i + 1 # 33
     # talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
@@ -4340,7 +4278,9 @@ if __name__ == "__main__":
 
     argParser = defineArgParser()
     clArgs = argParser.parse_args()
-
+    
+    tick = time.time()    
     plot(
         plotDir=clArgs.dir, dryrun=clArgs.dryrun,
     )
+    print('--- %s seconds ---' % (time.time() - tick))
