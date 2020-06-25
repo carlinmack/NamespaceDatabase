@@ -106,5 +106,5 @@
 ### 33 Talkpage Edits Time Averaged No Bots
 ![plot](33-talkpageEditsTimeAveragedNoBots.png)
 
-### 32 Talkpage Edits Time Groups
+### 34 Talkpage Edits Time Groups
 ![plot](34-talkpageEditsTimeGroups.png)
