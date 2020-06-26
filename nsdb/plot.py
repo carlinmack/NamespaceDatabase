@@ -1,9 +1,10 @@
 """
-This script ....t
+This script ...
 """
 import argparse
 import csv
 import os
+import time
 from datetime import datetime as dt
 
 import matplotlib
@@ -11,7 +12,6 @@ import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 from cycler import cycler
-import time
 
 import Database
 
@@ -182,10 +182,10 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
         "13": "Help Talk",
         "14": "Category",
         "15": "Category Talk",
-        "100": "Special",
-        "101": "Media",
-        "108": "Portal",
-        "109": "Portal Talk",
+        "-1": "Special",
+        "-2": "Media",
+        "100": "Portal",
+        "101": "Portal Talk",
         "118": "Draft",
         "119": "Draft Talk",
         "710": "TimedText",
@@ -1136,149 +1136,90 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     plt.close()
 
 
-def sentimentBots(cursor, i, plotDir, dataDir, dryrun=False):
-    figname = plotDir + str(i) + "-" + "sentimentBots"
-    plt.figure()
+def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
+    groups = ["User", "Blocked User", "IP", "IP Blocked", "Bot", "Special User"]
 
-    columns = [
-        "added sentiment",
-        "deleted sentiment",
+    conditions = [
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "blocked is True and ip_address is not true",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+        "bot is True",
+        "user_special is True",
+    ]
+    sentimentConditions = [
+        "edit.added_sentiment > 0 and edit.deleted_length > 2",
+        "edit.added_sentiment < 0 and edit.deleted_length > 2",
+        "edit.deleted_sentiment > 0 and edit.added_length > 2",
+        "edit.deleted_sentiment < 0 and edit.added_length > 2",
+        "edit.added_sentiment != 0 and edit.deleted_sentiment != 0",
+        "1"
     ]
 
-    botsAddedPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is true and edit.added_sentiment > 0 and edit.deleted_length > 2;"""
-    if not dryrun:
-        cursor.execute(botsAddedPos,)
-        botsAddedPosData = cursor.fetchall()
-        botsAddedPosData = list(*botsAddedPosData)
-        with open(dataDir + str(i) + "-added-pos.txt", "w") as file:
-            file.write(str(botsAddedPosData))
-    else:
-        botsAddedPosData = [0.17728728886536294, 0.027477968592279245]
+    data = []
 
-    botsDelPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is true and edit.deleted_sentiment > 0 and edit.added_length > 2;"""
-    if not dryrun:
-        cursor.execute(botsDelPos,)
-        botsDelPosData = cursor.fetchall()
-        botsDelPosData = list(*botsDelPosData)
-        with open(dataDir + str(i) + "-del-pos.txt", "w") as file:
-            file.write(str(botsDelPosData))
-    else:
-        botsDelPosData = [0.023353497729551847, 0.150664347880662]
+    for j, group in enumerate(groups):
+        groupData = []
 
-    botsAddNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is true and edit.added_sentiment < 0 and edit.deleted_length > 2;"""
-    if not dryrun:
-        cursor.execute(botsAddNeg,)
-        botsAddNegData = cursor.fetchall()
-        botsAddNegData = list(*botsAddNegData)
-        with open(dataDir + str(i) + "-added-neg.txt", "w") as file:
-            file.write(str(botsAddNegData))
-    else:
-        botsAddNegData = [-0.1454296560778105, -0.02064698243124772]
+        if not dryrun:
+            for sentimentCondition in sentimentConditions:
+                sentiment = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+                from edit join user
+                on edit.user_table_id = user.id
+                where %s and %s;"""
+                cursor.execute(sentiment % (conditions[j], sentimentCondition),)
+                sentimentData = cursor.fetchall()
+                groupData.append(list(*sentimentData))
 
-    botsDelNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment), std(edit.added_sentiment),
-    std(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is true and edit.deleted_sentiment < 0 and edit.added_length > 2;"""
-    if not dryrun:
-        cursor.execute(botsDelNeg,)
-        botsDelNegData = cursor.fetchall()
-        botsDelNegData = list(*botsDelNegData)
-        with open(dataDir + str(i) + "-del-neg.txt", "w") as file:
-            file.write(str(botsDelNegData))
-    else:
-        botsDelNegData = [-0.006741881635942859, -0.15595001052483945]
+            data.append(groupData)
+            writeCSV(dataDir + str(i) + "-" + group + ".csv", groupData)
+        else:
+            with open(dataDir + str(i) + "-" + group + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                for line in reader:
+                    groupData.append([float(i) for i in line])
 
-    botsBoth = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment), std(edit.added_sentiment),
-    std(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is true and edit.added_sentiment != 0 and edit.deleted_sentiment != 0;"""
-    if not dryrun:
-        cursor.execute(botsBoth,)
-        botsBothData = cursor.fetchall()
-        botsBothData = list(*botsBothData)
-        with open(dataDir + str(i) + "-both.txt", "w") as file:
-            file.write(str(botsBothData))
-    else:
-        botsBothData = [0.08434574107932176, 0.04702776938706688]
+            # print(groupData)
+            data.append(groupData)
 
-    bots = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment), std(edit.added_sentiment),
-    std(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is true;"""
-    if not dryrun:
-        cursor.execute(bots,)
-        botsData = cursor.fetchall()
-        botsData = list(*botsData)
-        with open(dataDir + str(i) + "-all.txt", "w") as file:
-            file.write(str(botsData))
-    else:
-        botsData = [0.005518091804445644, 0.004024606970162133]
+    figname = plotDir + str(i) + "-" + "sentimentGroups"
+    plt.figure()
+    _, axs = plt.subplots(3, 2, sharey=True)
+    axs = axs.ravel()
 
-    _, ax = plt.subplots()
+    columns = [ "added sentiment", "deleted sentiment",]
 
-    # Numbers of pairs of bars you want
-    N = len(columns)
+    labels = [
+        "added positive",
+        "added negative",
+        "deleted positive",
+        "deleted negative",
+        "both have sentiment",
+        "all",
+    ]
 
-    # Position of bars on x-axis
-    ind = list(range(N))
+    ind = list(range(len(columns)))
 
-    # Width of a bar
     width = 0.15
 
-    # Plotting
-    ax.bar(ind, botsAddedPosData, width, label="added positive")
-    ax.bar(
-        list(map(lambda x: x + width, ind)),
-        botsAddNegData,
-        width,
-        label="added negative",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 2, ind)),
-        botsDelPosData,
-        width,
-        label="deleted positive",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 3, ind)),
-        botsDelNegData,
-        width,
-        label="deleted negative",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 4, ind)),
-        botsBothData,
-        width,
-        label="both have sentiment",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 5, ind)), botsData, width, label="all bots",
-    )
+    for j, group in enumerate(groups):
+        axs[j].set_title("Average sentiment for different\ntypes of " + group + " edits")
+        axs[j].set_ylabel("unit ?")
+        axs[j].set_xticks(list(map(lambda x: x + (width * 5) / 2, ind)))
+        axs[j].set_xticklabels(columns)
+        removeSpines(axs[j])
+        axs[j].grid(color="#ccc", which="major", axis="y", linestyle="solid")
+        axs[j].set_axisbelow(True)
 
-    ax.set_ylabel("unit ?")
-    ax.set_title("Average sentiment for different types of bot edits")
+        for k, label in enumerate(labels):
+            axs[j].bar(
+                list(map(lambda x: x + width * k, ind)),
+                data[j][k],
+                width,
+                label=label,
+            )
 
-    # xticks()
-    # First argument - A list of positions at which ticks should be placed
-    # Second argument -  A list of labels to place at the given locations
-    plt.xticks(list(map(lambda x: x + (width * 3) / 2, ind)), columns)
-
-    removeSpines(ax)
-    plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
-    ax.set_axisbelow(True)
-    plt.gcf().set_size_inches(12, 7)
+    plt.gcf().set_size_inches(14, 17)
     # Finding the best position for legends and putting it
     plt.legend(loc="best")
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
@@ -1626,10 +1567,10 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
         "13": "Help Talk",
         "14": "Category",
         "15": "Category Talk",
-        "100": "Special",
-        "101": "Media",
-        "108": "Portal",
-        "109": "Portal Talk",
+        "-1": "Special",
+        "-2": "Media",
+        "100": "Portal",
+        "101": "Portal Talk",
         "118": "Draft",
         "119": "Draft Talk",
         "710": "TimedText",
@@ -1644,8 +1585,6 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
         "2301": "Gadget Talk",
         "2302": "Gadget Definition",
         "2303": "Gadget Definition Talk",
-        "-1": "Special",
-        "-2": "Media",
     }
 
     data = list(map(lambda x: (mapping[x[0]], x[1]), data))
@@ -3843,154 +3782,6 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
-def sentimentBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
-    figname = plotDir + str(i) + "-" + "sentimentBlockedIP"
-    plt.figure()
-
-    columns = [
-        "added sentiment",
-        "deleted sentiment",
-    ]
-
-    blockedIpsAddedPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.blocked is true and user.ip_address is true and edit.added_sentiment > 0 and edit.deleted_length > 2;"""
-    if not dryrun:
-        cursor.execute(blockedIpsAddedPos,)
-        blockedIpsAddedPosData = cursor.fetchall()
-        blockedIpsAddedPosData = list(*blockedIpsAddedPosData)
-        with open(dataDir + str(i) + "-added-pos.txt", "w") as file:
-            file.write(str(blockedIpsAddedPosData))
-    else:
-        blockedIpsAddedPosData = [0.23893303869964763, 0.057050037760701444]
-
-    blockedIpsDelPos = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.blocked is true and user.ip_address is true and edit.deleted_sentiment > 0 and edit.added_length > 2;"""
-    if not dryrun:
-        cursor.execute(blockedIpsDelPos,)
-        blockedIpsDelPosData = cursor.fetchall()
-        blockedIpsDelPosData = list(*blockedIpsDelPosData)
-        with open(dataDir + str(i) + "-del-pos.txt", "w") as file:
-            file.write(str(blockedIpsDelPosData))
-    else:
-        blockedIpsDelPosData = [0.07919517385535389, 0.20845096899352217]
-
-    blockedIpsAddNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.blocked is true and user.ip_address is true and edit.added_sentiment < 0 and edit.deleted_length > 2;"""
-    if not dryrun:
-        cursor.execute(blockedIpsAddNeg,)
-        blockedIpsAddNegData = cursor.fetchall()
-        blockedIpsAddNegData = list(*blockedIpsAddNegData)
-        with open(dataDir + str(i) + "-added-neg.txt", "w") as file:
-            file.write(str(blockedIpsAddNegData))
-    else:
-        blockedIpsAddNegData = [-0.1725811747876795, 0.0068039350788875]
-
-    blockedIpsDelNeg = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment), std(edit.added_sentiment),
-    std(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.blocked is true and user.ip_address is true and edit.deleted_sentiment < 0 and edit.added_length > 2;"""
-    if not dryrun:
-        cursor.execute(blockedIpsDelNeg,)
-        blockedIpsDelNegData = cursor.fetchall()
-        blockedIpsDelNegData = list(*blockedIpsDelNegData)
-        with open(dataDir + str(i) + "-del-neg.txt", "w") as file:
-            file.write(str(blockedIpsDelNegData))
-    else:
-        blockedIpsDelNegData = [-0.014139953722608171, -0.23624584347621916]
-
-    blockedIpsBoth = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment), std(edit.added_sentiment),
-    std(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.blocked is true and user.ip_address is true and edit.added_sentiment != 0 and edit.deleted_sentiment != 0;"""
-    if not dryrun:
-        cursor.execute(blockedIpsBoth,)
-        blockedIpsBothData = cursor.fetchall()
-        blockedIpsBothData = list(*blockedIpsBothData)
-        with open(dataDir + str(i) + "-both.txt", "w") as file:
-            file.write(str(blockedIpsBothData))
-    else:
-        blockedIpsBothData = [0.10119208201762017, 0.12005256244197264]
-
-    blockedIps = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment), std(edit.added_sentiment),
-    std(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.blocked is true and user.ip_address is true;"""
-    if not dryrun:
-        cursor.execute(blockedIps,)
-        blockedIpsData = cursor.fetchall()
-        blockedIpsData = list(*blockedIpsData)
-        with open(dataDir + str(i) + "-all.txt", "w") as file:
-            file.write(str(blockedIpsData))
-    else:
-        blockedIpsData = [0.039283604989237844, 0.005879388956523799]
-
-    _, ax = plt.subplots()
-
-    # Numbers of pairs of bars you want
-    N = len(columns)
-
-    # Position of bars on x-axis
-    ind = list(range(N))
-
-    # Width of a bar
-    width = 0.15
-
-    # Plotting
-    ax.bar(ind, blockedIpsAddedPosData, width, label="added positive")
-    ax.bar(
-        list(map(lambda x: x + width, ind)),
-        blockedIpsAddNegData,
-        width,
-        label="added negative",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 2, ind)),
-        blockedIpsDelPosData,
-        width,
-        label="deleted positive",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 3, ind)),
-        blockedIpsDelNegData,
-        width,
-        label="deleted negative",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 4, ind)),
-        blockedIpsBothData,
-        width,
-        label="both have sentiment",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 5, ind)),
-        blockedIpsData,
-        width,
-        label="all bots",
-    )
-
-    ax.set_ylabel("unit ?")
-    ax.set_title("Average sentiment for different types of blocked IP edits")
-
-    plt.xticks(list(map(lambda x: x + (width * 3) / 2, ind)), columns)
-
-    removeSpines(ax)
-    plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
-    ax.set_axisbelow(True)
-    plt.gcf().set_size_inches(12, 7)
-    plt.legend(loc="best")
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
-
-
 def talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "talkpageEditsTimeAveragedNoBots"
     plt.figure()
@@ -4095,7 +3886,7 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         "user_special is True",
         "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
         "bot is True",
-        "blocked is True and ip_address is not true",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not True",
         "ip_address is True and blocked is not true",
         "ip_address is True and blocked is true",
     ]
@@ -4175,9 +3966,11 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
             linestyle="-",
             marker=",",
         )
+    
+    axs[0].set_ylabel("Edits per Year")
+    axs[1].set_ylabel("Edits per Month")
 
     for ax in axs:
-        ax.set_ylabel("Edits per Year")
         ax.xaxis.set_major_locator(plt.MaxNLocator(10))
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -4311,8 +4104,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 12
     # sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 13
-    # sentimentBots(cursor, i, plotDir, dataDir, dryrun)
+    i = i + 1  # 13 - 55 minutes
+    # sentimentGroups(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 14
     # profanityAll(cursor, i, plotDir, dataDir, dryrun)
@@ -4341,10 +4134,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 22
     # aggregations(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 23
+    i = i + 1  # 23 - 50 seconds
     # editBooleans(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 24
+    i = i + 1  # 24 - 50 seconds
     # userBooleans(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 25
@@ -4369,7 +4162,6 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 32
-    # sentimentBlockedIP(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 33
     # talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun)
@@ -4411,4 +4203,3 @@ if __name__ == "__main__":
         plotDir=clArgs.dir, dryrun=clArgs.dryrun,
     )
     print("--- %s seconds ---" % (time.time() - tick))
-
