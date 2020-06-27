@@ -32,7 +32,7 @@
 ![plot](9-editsMainTalkNeitherUserBots.png)
 
 ### 10.1 Edit Times User Bots
-![plot](10-2-editTimesUserBots.png)
+![plot](10-1-editTimesUserBots.png)
 
 ### 10.2 Edit Times User Bots
 ![plot](10-2-editTimesUserBots.png)
@@ -106,8 +106,8 @@
 ### 31 Talkpage Edits Over Time No Bots
 ![plot](31-talkpageEditsOverTimeNoBots.png)
 
-### 32 Sentiment Blocked IP
-![plot](32-sentimentBlockedIP.png)
+### 32 Average Blocked Last Edits
+![plot](32-averageBlockedLastEdits.png)
 
 ### 33 Talkpage Edits Time Averaged No Bots
 ![plot](33-talkpageEditsTimeAveragedNoBots.png)

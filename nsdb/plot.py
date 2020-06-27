@@ -861,7 +861,6 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         axs[0].scatter(data[j][:2], plotRange, color=colors[j], label=group)
         axs[1].scatter(data[j][2:], plotRange, color=colors[j], label=group)
 
-
     axs[0].hlines(
         y=plotRange,
         xmin=[min(x) for x in list(zip(*data))][:2],
@@ -880,7 +879,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     )
     axs[1].set_yticklabels(columns[2:])
     axs[1].invert_yaxis()
-    
+
     axs[0].legend(
         loc="lower center", bbox_to_anchor=(0.5, 1), ncol=3, fancybox=True, shadow=True,
     )
@@ -2032,7 +2031,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     AVG(deleted_sentiment)  FROM edit
     inner join user
     on user.id = edit.user_table_id
-    where user.blocked is True;"""
+    where user.blocked is True and ip_address is not true;"""
     if not dryrun:
         cursor.execute(blocked,)
         blockedData = cursor.fetchall()
@@ -2041,27 +2040,27 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             file.write(str(blockedData))
     else:
         blockedData = [
-            378.3652,
-            373.6976,
-            49.8555,
-            48.4949,
-            9.6795,
-            1.7220,
-            1.3405,
-            0.1225,
-            0.0025,
+            376.9058,
+            374.0861,
+            49.9100,
+            48.6153,
+            9.6661,
+            1.7168,
+            1.3400,
+            0.1222,
+            0.0022,
             0.0005,
             0.0002,
-            0.12557076,
-            0.10018044,
-            0.01955825,
-            0.00507267,
-            0.12058783,
-            0.0155,
-            0.16721780,
-            0.0295,
-            0.027971535199568475,
-            0.004760227724098624,
+            0.12568887,
+            0.10028163,
+            0.01931273,
+            0.00505370,
+            0.12080836,
+            0.0153,
+            0.16692144,
+            0.0281,
+            0.027887433037106706,
+            0.00475190706470203,
         ]
 
     bot = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
@@ -3781,6 +3780,284 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
+def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "averageBlockedLastEdits"
+    plt.figure()
+
+    columns = [
+        "added_length",
+        "deleted_length",
+        "del_words",
+        "comment_length",
+        "ins_longest_inserted_word",
+        "ins_longest_character_sequence",
+        "ins_internal_link",
+        "ins_external_link",
+        "blanking",
+        "comment_copyedit",
+        "comment_personal_life",
+        "comment_special_chars",
+        "ins_capitalization",
+        "ins_digits",
+        "ins_pronouns",
+        "ins_special_chars",
+        "ins_vulgarity",
+        "ins_whitespace",
+        "reverted",
+        "added_sentiment",
+        "deleted_sentiment",
+    ]
+
+    allEdits = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit;"""
+    if not dryrun:
+        cursor.execute(allEdits,)
+        allData = cursor.fetchall()
+        allData = list(*allData)
+        with open(dataDir + str(i) + "-all.txt", "w") as file:
+            file.write(str(allData))
+    else:
+        allData = [
+            442.0422,
+            439.0867,
+            58.0321,
+            49.1949,
+            10.6587,
+            1.8952,
+            1.6529,
+            0.1304,
+            0.0022,
+            0.0005,
+            0.0002,
+            0.11972271,
+            0.10387291,
+            0.02747601,
+            0.00610185,
+            0.12846018,
+            0.0143,
+            0.16946286,
+            0.0293,
+            0.03135975155021137,
+            0.0055170703440406196,
+        ]
+
+    blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM edit
+    inner join user
+    on user.id = edit.user_table_id
+    where user.blocked is True and ip_address is not true;"""
+    if not dryrun:
+        cursor.execute(blocked,)
+        blockedData = cursor.fetchall()
+        blockedData = list(*blockedData)
+        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
+            file.write(str(blockedData))
+    else:
+        blockedData = [
+            376.9058,
+            374.0861,
+            49.9100,
+            48.6153,
+            9.6661,
+            1.7168,
+            1.3400,
+            0.1222,
+            0.0022,
+            0.0005,
+            0.0002,
+            0.12568887,
+            0.10028163,
+            0.01931273,
+            0.00505370,
+            0.12080836,
+            0.0153,
+            0.16692144,
+            0.0281,
+            0.027887433037106706,
+            0.00475190706470203,
+        ]
+
+    blockedLastFive = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment)  FROM blocked_last_five_edits;"""
+    if not dryrun:
+        cursor.execute(blockedLastFive,)
+        blockedLastFiveData = cursor.fetchall()
+        blockedLastFiveData = list(*blockedLastFiveData)
+        with open(dataDir + str(i) + "-blockedLastFive.txt", "w") as file:
+            file.write(str(blockedLastFiveData))
+    else:
+        blockedLastFiveData = [
+            591.8531,
+            313.1837,
+            42.4830,
+            39.3817,
+            9.9740,
+            1.7104,
+            2.4844,
+            0.1693,
+            0.0056,
+            0.0001,
+            0.0004,
+            0.12568949,
+            0.10761438,
+            0.03202700,
+            0.00905484,
+            0.10172546,
+            0.0245,
+            0.18894388,
+            0.1336,
+            0.044459942111849636,
+            0.0062527888968363565,
+        ]
+
+    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
+
+    start = 0
+    end = 2
+    plotRange = range(start, end)
+
+    fig.suptitle("Average of all integer edit fields")
+    axs[0].hlines(
+        y=plotRange,
+        xmin=[min(a, b) for a, b in zip(blockedData[:end], blockedLastFiveData[:end],)],
+        xmax=[max(a, b) for a, b in zip(blockedData[:end], blockedLastFiveData[:end],)],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[0].vlines(
+        x=allData[:2],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    axs[0].scatter(
+        blockedLastFiveData[:2],
+        plotRange,
+        color="orangered",
+        marker="D",
+        label="Last five edits of blocked users",
+    )
+    axs[0].scatter(blockedData[:2], plotRange, color="orangered", label="Blocked users")
+    axs[0].set_yticklabels(columns[:2])
+    axs[0].set_yticks(plotRange)
+    axs[0].legend(
+        loc="upper center", bbox_to_anchor=(0.5, 2), ncol=3, fancybox=True, shadow=True,
+    )
+    # axs[0].set_ylim([start - 0.5, end + 0.5])
+
+    start = 3
+    end = 5
+    plotRange = range(1, end - start + 1)
+    axs[1].hlines(
+        y=plotRange,
+        xmin=[
+            min(a, b)
+            for a, b in zip(blockedData[start:end], blockedLastFiveData[start:end],)
+        ],
+        xmax=[
+            max(a, b)
+            for a, b in zip(blockedData[start:end], blockedLastFiveData[start:end],)
+        ],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[1].vlines(
+        x=allData[start:end],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    axs[1].scatter(
+        blockedLastFiveData[start:end], plotRange, color="orangered", marker="D"
+    )
+    axs[1].scatter(blockedData[start:end], plotRange, color="orangered")
+    axs[1].set_yticklabels(columns[start:end])
+    axs[1].set_yticks(plotRange)
+
+    start = 5
+    end = 8
+    plotRange = range(1, end - start + 1)
+    axs[2].hlines(
+        y=plotRange,
+        xmin=[
+            min(a, b)
+            for a, b in zip(blockedData[start:end], blockedLastFiveData[start:end],)
+        ],
+        xmax=[
+            max(a, b)
+            for a, b in zip(blockedData[start:end], blockedLastFiveData[start:end],)
+        ],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[2].vlines(
+        x=allData[start:end],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    axs[2].scatter(
+        blockedLastFiveData[start:end], plotRange, color="orangered", marker="D"
+    )
+    axs[2].scatter(blockedData[start:end], plotRange, color="orangered")
+    axs[2].set_yticklabels(columns[start:end])
+    axs[2].set_yticks(plotRange)
+    axs[2].set_xlim(left=0)
+
+    start = 8
+    end = 21
+    plotRange = range(1, end - start + 1)
+    axs[3].hlines(
+        y=plotRange,
+        xmin=[
+            min(a, b) for a, b in zip(blockedData[start:], blockedLastFiveData[start:],)
+        ],
+        xmax=[
+            max(a, b) for a, b in zip(blockedData[start:], blockedLastFiveData[start:],)
+        ],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[3].vlines(
+        x=allData[start:],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+    axs[3].scatter(
+        blockedLastFiveData[start:], plotRange, color="orangered", marker="D"
+    )
+    axs[3].scatter(blockedData[start:], plotRange, color="orangered")
+    axs[3].set_yticklabels(columns[start:])
+    axs[3].set_yticks(plotRange)
+    axs[3].set_xlim(left=0)
+
+    plt.gcf().set_size_inches(9.5, 9.5)
+    removeSpines(axs[0])
+    removeSpines(axs[1])
+    removeSpines(axs[2])
+    removeSpines(axs[3])
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
 def talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "talkpageEditsTimeAveragedNoBots"
     plt.figure()
@@ -4138,7 +4415,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 10 - 2 minutes
-    editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
+    # editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 11
     # distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)
@@ -4203,7 +4480,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 31
     # talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 32
+    i = i + 1  # 32 - 7 minutes
+    # averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 33
     # talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun)
