@@ -741,9 +741,6 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
 
 def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
-    figname = plotDir + str(i) + "-" + "editTimesUserBots"
-    plt.figure()
-
     groups = ["Special User", "User", "Blocked User", "IP", "IP Blocked", "Bot"]
 
     conditions = [
@@ -790,10 +787,12 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         "Time between\nfirst and last edit",
     ]
 
+    figname = plotDir + str(i) + "-1-" + "editTimesUserBots"
+    plt.figure()
+    fig, axs = plt.subplots(1, 2)
+
     # Position of bars on x-axis
     ind = list(range(len(columns)))
-
-    fig, axs = plt.subplots(1, 2)
 
     # Width of a bar
     width = 0.14
@@ -808,31 +807,27 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     ]
 
     # Plotting
-    for i, group in enumerate(groups):
+    for j, group in enumerate(groups):
         axs[0].bar(
-            list(map(lambda x: x + width * i, ind[:2])),
-            data[i][:2],
+            list(map(lambda x: x + width * j, ind[:2])),
+            data[j][:2],
             width,
             label=group,
             # yerr=dataStd[i][:2],
-            color=colors[i],
+            color=colors[j],
         )
         axs[0].set_xticklabels(columns[:2])
         axs[0].set_xticks(list(map(lambda x: x + (width * 5) / 2, ind[:2])))
         axs[1].bar(
-            list(map(lambda x: x + width * i, ind[2:])),
-            data[i][2:],
+            list(map(lambda x: x + width * j, ind[2:])),
+            data[j][2:],
             width,
             label=group,
             # yerr=dataStd[i][2:],
-            color=colors[i],
+            color=colors[j],
         )
         axs[1].set_xticklabels(columns[2:])
         axs[1].set_xticks(list(map(lambda x: x + (width * 5) / 2, ind[2:])))
-
-    # First argument - A list of positions at which ticks should be placed
-    # Second argument -  A list of labels to place at the given locations
-    plt.xticks()
 
     fig.suptitle("Average time between talk page edits")
     for ax in axs:
@@ -845,6 +840,53 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         ax.legend()
 
     plt.gcf().set_size_inches(15, 7)
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+    figname = plotDir + str(i) + "-2-" + "editTimesUserBots"
+    plt.figure()
+    fig, axs = plt.subplots(2, 1)
+
+    fig.suptitle("Average time between talk page edits", y=1.05)
+    plotRange = range(0, 2)
+
+    for k, ax in enumerate(axs):
+        removeSpines(ax)
+        ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        ax.set_yticks(plotRange)
+        ax.set_ylim(bottom=-0.5, top=1.5)
+        ax.set_xlabel("Hours")
+
+    for j, group in enumerate(groups):
+        axs[0].scatter(data[j][:2], plotRange, color=colors[j], label=group)
+        axs[1].scatter(data[j][2:], plotRange, color=colors[j], label=group)
+
+
+    axs[0].hlines(
+        y=plotRange,
+        xmin=[min(x) for x in list(zip(*data))][:2],
+        xmax=[max(x) for x in list(zip(*data))][:2],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[0].set_yticklabels(columns[:2])
+    axs[0].invert_yaxis()
+    axs[1].hlines(
+        y=plotRange,
+        xmin=[min(x) for x in list(zip(*data))][2:],
+        xmax=[max(x) for x in list(zip(*data))][2:],
+        color="grey",
+        alpha=0.4,
+    )
+    axs[1].set_yticklabels(columns[2:])
+    axs[1].invert_yaxis()
+    
+    axs[0].legend(
+        loc="lower center", bbox_to_anchor=(0.5, 1), ncol=3, fancybox=True, shadow=True,
+    )
+
+    plt.gcf().set_size_inches(9.5, 5.5)
+
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -4096,7 +4138,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 10 - 2 minutes
-    # editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
+    editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 11
     # distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)

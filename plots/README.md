@@ -7,10 +7,10 @@
 ### 2 Distribution Of Talk Edits
 ![plot](2-distributionOfTalkEdits.png)
 
-### 3 Number Of Pages Per Namespace - linear
+### 3.1 Number Of Pages Per Namespace - linear
 ![plot](3-numberOfPagesPerNamespace-linear.png)
 
-### 3 Number Of Pages Per Namespace - log
+### 3.2 Number Of Pages Per Namespace - log
 ![plot](3-numberOfPagesPerNamespace-log.png)
 
 ### 4 Edits Main Talk Neither
@@ -31,8 +31,11 @@
 ### 9 Edits Main Talk Neither User Bots
 ![plot](9-editsMainTalkNeitherUserBots.png)
 
-### 10 Edit Times User Bots
-![plot](10-editTimesUserBots.png)
+### 10.1 Edit Times User Bots
+![plot](10-2-editTimesUserBots.png)
+
+### 10.2 Edit Times User Bots
+![plot](10-2-editTimesUserBots.png)
 
 ### 11 Distribution Of Edits Per Namespace
 ![plot](11-distributionOfEditsPerNamespace.png)
@@ -40,8 +43,11 @@
 ### 12 Sentiment User Bots Blocked IP
 ![plot](12-sentimentUserBotsBlockedIP.png)
 
-### 13 Sentiment Bots
-![plot](13-sentimentBots.png)
+### 13.1 Sentiment Groups
+![plot](13-1-sentimentGroups.png)
+
+### 13.2 Sentiment Groups
+![plot](13-2-sentimentGroups.png)
 
 ### 14 Profanity All
 ![plot](14-profanityAll.png)
@@ -55,10 +61,10 @@
 ### 17 Internal External Links
 ![plot](17-internalExternalLinks.png)
 
-### 18 Special Users Plot - linear
+### 18.1 Special Users Plot - linear
 ![plot](18-specialUsersPlot-linear.png)
 
-### 18 Special Users Plot - log
+### 18.2 Special Users Plot - log
 ![plot](18-specialUsersPlot-log.png)
 
 ### 19 Average All Special
