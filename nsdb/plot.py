@@ -1182,20 +1182,20 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
             # print(groupData)
             data.append(groupData)
 
-    figname = plotDir + str(i) + "-" + "sentimentGroups"
+    figname = plotDir + str(i) + "-1-" + "sentimentGroups"
     plt.figure()
     _, axs = plt.subplots(3, 2, sharey=True)
     axs = axs.ravel()
 
-    columns = [ "added sentiment", "deleted sentiment",]
+    columns = [ "Added sentiment", "Deleted sentiment",]
 
     labels = [
-        "added positive",
-        "added negative",
-        "deleted positive",
-        "deleted negative",
-        "both have sentiment",
-        "all",
+        "Added positive",
+        "Added negative",
+        "Deleted positive",
+        "Deleted negative",
+        "Both have sentiment",
+        "All",
     ]
 
     ind = list(range(len(columns)))
@@ -1225,6 +1225,57 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
+    colors = [
+        "gold",
+        "mediumpurple",
+        "orangered",
+        "mediumaquamarine",
+        "skyblue",
+        "#F08EC1",
+    ]
+
+    figname = plotDir + str(i) + "-2-" + "sentimentGroups"
+    plt.figure()
+    fig, axs = plt.subplots(1, 2, sharey=True)
+    fig.suptitle("Average sentiment for different types of edits by groups", y=1.05)
+    plotRange = range(0,6)
+    for k, ax in enumerate(axs):
+        ax.hlines(
+            y=plotRange,
+            xmin=[min(list(zip(*x))[k]) for x in list(zip(*data))],
+            xmax=[max(list(zip(*x))[k]) for x in list(zip(*data))],
+            color="grey",
+            alpha=0.4,
+        )
+        # ax.vlines(
+        #     x=allData[:2],
+        #     ymin=list(map(lambda x: x - 0.5, plotRange)),
+        #     ymax=list(map(lambda x: x + 0.5, plotRange)),
+            # color="grey",
+            # alpha=0.4,
+        # )
+        for j, group in enumerate(groups):
+            dataSlice = [x[k] for x in data[j]]
+            ax.scatter(dataSlice, plotRange, color=colors[j], label=group)
+
+        removeSpines(ax)
+        ax.axvline(0, color="#ccc", linewidth=0.5, zorder=-1)
+        ax.set_axisbelow(True)
+
+    axs[0].set_xlabel("Added sentiment")
+    axs[1].set_xlabel("Deleted sentiment")
+
+    axs[0].set_yticklabels(labels)
+    axs[0].set_yticks(plotRange)
+
+    axs[0].legend(
+        loc="lower center", bbox_to_anchor=(1,1), ncol=3, fancybox=True, shadow=True,
+    )
+
+    plt.gcf().set_size_inches(9.5, 5.5)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
 
 def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "profanityAll"
@@ -3966,7 +4017,7 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
             linestyle="-",
             marker=",",
         )
-    
+
     axs[0].set_ylabel("Edits per Year")
     axs[1].set_ylabel("Edits per Month")
 
