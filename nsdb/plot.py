@@ -758,7 +758,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     for j, group in enumerate(groups):
         if not dryrun:
             times = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
-            avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, 
+            avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600,
             std(duration)/3600
             from user_time_stats join user
             on user_time_stats.id = user.id
@@ -4171,7 +4171,7 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     where %s and Year(edit_date) > 2001 and Year(edit_date) < 2020
     GROUP BY YEAR(edit_date) order by YEAR(edit_date)"""
 
-    queryMonth = """select Year(edit_date), Month(edit_date) as date, count(*) from edit 
+    queryMonth = """select Year(edit_date), Month(edit_date) as date, count(*) from edit
     join user on edit.user_table_id = user.id
     where %s
     GROUP BY YEAR(edit_date), Month(edit_date) order by YEAR(edit_date), Month(edit_date)"""
@@ -4259,6 +4259,156 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
+
+
+def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
+    columns = [
+        "Length of added content",
+        "Length of deleted content",
+        "Deleted words",
+        "Length of comment",
+        "Characters in Longest inserted word",
+        "Longest Character Sequence",
+        "Number of internal links inserted",
+        "Number of external links inserted",
+        "Blanking talkpage",
+        "Comment contains 'copyedit'",
+        "Special characters in comment",
+        "Percent of capitalization in added",
+        "Percent of digits in added",
+        "Percent of pronouns in added",
+        "Percent of special characters in added",
+        "Added contains vulgarity",
+        "Percent of whitespace in added",
+        "Edit Reverted",
+        "Added sentiment",
+        "Deleted sentiment",
+    ]
+
+    groups = [
+        "Special",
+        "Users",
+        "Bot",
+        "Blocked",
+        "IP",
+        "IP Blocked",
+    ]
+
+    conditions = [
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "bot is True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not True",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+    ]
+
+    timeSpanConditions = ["YEAR(edit_date), MONTH(edit_date), ", "YEAR(edit_date),"]
+    groupByConditions = [
+        " GROUP BY YEAR(edit_date), MONTH(edit_date) order by YEAR(edit_date), MONTH(edit_date)",
+        " GROUP BY YEAR(edit_date) order by YEAR(edit_date)",
+    ]
+
+    names = ["month", "year"]
+    for m in range(2):
+        data = []
+
+        for j, condition in enumerate(conditions):
+            query = """select %s AVG(added_length),AVG(deleted_length),
+            AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
+            AVG(ins_internal_link),AVG(ins_external_link),AVG(comment_special_chars),AVG(blanking),
+            AVG(comment_copyedit),AVG(ins_capitalization),AVG(ins_digits),
+            AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),
+            AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit join user
+            on edit.user_table_id = user.id
+            where %s
+            %s ;"""
+
+            if not dryrun:
+                cursor.execute(
+                    query % (timeSpanConditions[m], condition, groupByConditions[m])
+                )
+                groupData = cursor.fetchall()
+                data.append(groupData)
+                writeCSV(
+                    dataDir + str(i) + "-" + names[m] + "-" + groups[j] + ".csv",
+                    groupData,
+                )
+            else:
+                with open(
+                    dataDir + str(i) + "-" + names[m] + "-" + groups[j] + ".csv", "r"
+                ) as file:
+                    reader = csv.reader(file, delimiter=",")
+                    groupData = [line for line in reader]
+
+                    groupData = list(map(lambda x: tuple(map(float, x)), groupData))
+                    data.append(groupData)
+
+        if m == 0:
+            dates = [
+                list(
+                    map(
+                        lambda x: matplotlib.dates.datestr2num(
+                            str(int(x[0])) + "-" + str(int(x[1]))
+                        ),
+                        y,
+                    )
+                )
+                for y in data
+            ]
+            values = [list(map(lambda x: x[2:], y)) for y in data]
+        elif m == 1:
+            dates = [
+                list(
+                    map(
+                        lambda x: matplotlib.dates.datestr2num(str(int(x[0]))),
+                        y,
+                    )
+                )
+                for y in data
+            ]
+            values = [list(map(lambda x: x[1:], y)) for y in data]
+
+        colors = [
+            "gold",
+            "mediumpurple",
+            "mediumaquamarine",
+            "orangered",
+            "skyblue",
+            "#F08EC1",
+        ]
+
+        for j in range(4):
+            figname = (
+                plotDir
+                + str(i)
+                + "-"
+                + names[m]
+                + "-"
+                + str(j)
+                + "-"
+                + "averageFeaturesOverTimeGroups"
+            )
+            plt.figure()
+            _, axs = plt.subplots(5, 1)
+
+            axs[0].set_title("Talkpage edits over time")
+            for k, group in enumerate(groups):
+                for l in range(0, 5):
+                    axs[l].set_title(columns[(5 * j) + l])
+                    axs[l].plot_date(
+                        dates[k],
+                        list(map(lambda x: x[(5 * j) + l], values[k])),
+                        "C0-",
+                        label=group,
+                        c=colors[k],
+                    )
+                    removeSpines(axs[l])
+            axs[0].legend(loc="best")
+            plt.gcf().set_size_inches(20, 20)
+
+            plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+            plt.close()
 
 
 # --------------------------------------------------------------------------------------
@@ -4488,6 +4638,9 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     i = i + 1  # 34 - 54 minutes
     # talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
+
+    i = i + 1  # 35 - 48 minutes
+    # averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()

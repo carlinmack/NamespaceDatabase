@@ -114,3 +114,27 @@
 
 ### 34 Talkpage Edits Time Groups
 ![plot](34-talkpageEditsTimeGroups.png)
+
+### 35.1.1 Average Features Over Time Groups Month
+![plot](35-month-0-averageFeaturesOverTimeGroups.png)
+
+### 35.1.2 Average Features Over Time Groups Month
+![plot](35-month-1-averageFeaturesOverTimeGroups.png)
+
+### 35.1.3 Average Features Over Time Groups Month
+![plot](35-month-2-averageFeaturesOverTimeGroups.png)
+
+### 35.1.4 Average Features Over Time Groups Month
+![plot](35-month-3-averageFeaturesOverTimeGroups.png)
+
+### 35.1.1 Average Features Over Time Groups Year
+![plot](35-year-0-averageFeaturesOverTimeGroups.png)
+
+### 35.1.2 Average Features Over Time Groups Year
+![plot](35-year-1-averageFeaturesOverTimeGroups.png)
+
+### 35.1.3 Average Features Over Time Groups Year
+![plot](35-year-2-averageFeaturesOverTimeGroups.png)
+
+### 35.1.4 Average Features Over Time Groups Year
+![plot](35-year-3-averageFeaturesOverTimeGroups.png)
