@@ -165,44 +165,7 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
             ("2301", 1),
         ]
 
-    mapping = {
-        "0": "Main",
-        "1": "Talk",
-        "2": "User",
-        "3": "User Talk",
-        "4": "Wikipedia",
-        "5": "Wikipedia Talk",
-        "6": "File",
-        "7": "FIle Talk",
-        "8": "MediaWiki",
-        "9": "MediaWiki Talk",
-        "10": "Template",
-        "11": "Template Talk",
-        "12": "Help",
-        "13": "Help Talk",
-        "14": "Category",
-        "15": "Category Talk",
-        "-1": "Special",
-        "-2": "Media",
-        "100": "Portal",
-        "101": "Portal Talk",
-        "118": "Draft",
-        "119": "Draft Talk",
-        "710": "TimedText",
-        "711": "TimedText Talk",
-        "828": "Module",
-        "829": "Module Talk",
-        "108": "Book",
-        "109": "Book Talk",
-        "446": "Education Program",
-        "447": "Education Program Talk",
-        "2300": "Gadget",
-        "2301": "Gadget Talk",
-        "2302": "Gadget Definition",
-        "2303": "Gadget Definition Talk",
-    }
-
-    data = list(map(lambda x: (mapping[x[0]], x[1]), data))
+    data = mapNamespace(data)
 
     _, ax = plt.subplots()  # Create a figure and an axes.
     ax.barh(*zip(*data))
@@ -781,127 +744,107 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     figname = plotDir + str(i) + "-" + "editTimesUserBots"
     plt.figure()
 
-    columns = [
-        "min time",
-        "average time",
-        "maximum time",
-        "account duration",
+    groups = ["Special User", "User", "Blocked User", "IP", "IP Blocked", "Bot"]
+
+    conditions = [
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "blocked is True and ip_address is not true",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+        "bot is True",
     ]
 
-    users = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
-    avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, std(duration)/3600
-    from user_time_stats join user
-    on user_time_stats.id = user.id
-    where user.blocked is not True;"""
-    if not dryrun:
-        cursor.execute(users,)
-        userData = cursor.fetchall()
-        userStd = list(*userData)[4:]
-        userData = list(*userData)[:4]
-        with open(dataDir + str(i) + "-user.txt", "w") as file:
-            file.write(str(userData) + "\n" + str(userStd))
-    else:
-        # userData = [554.73523706, 1895.69554062, 12669.22330022, 40912.15355312]
-        userData = [585.04453404, 1353.55128065, 4190.04904727, 7496.67851755]
-        userStd = [
-            4173.818169075838,
-            4945.720150565946,
-            10877.852434682092,
-            19318.9197993923,
-        ]
+    data = []
+    dataStd = []
 
-    blocked = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
-    avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, std(duration)/3600
-    from user_time_stats join user
-    on user_time_stats.id = user.id
-    where user.blocked is true;"""
-    if not dryrun:
-        cursor.execute(blocked,)
-        blockedData = cursor.fetchall()
-        blockedStd = list(*blockedData)[4:]
-        blockedData = list(*blockedData)[:4]
-        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
-            file.write(str(blockedData) + "\n" + str(blockedStd))
-    else:
-        # blockedData = [5.51123904, 215.49983126, 4457.78610197, 17759.69208272]
-        blockedData = [104.89630128, 315.44417069, 1522.00393320, 3044.11047520]
-        blockedStd = [
-            1445.3397388692304,
-            1813.6419287313036,
-            5619.618614308308,
-            10367.92683510656,
-        ]
+    for j, group in enumerate(groups):
+        if not dryrun:
+            times = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
+            avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, 
+            std(duration)/3600
+            from user_time_stats join user
+            on user_time_stats.id = user.id
+            where %s;"""
+            cursor.execute(times % conditions[j],)
+            timeData = cursor.fetchall()
+            timeStd = list(*timeData)[4:]
+            timeData = list(*timeData)[:4]
 
-    specialUsers = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
-    avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600, std(duration)/3600
-    from user_time_stats join user
-    on user_time_stats.id = user.id
-    where user.user_special is true;"""
-    if not dryrun:
-        cursor.execute(specialUsers,)
-        specialUsersData = cursor.fetchall()
-        specialUsersStd = list(*specialUsersData)[4:]
-        specialUsersData = list(*specialUsersData)[:4]
-        with open(dataDir + str(i) + "-specialUsers.txt", "w") as file:
-            file.write(str(specialUsersData) + "\n" + str(specialUsersStd))
-    else:
-        # specialUsersData = [147.03132949, 1124.02555881, 13976.81447445, 45119.61085901]
-        specialUsersData = [75.23881283, 608.03894083, 14312.48619327, 68101.25732456]
-        specialUsersStd = [
-            1720.7292200635438,
-            2310.760460431426,
-            14440.439492053269,
-            41412.40758456633,
-        ]
+            data.append(timeData)
+            dataStd.append(timeStd)
+            writeCSV(dataDir + str(i) + "-" + group + ".csv", [timeData, timeStd])
+        else:
+            with open(dataDir + str(i) + "-" + group + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                temp = [list(map(float, line)) for line in reader]
 
-    # Numbers of pairs of bars you want
-    N = len(columns)
+            # print(groupData)
+            data.append(temp[0])
+            dataStd.append(temp[1])
+
+    columns = [
+        "Minimum time\nbetween edits",
+        "Average time\nbetween edits",
+        "Maximum time\nbetween edits",
+        "Time between\nfirst and last edit",
+    ]
 
     # Position of bars on x-axis
-    ind = list(range(N))
+    ind = list(range(len(columns)))
 
-    _, ax = plt.subplots()
+    fig, axs = plt.subplots(1, 2)
 
     # Width of a bar
-    width = 0.3
+    width = 0.14
+
+    colors = [
+        "gold",
+        "mediumpurple",
+        "orangered",
+        "skyblue",
+        "#F08EC1",
+        "mediumaquamarine",
+    ]
 
     # Plotting
-    ax.bar(
-        ind,
-        specialUsersData,
-        width,
-        label="Users with special privileges",
-        yerr=specialUsersStd,
-        color="gold",
-    )
-    ax.bar(
-        list(map(lambda x: x + width, ind)),
-        userData,
-        width,
-        label="Non blocked users",
-        yerr=userStd,
-        color="mediumpurple",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 2, ind)),
-        blockedData,
-        width,
-        label="Blocked users",
-        yerr=blockedStd,
-        color="orangered",
-    )
+    for i, group in enumerate(groups):
+        axs[0].bar(
+            list(map(lambda x: x + width * i, ind[:2])),
+            data[i][:2],
+            width,
+            label=group,
+            # yerr=dataStd[i][:2],
+            color=colors[i],
+        )
+        axs[0].set_xticklabels(columns[:2])
+        axs[0].set_xticks(list(map(lambda x: x + (width * 5) / 2, ind[:2])))
+        axs[1].bar(
+            list(map(lambda x: x + width * i, ind[2:])),
+            data[i][2:],
+            width,
+            label=group,
+            # yerr=dataStd[i][2:],
+            color=colors[i],
+        )
+        axs[1].set_xticklabels(columns[2:])
+        axs[1].set_xticks(list(map(lambda x: x + (width * 5) / 2, ind[2:])))
+
     # First argument - A list of positions at which ticks should be placed
     # Second argument -  A list of labels to place at the given locations
-    plt.xticks(list(map(lambda x: x + (width * 2) / 2, ind)), columns)
+    plt.xticks()
 
-    ax.set_ylim(bottom=0)
-    ax.set_title("Average time between talk page edits and account duration")
-    ax.set_ylabel("Hours")
-    plt.legend(loc="upper left")
+    fig.suptitle("Average time between talk page edits")
+    for ax in axs:
+        ax.set_ylim(bottom=0)
+        ax.set_ylabel("Hours")
+        ax.grid(color="#ccc", which="major", axis="y", linestyle="solid")
+        ax.set_axisbelow(True)
+        removeSpines(ax)
+        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        ax.legend()
 
-    plt.gcf().set_size_inches(9, 7)
-    singlePlot(plt, ax, "y")
-
+    plt.gcf().set_size_inches(15, 7)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -1085,11 +1028,8 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
 
     _, ax = plt.subplots()
 
-    # Numbers of pairs of bars you want
-    N = len(columns)
-
     # Position of bars on x-axis
-    ind = list(range(N))
+    ind = list(range(len(columns)))
 
     # Width of a bar
     width = 0.2
@@ -1153,7 +1093,7 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
         "edit.deleted_sentiment > 0 and edit.added_length > 2",
         "edit.deleted_sentiment < 0 and edit.added_length > 2",
         "edit.added_sentiment != 0 and edit.deleted_sentiment != 0",
-        "1"
+        "1",
     ]
 
     data = []
@@ -1187,7 +1127,10 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
     _, axs = plt.subplots(3, 2, sharey=True)
     axs = axs.ravel()
 
-    columns = [ "Added sentiment", "Deleted sentiment",]
+    columns = [
+        "Added sentiment",
+        "Deleted sentiment",
+    ]
 
     labels = [
         "Added positive",
@@ -1203,7 +1146,9 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
     width = 0.15
 
     for j, group in enumerate(groups):
-        axs[j].set_title("Average sentiment for different\ntypes of " + group + " edits")
+        axs[j].set_title(
+            "Average sentiment for different\ntypes of " + group + " edits"
+        )
         axs[j].set_ylabel("unit ?")
         axs[j].set_xticks(list(map(lambda x: x + (width * 5) / 2, ind)))
         axs[j].set_xticklabels(columns)
@@ -1213,10 +1158,7 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
 
         for k, label in enumerate(labels):
             axs[j].bar(
-                list(map(lambda x: x + width * k, ind)),
-                data[j][k],
-                width,
-                label=label,
+                list(map(lambda x: x + width * k, ind)), data[j][k], width, label=label,
             )
 
     plt.gcf().set_size_inches(14, 17)
@@ -1238,7 +1180,7 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
     plt.figure()
     fig, axs = plt.subplots(1, 2, sharey=True)
     fig.suptitle("Average sentiment for different types of edits by groups", y=1.05)
-    plotRange = range(0,6)
+    plotRange = range(0, 6)
     for k, ax in enumerate(axs):
         ax.hlines(
             y=plotRange,
@@ -1251,8 +1193,8 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
         #     x=allData[:2],
         #     ymin=list(map(lambda x: x - 0.5, plotRange)),
         #     ymax=list(map(lambda x: x + 0.5, plotRange)),
-            # color="grey",
-            # alpha=0.4,
+        # color="grey",
+        # alpha=0.4,
         # )
         for j, group in enumerate(groups):
             dataSlice = [x[k] for x in data[j]]
@@ -1269,13 +1211,14 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
     axs[0].set_yticks(plotRange)
 
     axs[0].legend(
-        loc="lower center", bbox_to_anchor=(1,1), ncol=3, fancybox=True, shadow=True,
+        loc="lower center", bbox_to_anchor=(1, 1), ncol=3, fancybox=True, shadow=True,
     )
 
     plt.gcf().set_size_inches(9.5, 5.5)
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
+
 
 def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "profanityAll"
@@ -1601,44 +1544,7 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
             ("2303", 0),
         ]
 
-    mapping = {
-        "0": "Main",
-        "1": "Talk",
-        "2": "User",
-        "3": "User Talk",
-        "4": "Wikipedia",
-        "5": "Wikipedia Talk",
-        "6": "File",
-        "7": "FIle Talk",
-        "8": "MediaWiki",
-        "9": "MediaWiki Talk",
-        "10": "Template",
-        "11": "Template Talk",
-        "12": "Help",
-        "13": "Help Talk",
-        "14": "Category",
-        "15": "Category Talk",
-        "-1": "Special",
-        "-2": "Media",
-        "100": "Portal",
-        "101": "Portal Talk",
-        "118": "Draft",
-        "119": "Draft Talk",
-        "710": "TimedText",
-        "711": "TimedText Talk",
-        "828": "Module",
-        "829": "Module Talk",
-        "108": "Book",
-        "109": "Book Talk",
-        "446": "Education Program",
-        "447": "Education Program Talk",
-        "2300": "Gadget",
-        "2301": "Gadget Talk",
-        "2302": "Gadget Definition",
-        "2303": "Gadget Definition Talk",
-    }
-
-    data = list(map(lambda x: (mapping[x[0]], x[1]), data))
+    data = mapNamespace(data)
 
     _, ax = plt.subplots()
     ax.set_title("Namespaces that the top 500 users have edited")
@@ -3946,7 +3852,8 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     where %s and Year(edit_date) > 2001 and Year(edit_date) < 2020
     GROUP BY YEAR(edit_date) order by YEAR(edit_date)"""
 
-    queryMonth = """select Year(edit_date), Month(edit_date) as date, count(*) from edit join user on edit.user_table_id = user.id
+    queryMonth = """select Year(edit_date), Month(edit_date) as date, count(*) from edit 
+    join user on edit.user_table_id = user.id
     where %s
     GROUP BY YEAR(edit_date), Month(edit_date) order by YEAR(edit_date), Month(edit_date)"""
 
@@ -4043,6 +3950,48 @@ def writeCSV(fileName, data):
         writer = csv.writer(file, delimiter=",")
         for line in data:
             writer.writerow(line)
+
+
+def mapNamespace(data):
+    mapping = {
+        "0": "Main",
+        "1": "Main Talk",
+        "2": "User",
+        "3": "User Talk",
+        "4": "Wikipedia",
+        "5": "Wikipedia Talk",
+        "6": "File",
+        "7": "FIle Talk",
+        "8": "MediaWiki",
+        "9": "MediaWiki Talk",
+        "10": "Template",
+        "11": "Template Talk",
+        "12": "Help",
+        "13": "Help Talk",
+        "14": "Category",
+        "15": "Category Talk",
+        "-1": "Special",
+        "-2": "Media",
+        "100": "Portal",
+        "101": "Portal Talk",
+        "118": "Draft",
+        "119": "Draft Talk",
+        "710": "TimedText",
+        "711": "TimedText Talk",
+        "828": "Module",
+        "829": "Module Talk",
+        "108": "Book",
+        "109": "Book Talk",
+        "446": "Education Program",
+        "447": "Education Program Talk",
+        "2300": "Gadget",
+        "2301": "Gadget Talk",
+        "2302": "Gadget Definition",
+        "2303": "Gadget Definition Talk",
+    }
+
+    data = list(map(lambda x: (mapping[x[0]], x[1]), data))
+    return data
 
 
 def singlePlot(pltObj, ax, axis):
@@ -4146,7 +4095,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 9
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 10
+    i = i + 1  # 10 - 2 minutes
     # editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 11
