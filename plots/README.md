@@ -138,3 +138,6 @@
 
 ### 35.1.4 Average Features Over Time Groups Year
 ![plot](35-year-3-averageFeaturesOverTimeGroups.png)
+
+### 36 Talkpage Editors Time Groups
+![plot](36-talkpageEditorsTimeGroups.png)

@@ -2902,10 +2902,8 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + ".csv", data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
-            data = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                data.append(line)
+            data = [line for line in reader]
 
             data = list(map(lambda x: (dt.strptime(x[0], "%Y-%m-%d"), int(x[1])), data))
 
@@ -3221,10 +3219,8 @@ def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + ".csv", data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
-            data = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                data.append(line)
+            data = [line for line in reader]
 
             data = list(map(lambda x: tuple(map(float, x)), data))
 
@@ -3307,10 +3303,8 @@ def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + ".csv", data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
-            data = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                data.append(line)
+            data = [line for line in reader]
 
             data = list(map(lambda x: tuple(map(float, x)), data))
 
@@ -3410,10 +3404,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + "-all.csv", [allUsersData])
     else:
         with open(dataDir + str(i) + "-all.csv", "r") as file:
-            allUsersData = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                allUsersData.append(line)
+            allUsersData = [line for line in reader]
             allUsersData = allUsersData[0]
             allUsersData = list(map(float, allUsersData))
 
@@ -3444,10 +3436,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + "-user.csv", [usersData])
     else:
         with open(dataDir + str(i) + "-user.csv", "r") as file:
-            usersData = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                usersData.append(line)
+            usersData = [line for line in reader]
             usersData = usersData[0]
             usersData = list(map(float, usersData))
 
@@ -3478,10 +3468,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + "-special.csv", [specialUsersData])
     else:
         with open(dataDir + str(i) + "-special.csv", "r") as file:
-            specialUsersData = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                specialUsersData.append(line)
+            specialUsersData = [line for line in reader]
             specialUsersData = specialUsersData[0]
             specialUsersData = list(map(float, specialUsersData))
 
@@ -3513,10 +3501,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + "-bots.csv", [botsData])
     else:
         with open(dataDir + str(i) + "-bots.csv", "r") as file:
-            botsData = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                botsData.append(line)
+            botsData = [line for line in reader]
             botsData = botsData[0]
             botsData = list(map(float, botsData))
 
@@ -3547,11 +3533,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + "-blocked.csv", [blockedData])
     else:
         with open(dataDir + str(i) + "-blocked.csv", "r") as file:
-            print(dataDir + str(i) + "-blocked.csv")
-            blockedData = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                blockedData.append(line)
+            blockedData = [line for line in reader]
             blockedData = blockedData[0]
             blockedData = list(map(float, blockedData))
 
@@ -3581,10 +3564,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + "-ip.csv", [ipData])
     else:
         with open(dataDir + str(i) + "-ip.csv", "r") as file:
-            ipData = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                ipData.append(line)
+            ipData = [line for line in reader]
             ipData = ipData[0]
             ipData = list(map(float, ipData))
 
@@ -3614,10 +3595,8 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir + str(i) + "-ip-blocked.csv", [ipBlockedData])
     else:
         with open(dataDir + str(i) + "-ip-blocked.csv", "r") as file:
-            ipBlockedData = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                ipBlockedData.append(line)
+            ipBlockedData = [line for line in reader]
             ipBlockedData = ipBlockedData[0]
             ipBlockedData = list(map(float, ipBlockedData))
 
@@ -3670,77 +3649,83 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
 
 
 def talkpageEditsTimeAveraged(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "talkpageEditsTimeAveraged"
-    plt.figure()
+    yearConditions = [
+        "where",
+        "join user on edit.user_table_id = user.id where user.bot is not True and",
+    ]
+    monthConditions = [
+        "",
+        "join user on edit.user_table_id = user.id where user.bot is not True",
+    ]
+    names = ["withBots", "noBots"]
 
-    years = """select Year(edit_date) as date, count(*) from edit
-    where Year(edit_date) > 2001 and Year(edit_date) < 2020 GROUP BY YEAR(edit_date)
-    order by YEAR(edit_date) ;"""
+    for j, name in enumerate(names):
+        figname = plotDir + str(i) + "-" + name + "-" + "talkpageEditsTimeAveraged"
+        plt.figure()
+        years = """select Year(edit_date) as date, count(*) from edit %s
+         Year(edit_date) > 2001 and Year(edit_date) < 2020 GROUP BY YEAR(edit_date)
+        order by YEAR(edit_date) ;"""
 
-    if not dryrun:
-        cursor.execute(years,)
-        yearsData = cursor.fetchall()
+        if not dryrun:
+            cursor.execute(years % yearConditions[j],)
+            yearsData = cursor.fetchall()
 
-        writeCSV(dataDir + str(i) + "-years.csv", yearsData)
-    else:
-        with open(dataDir + str(i) + "-years.csv", "r") as file:
-            yearsData = []
-            reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                yearsData.append(line)
+            writeCSV(dataDir + str(i) + "-" + name + "-years.csv", yearsData)
+        else:
+            with open(dataDir + str(i) + "-" + name + "-years.csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                yearsData = [line for line in reader]
 
-            yearsData = list(map(lambda x: tuple(map(float, x)), yearsData))
+                yearsData = list(map(lambda x: tuple(map(float, x)), yearsData))
 
-    months = """select Year(edit_date), Month(edit_date) as date, count(*) from edit
-    GROUP BY YEAR(edit_date), Month(edit_date)
-    order by YEAR(edit_date), Month(edit_date);"""
+        months = """select Year(edit_date), Month(edit_date) as date, count(*) from edit %s
+        GROUP BY YEAR(edit_date), Month(edit_date)
+        order by YEAR(edit_date), Month(edit_date);"""
 
-    if not dryrun:
-        cursor.execute(months,)
-        monthsData = cursor.fetchall()
+        if not dryrun:
+            cursor.execute(months % monthConditions[j],)
+            monthsData = cursor.fetchall()
 
-        writeCSV(dataDir + str(i) + "-months.csv", monthsData)
-    else:
-        with open(dataDir + str(i) + "-months.csv", "r") as file:
-            monthsData = []
-            reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                monthsData.append(line)
+            writeCSV(dataDir + str(i) + "-" + name + "-months.csv", monthsData)
+        else:
+            with open(dataDir + str(i) + "-" + name + "-months.csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                monthsData = [line for line in reader]
 
-            monthsData = list(map(lambda x: tuple(map(float, x)), monthsData))
+                monthsData = list(map(lambda x: tuple(map(float, x)), monthsData))
 
-    datesYears = list(
-        map(lambda x: matplotlib.dates.datestr2num(str(int(x[0]))), yearsData)
-    )
-    datesMonths = list(
-        map(
-            lambda x: matplotlib.dates.datestr2num(
-                str(int(x[0])) + "-" + str(int(x[1]))
-            ),
-            monthsData,
+        datesYears = list(
+            map(lambda x: matplotlib.dates.datestr2num(str(int(x[0]))), yearsData)
         )
-    )
-    valuesYears = [x[1] for x in yearsData]
-    valuesMonths = [x[2] for x in monthsData]
+        datesMonths = list(
+            map(
+                lambda x: matplotlib.dates.datestr2num(
+                    str(int(x[0])) + "-" + str(int(x[1]))
+                ),
+                monthsData,
+            )
+        )
+        valuesYears = [x[1] for x in yearsData]
+        valuesMonths = [x[2] for x in monthsData]
 
-    _, ax = plt.subplots()
+        _, ax = plt.subplots()
 
-    ax.set_title("Talkpage edits over time")
-    ax.set_ylabel("Edits per Year")
+        ax.set_title("Talkpage edits over time")
+        ax.set_ylabel("Edits per Year")
 
-    ax.plot_date(datesYears, valuesYears, "C0-")
-    ax2 = ax.twinx()
-    ax2.plot_date(datesMonths, valuesMonths, "C0-", alpha=0.4)
-    ax2.set_ylabel("Edits per Month")
+        ax.plot_date(datesYears, valuesYears, "C0-")
+        ax2 = ax.twinx()
+        ax2.plot_date(datesMonths, valuesMonths, "C0-", alpha=0.4)
+        ax2.set_ylabel("Edits per Month")
 
-    plt.gcf().set_size_inches(12, 7.5)
-    ax.spines["top"].set_visible(False)
-    ax2.spines["top"].set_visible(False)
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    ax2.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        plt.gcf().set_size_inches(12, 7.5)
+        ax.spines["top"].set_visible(False)
+        ax2.spines["top"].set_visible(False)
+        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        ax2.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+        plt.close()
 
 
 def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
@@ -3758,10 +3743,8 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
         writeCSV(dataDir, i, data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
-            data = []
             reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                data.append(line)
+            data = [line for line in reader]
 
             data = list(map(lambda x: (dt.strptime(x[0], "%Y-%m-%d"), int(x[1])), data))
 
@@ -4058,84 +4041,6 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
-def talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "talkpageEditsTimeAveragedNoBots"
-    plt.figure()
-
-    years = """select Year(edit_date) as date, count(*) from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is not True and
-    Year(edit_date) > 2001 and Year(edit_date) < 2020
-    GROUP BY YEAR(edit_date) order by YEAR(edit_date) ;"""
-
-    if not dryrun:
-        cursor.execute(years,)
-        yearsData = cursor.fetchall()
-
-        writeCSV(dataDir + str(i) + "-years.csv", yearsData)
-    else:
-        with open(dataDir + str(i) + "-years.csv", "r") as file:
-            yearsData = []
-            reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                yearsData.append(line)
-
-            yearsData = list(map(lambda x: tuple(map(float, x)), yearsData))
-
-    months = """select Year(edit_date), Month(edit_date) as date, count(*) from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is not True
-    GROUP BY YEAR(edit_date), Month(edit_date)
-    order by YEAR(edit_date), Month(edit_date);"""
-
-    if not dryrun:
-        cursor.execute(months,)
-        monthsData = cursor.fetchall()
-
-        writeCSV(dataDir + str(i) + "-months.csv", monthsData)
-    else:
-        with open(dataDir + str(i) + "-months.csv", "r") as file:
-            monthsData = []
-            reader = csv.reader(file, delimiter=",")
-            for line in reader:
-                monthsData.append(line)
-
-            monthsData = list(map(lambda x: tuple(map(float, x)), monthsData))
-
-    datesYears = list(
-        map(lambda x: matplotlib.dates.datestr2num(str(int(x[0]))), yearsData)
-    )
-    datesMonths = list(
-        map(
-            lambda x: matplotlib.dates.datestr2num(
-                str(int(x[0])) + "-" + str(int(x[1]))
-            ),
-            monthsData,
-        )
-    )
-    valuesYears = [x[1] for x in yearsData]
-    valuesMonths = [x[2] for x in monthsData]
-
-    _, ax = plt.subplots()
-
-    ax.set_title("Talkpage edits over time excluding bots")
-    ax.set_ylabel("Edits per Year")
-
-    ax.plot_date(datesYears, valuesYears, "C0-")
-    ax2 = ax.twinx()
-    ax2.plot_date(datesMonths, valuesMonths, "C0-", alpha=0.4)
-    ax2.set_ylabel("Edits per Month")
-
-    plt.gcf().set_size_inches(12, 7.5)
-    ax.spines["top"].set_visible(False)
-    ax2.spines["top"].set_visible(False)
-    ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    ax2.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
-
-
 def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "talkpageEditsTimeGroups"
     plt.figure()
@@ -4189,10 +4094,8 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
             writeCSV(dataDir + str(i) + "-years-" + column + ".csv", yearsData)
         else:
             with open(dataDir + str(i) + "-years-" + column + ".csv", "r") as file:
-                yearsData = []
                 reader = csv.reader(file, delimiter=",")
-                for line in reader:
-                    yearsData.append(line)
+                yearsData = [line for line in reader]
 
                 yearsData = list(map(lambda x: tuple(map(float, x)), yearsData))
                 dataYear.append(yearsData)
@@ -4204,10 +4107,8 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
             writeCSV(dataDir + str(i) + "-month-" + column + ".csv", monthData)
         else:
             with open(dataDir + str(i) + "-month-" + column + ".csv", "r") as file:
-                monthData = []
                 reader = csv.reader(file, delimiter=",")
-                for line in reader:
-                    monthData.append(line)
+                monthData = [line for line in reader]
 
                 monthData = list(map(lambda x: tuple(map(float, x)), monthData))
                 monthDates = list(
@@ -4359,12 +4260,7 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
             values = [list(map(lambda x: x[2:], y)) for y in data]
         elif m == 1:
             dates = [
-                list(
-                    map(
-                        lambda x: matplotlib.dates.datestr2num(str(int(x[0]))),
-                        y,
-                    )
-                )
+                list(map(lambda x: matplotlib.dates.datestr2num(str(int(x[0]))), y,))
                 for y in data
             ]
             values = [list(map(lambda x: x[1:], y)) for y in data]
@@ -4409,6 +4305,130 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
 
             plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
             plt.close()
+
+
+def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "talkpageEditorsTimeGroups"
+    plt.figure()
+
+    columns = [
+        "Special",
+        "Users",
+        "Bot",
+        "Blocked",
+        "IP",
+        "IP Blocked",
+    ]
+
+    colors = [
+        "gold",
+        "mediumpurple",
+        "mediumaquamarine",
+        "orangered",
+        "skyblue",
+        "#F08EC1",
+    ]
+
+    conditions = [
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "bot is True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not True",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+    ]
+
+    queryYear = """SELECT count(years) FROM (
+        SELECT Year(edit_date) as years FROM edit JOIN user ON edit.user_table_id = user.id     
+        WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020     
+        GROUP BY YEAR(edit_date), edit.user_table_id 
+        ORDER BY YEAR(edit_date)
+        ) AS innerQuery group by years"""
+
+    # queryMonth = """select Year(edit_date), Month(edit_date) as date, count(*) from edit
+    # join user on edit.user_table_id = user.id
+    # where %s
+    # GROUP BY YEAR(edit_date), Month(edit_date), edit.user_table_id order by YEAR(edit_date), Month(edit_date)"""
+
+    dataYear = []
+    # dataMonth = []
+    # datesMonths = []
+
+    for j, column in enumerate(columns):
+        # print(conditions[i])
+        if not dryrun:
+            cursor.execute(queryYear % conditions[j],)
+            yearsData = cursor.fetchall()
+            dataYear.append(yearsData)
+            writeCSV(dataDir + str(i) + "-years-" + column + ".csv", yearsData)
+        else:
+            with open(dataDir + str(i) + "-years-" + column + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                yearsData = [line for line in reader]
+
+                yearsData = list(map(lambda x: tuple(map(float, x)), yearsData))
+                dataYear.append(yearsData)
+
+        # if not dryrun:
+        #     cursor.execute(queryMonth % conditions[j],)
+        #     monthData = cursor.fetchall()
+        #     dataMonth.append(monthData)
+        #     writeCSV(dataDir + str(i) + "-month-" + column + ".csv", monthData)
+        # else:
+        #     with open(dataDir + str(i) + "-month-" + column + ".csv", "r") as file:
+        #         reader = csv.reader(file, delimiter=",")
+        #         monthData = [line for line in reader]
+
+        #         monthData = list(map(lambda x: tuple(map(float, x)), monthData))
+        #         monthDates = list(
+        #             map(
+        #                 lambda x: matplotlib.dates.datestr2num(
+        #                     str(int(x[0])) + "-" + str(int(x[1]))
+        #                 ),
+        #                 monthData,
+        #             )
+        #         )
+        #         dataMonth.append(monthData)
+        #         datesMonths.append(monthDates)
+
+    datesYears = list(range(2002, 2020))
+
+    _, axs = plt.subplots(2, 1)
+
+    axs[0].set_title("Number of talkpage editors over time by group")
+    for i, column in enumerate(columns):
+        axs[0].plot(
+            datesYears,
+            dataYear[i],
+            color=colors[i],
+            label=column,
+            linestyle="-",
+            marker=",",
+        )
+        # axs[1].plot_date(
+        #     datesMonths[i],
+        #     [x[2] for x in dataMonth[i]],
+        #     color=colors[i],
+        #     label=column,
+        #     linestyle="-",
+        #     marker=",",
+        # )
+
+    axs[0].set_ylabel("Editors per Year")
+    axs[1].set_ylabel("Editors per Month")
+
+    for ax in axs:
+        ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        showGrid(plt, ax, "y")
+
+    plt.gcf().set_size_inches(16, 12)
+    plt.legend(loc="upper right")
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
 
 
 # --------------------------------------------------------------------------------------
@@ -4624,7 +4644,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 29 - 26 minutes
     # namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 30
+    i = i + 1  # 30 - minutes
     # talkpageEditsTimeAveraged(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 31
@@ -4634,13 +4654,15 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 33
-    # talkpageEditsTimeAveragedNoBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 34 - 54 minutes
     # talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 35 - 48 minutes
     # averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun)
+
+    i = i + 1  # 36 - 17 minutes
+    # talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
