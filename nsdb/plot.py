@@ -4432,8 +4432,6 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
 
 
 def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "compositionOfUserOverTime"
-    plt.figure()
 
     columns = [
         "Special",
@@ -4505,34 +4503,70 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
 
     datesYears = list(range(2002, 2020))
 
+    figname = plotDir + str(i) + "-compositionOfUserOverTime"
+    plt.figure()
     _, axs = plt.subplots(2, 1)
-    axs[0].set_title("Talkpage edits over time by group")
-    axs[1].set_title("Number of talkpage editors over time by group")
-    # for i, column in enumerate(columns):
+    axs[0].set_title("Number of talkpage editors over time by group")
+    axs[1].set_title("Talkpage edits over time by group")
     axs[0].stackplot(
-        datesYears,
-        dataEditsYear,
-        colors=colors,
-        labels=columns,
-    )
-    axs[1].stackplot(
         datesYears,
         dataEditorsYear,
         colors=colors,
         labels=columns,
     )
-    axs[0].set_ylabel("Edits per Year")
-    axs[1].set_ylabel("Editors per Year")
+    axs[1].stackplot(
+        datesYears,
+        dataEditsYear,
+        colors=colors,
+        labels=columns,
+    )
+    axs[0].set_ylabel("Editors per Year")
+    axs[1].set_ylabel("Edits per Year")
 
     for ax in axs:
         ax.xaxis.set_major_locator(plt.MaxNLocator(10))
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        showGrid(plt, ax, "y")
 
     plt.gcf().set_size_inches(16, 12)
-    plt.legend(loc="upper right")
+    plt.legend()
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+    sums = [sum(x) for x in list(zip(*dataEditsYear))]
+    dataEditsYear = [[z/sums[i] for i, z in enumerate(y)] for y in dataEditsYear]
+    sums = [sum(x) for x in list(zip(*dataEditorsYear))]
+    dataEditorsYear = [[z/sums[i] for i, z in enumerate(y)] for y in dataEditorsYear]
+    
+    figname = plotDir + str(i) + "-proportional-compositionOfUserOverTime"
+    plt.figure()
+    _, axs = plt.subplots(2, 1)
+    axs[0].set_title("Number of talkpage editors over time by group")
+    axs[1].set_title("Talkpage edits over time by group")
+    axs[0].stackplot(
+        datesYears,
+        dataEditorsYear,
+        colors=colors,
+        labels=columns,
+    )
+    axs[1].stackplot(
+        datesYears,
+        dataEditsYear,
+        colors=colors,
+        labels=columns,
+    )
+    axs[0].set_ylabel("Editors per Year / %")
+    axs[1].set_ylabel("Edits per Year / %")
+
+    for ax in axs:
+        ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+    plt.gcf().set_size_inches(16, 12)
+    plt.legend()
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()

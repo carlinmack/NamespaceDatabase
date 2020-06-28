@@ -100,8 +100,11 @@
 ### 29 Namespaces Edited By User Groups
 ![plot](29-namespacesEditedByUserGroups.png)
 
-### 30 Talkpage Edits Time Averaged
-![plot](30-talkpageEditsTimeAveraged.png)
+### 30.1 Talkpage Edits Time Averaged
+![plot](30-noBots-talkpageEditsTimeAveraged.png)
+
+### 30.2 Talkpage Edits Time Averaged No Bots
+![plot](30-noBots-talkpageEditsTimeAveraged.png)
 
 ### 31 Talkpage Edits Over Time No Bots
 ![plot](31-talkpageEditsOverTimeNoBots.png)
@@ -142,5 +145,8 @@
 ### 36 Talkpage Editors Time Groups
 ![plot](36-talkpageEditorsTimeGroups.png)
 
-### 37 Composition Of User Over Time
+### 37.1 Composition Of User Over Time
 ![plot](37-compositionOfUserOverTime.png)
+
+### 37.2 Composition Of User Over Time Proportional
+![plot](37-proportional-compositionOfUserOverTime.png)
