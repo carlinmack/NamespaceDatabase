@@ -1,6 +1,3 @@
-"""
-This script ...
-"""
 import argparse
 import csv
 import os
@@ -20,10 +17,8 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     plt.figure()
     figname = plotDir + str(i) + "-" + "partitionStatus"
 
-    query = """SELECT status, count(id)
-    FROM wikiactors.partition
-    GROUP BY status
-    ORDER BY count(id) desc;"""
+    query = """SELECT status, count(id) FROM wikiactors.partition
+    GROUP BY status ORDER BY count(id) desc;"""
 
     if not dryrun:
         cursor.execute(query,)
@@ -120,50 +115,18 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "numberOfPagesPerNamespace"
     plt.figure()
 
-    query = """SELECT namespace, count(page_id)
-    AS 'count'
-    FROM page
-    GROUP BY namespace
-    ORDER BY namespace;"""
+    query = """SELECT namespace, count(page_id) AS 'count' FROM page
+    GROUP BY namespace ORDER BY namespace;"""
     if not dryrun:
         cursor.execute(query,)
         data = cursor.fetchall()
         data = list(map(lambda x: (str(x[0]), x[1]), data))
 
-        with open(dataDir + str(i) + ".txt", "w") as file:
-            file.write(str(data))
+        writeCSV(dataDir + str(i) + ".csv", data)
     else:
-        data = [
-            ("0", 13274486),
-            ("1", 6973255),
-            ("2", 2769259),
-            ("3", 13270254),
-            ("4", 1064053),
-            ("5", 145316),
-            ("6", 799880),
-            ("7", 421780),
-            ("8", 2119),
-            ("9", 1308),
-            ("10", 575245),
-            ("11", 310669),
-            ("12", 1934),
-            ("13", 1051),
-            ("14", 1668104),
-            ("15", 1399806),
-            ("100", 89259),
-            ("101", 22247),
-            ("108", 6893),
-            ("109", 6196),
-            ("118", 91670),
-            ("119", 20586),
-            ("447", 1323),
-            ("710", 924),
-            ("711", 40),
-            ("828", 9691),
-            ("829", 6564),
-            ("2300", 1),
-            ("2301", 1),
-        ]
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [[str(line[0]), int(line[1])] for line in reader]
 
     data = mapNamespace(data)
 
@@ -191,15 +154,14 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     plt.figure()
 
     if not dryrun:
-        query = """SELECT count(*)
-            FROM user;"""
+        query = """SELECT count(*) FROM user;"""
         cursor.execute(query,)
         totalUsers = cursor.fetchone()[0]
     else:
         totalUsers = 50390420
 
     query = """SELECT
-    (select count(*) as target from user
+    (select count(*) as target from user 
     WHERE talkpage_number_of_edits > 0 and number_of_edits > 0),
     (select count(*) as target from user
     WHERE talkpage_number_of_edits = 0 and number_of_edits > 0),
@@ -235,205 +197,87 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
-def numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "numMainTalkEditsForBiggestUsers"
-    plt.figure()
+def numMainTalkEditsForBiggestEditors(cursor, i, plotDir, dataDir, dryrun):
+    groups = ["Special User", "User", "Blocked User", "IP", "IP Blocked", "Bot"]
 
-    mainspace = """SELECT username, number_of_edits FROM user
-    where bot is null order by number_of_edits desc limit 10;"""
-    talkspace = """SELECT username, talkpage_number_of_edits FROM user
-    where bot is null order by talkpage_number_of_edits desc limit 10;"""
-    if not dryrun:
-        cursor.execute(mainspace,)
-        mainspaceData = cursor.fetchall()
+    conditions = [
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+        "bot is True",
+    ]
 
-        with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
-            file.write(str(mainspaceData))
+    selectConditions = [
+        "username",
+        "username",
+        "username",
+        "ip_address",
+        "ip_address",
+        "username",
+    ]
 
-        cursor.execute(talkspace,)
-        talkspaceData = cursor.fetchall()
+    dataMainspace = []
+    dataTalkspace = []
 
-        with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
-            file.write(str(talkspaceData))
-    else:
-        mainspaceData = [
-            ("Ser Amantio di Nicolao", 2642285),
-            ("Koavf", 1501381),
-            ("BrownHairedGirl", 1486023),
-            ("BD2412", 1358460),
-            ("Rich Farmbrough", 1254142),
-            ("Tom.Reding", 1210959),
-            ("Waacstats", 1108188),
-            ("Materialscientist", 1059053),
-            ("Hmains", 1047292),
-            ("Bearcat", 953537),
-        ]
-        talkspaceData = [
-            ("Koavf", 432184),
-            ("Ser Amantio di Nicolao", 324243),
-            ("Rich Farmbrough", 270090),
-            ("Dthomsen8", 265542),
-            ("BetacommandBot", 253719),
-            ("EP111", 246440),
-            ("Johnsoniensis", 238420),
-            ("Fortdj33", 168119),
-            ("ChrisGualtieri", 167658),
-            ("Meno25", 144943),
-        ]
+    for j, group in enumerate(groups):
+        mainspace = """SELECT %s, number_of_edits FROM user
+        where %s order by number_of_edits desc limit 10;"""
+        talkspace = """SELECT %s, talkpage_number_of_edits FROM user
+        where %s order by talkpage_number_of_edits desc limit 10;"""
+        if not dryrun:
+            cursor.execute(mainspace % (selectConditions[j], conditions[j]),)
+            mainspaceData = cursor.fetchall()
 
-    fig, axs = plt.subplots(2, 1)  # Create a figure and an axes.
-    fig.suptitle("Top 10 mainspace and talkpage editors")
-    axs[0].barh(*zip(*mainspaceData), color="gold")
-    axs[0].set_ylabel("Usernames")  # Add an x-label to the axes.
-    axs[0].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
-    axs[0].set_title("Main space edits")  # Add a title to the axes.
-    axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    axs[1].barh(*zip(*talkspaceData), color="gold")
-    axs[1].set_ylabel("Usernames")  # Add an x-label to the axes.
-    axs[1].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
-    axs[1].set_title("Talk space edits")  # Add a title to the axes.
-    axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+            writeCSV(dataDir + str(i) + "-" + group + "-mainspace.csv", mainspaceData)
+            dataMainspace.append(mainspaceData)
 
-    plt.gcf().set_size_inches(8, 11)
-    removeSpines(axs[0])
-    removeSpines(axs[1])
+            cursor.execute(talkspace % (selectConditions[j], conditions[j]),)
+            talkspaceData = cursor.fetchall()
+            dataTalkspace.append(talkspaceData)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+            writeCSV(dataDir + str(i) + "-" + group + "-talkspace.csv", talkspaceData)
+        else:
+            with open(dataDir + str(i) + "-" + group + "-mainspace.csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                mainspaceData = [[str(line[0]), int(line[1])] for line in reader]
+                dataMainspace.append(mainspaceData)
 
+            with open(dataDir + str(i) + "-" + group + "-talkspace.csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                talkspaceData = [[str(line[0]), int(line[1])] for line in reader]
+                dataTalkspace.append(talkspaceData)
 
-def numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "numMainTalkEditsForBiggestBots"
-    plt.figure()
+    colors = [
+        "gold",
+        "mediumpurple",
+        "orangered",
+        "skyblue",
+        "#F08EC1",
+        "mediumaquamarine",
+    ]
 
-    mainspace = """SELECT username, number_of_edits FROM user
-    where bot is true order by number_of_edits desc limit 10;"""
-    talkspace = """SELECT username, talkpage_number_of_edits FROM user
-    where bot is true order by talkpage_number_of_edits desc limit 10;"""
-    if not dryrun:
-        cursor.execute(mainspace,)
-        mainspaceData = cursor.fetchall()
+    for j, group in enumerate(groups):
+        figname = plotDir + str(i) + "-" + group + "-numMainTalkEditsForBiggestEditors"
+        plt.figure()
+        fig, axs = plt.subplots(2, 1)  # Create a figure and an axes.
+        fig.suptitle("Top 10 mainspace and talkpage %s editors" % group)
+        axs[0].barh(*zip(*dataMainspace[j]), color=colors[j])
+        axs[0].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
+        axs[0].set_title("Main space edits")  # Add a title to the axes.
+        axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        axs[1].barh(*zip(*dataTalkspace[j]), color=colors[j])
+        axs[1].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
+        axs[1].set_title("Talk space edits")  # Add a title to the axes.
+        axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
-        with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
-            file.write(str(mainspaceData))
+        plt.gcf().set_size_inches(8, 11)
+        removeSpines(axs[0])
+        removeSpines(axs[1])
 
-        cursor.execute(talkspace,)
-        talkspaceData = cursor.fetchall()
-
-        with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
-            file.write(str(talkspaceData))
-    else:
-        mainspaceData = [
-            ("WP 1.0 bot", 6589889),
-            ("Cydebot", 6336698),
-            ("ClueBot NG", 5196209),
-            ("AnomieBOT", 4361942),
-            ("SmackBot", 3171007),
-            ("Yobot", 2823974),
-            ("Addbot", 2712291),
-            ("InternetArchiveBot", 2683840),
-            ("EmausBot", 1961489),
-            ("Monkbot", 1556995),
-        ]
-        talkspaceData = [
-            ("Yobot", 1520000),
-            ("SineBot", 1414852),
-            ("InternetArchiveBot", 1066758),
-            ("AnomieBOT", 483147),
-            ("ListasBot", 428200),
-            ("BattyBot", 418389),
-            ("Kingbotk", 366118),
-            ("Xenobot Mk V", 347264),
-            ("Lowercase sigmabot III", 311482),
-            ("MiszaBot I", 226159),
-        ]
-
-    fig, axs = plt.subplots(2, 1)  # Create a figure and an axes.
-    fig.suptitle("Top 10 mainspace and talkpage bot editors")
-    axs[0].barh(*zip(*mainspaceData), color="mediumaquamarine")
-    axs[0].set_ylabel("Usernames")  # Add an x-label to the axes.
-    axs[0].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
-    axs[0].set_title("Main space edits")  # Add a title to the axes.
-    axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    axs[1].barh(*zip(*talkspaceData), color="mediumaquamarine")
-    axs[1].set_ylabel("Usernames")  # Add an x-label to the axes.
-    axs[1].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
-    axs[1].set_title("Talk space edits")  # Add a title to the axes.
-    axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-
-    plt.gcf().set_size_inches(8, 11)
-    removeSpines(axs[0])
-    removeSpines(axs[1])
-
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
-
-
-def numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "numMainTalkEditsForBiggestIPs"
-    plt.figure()
-
-    mainspace = """SELECT ip_address, number_of_edits FROM user
-    where ip_address is not null order by number_of_edits desc limit 10;"""
-    talkspace = """SELECT ip_address, talkpage_number_of_edits FROM user
-    where ip_address is not null order by talkpage_number_of_edits desc limit 10;"""
-    if not dryrun:
-        cursor.execute(mainspace,)
-        mainspaceData = cursor.fetchall()
-        # data = list(*data)
-        with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
-            file.write(str(mainspaceData))
-
-        cursor.execute(talkspace,)
-        talkspaceData = cursor.fetchall()
-
-        with open(dataDir + str(i) + "-talkspace.txt", "w") as file:
-            file.write(str(talkspaceData))
-    else:
-        mainspaceData = [
-            ("84.90.219.128", 49897),
-            ("24.143.224.15", 45221),
-            ("208.81.184.4", 37762),
-            ("2600:1700:7E31:5", 33067),
-            ("2605:A000:140D:4", 24182),
-            ("129.33.19.254", 23492),
-            ("217.129.67.28", 23340),
-            ("204.153.84.10", 23007),
-            ("68.39.174.238", 21153),
-            ("2001:569:7C07:26", 20859),
-        ]
-        talkspaceData = [
-            ("208.81.184.4", 11671),
-            ("204.153.84.10", 4248),
-            ("64.6.124.31", 3862),
-            ("129.33.19.254", 3661),
-            ("98.113.248.40", 2575),
-            ("72.228.177.92", 2165),
-            ("208.245.87.2", 2063),
-            ("69.22.98.162", 1965),
-            ("66.234.33.8", 1913),
-            ("2001:8A0:F23F:16", 1874),
-        ]
-
-    fig, axs = plt.subplots(2, 1)  # Create a figure and an axes.
-    fig.suptitle("Top 10 mainspace and talkpage IP editors")
-    axs[0].barh(*zip(*mainspaceData), color="skyblue")
-    axs[0].set_ylabel("Usernames")  # Add an x-label to the axes.
-    axs[0].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
-    axs[0].set_title("Main space edits")  # Add a title to the axes.
-    axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    axs[1].barh(*zip(*talkspaceData), color="skyblue")
-    axs[1].set_ylabel("Usernames")  # Add an x-label to the axes.
-    axs[1].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
-    axs[1].set_title("Talk space edits")  # Add a title to the axes.
-    axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-
-    plt.gcf().set_size_inches(8, 11)
-    removeSpines(axs[0])
-    removeSpines(axs[1])
-
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+        plt.close()
 
 
 def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
@@ -850,7 +694,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     fig.suptitle("Average time between talk page edits", y=1.05)
     plotRange = range(0, 2)
 
-    for k, ax in enumerate(axs):
+    for ax in axs:
         removeSpines(ax)
         ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
         ax.set_yticks(plotRange)
@@ -4509,16 +4353,10 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     axs[0].set_title("Number of talkpage editors over time by group")
     axs[1].set_title("Talkpage edits over time by group")
     axs[0].stackplot(
-        datesYears,
-        dataEditorsYear,
-        colors=colors,
-        labels=columns,
+        datesYears, dataEditorsYear, colors=colors, labels=columns,
     )
     axs[1].stackplot(
-        datesYears,
-        dataEditsYear,
-        colors=colors,
-        labels=columns,
+        datesYears, dataEditsYear, colors=colors, labels=columns,
     )
     axs[0].set_ylabel("Editors per Year")
     axs[1].set_ylabel("Edits per Year")
@@ -4536,27 +4374,17 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
     sums = [sum(x) for x in list(zip(*dataEditsYear))]
-    dataEditsYear = [[z/sums[i] for i, z in enumerate(y)] for y in dataEditsYear]
+    dataEditsYear = [[z / sums[i] for i, z in enumerate(y)] for y in dataEditsYear]
     sums = [sum(x) for x in list(zip(*dataEditorsYear))]
-    dataEditorsYear = [[z/sums[i] for i, z in enumerate(y)] for y in dataEditorsYear]
-    
+    dataEditorsYear = [[z / sums[i] for i, z in enumerate(y)] for y in dataEditorsYear]
+
     figname = plotDir + str(i) + "-proportional-compositionOfUserOverTime"
     plt.figure()
     _, axs = plt.subplots(2, 1)
     axs[0].set_title("Number of talkpage editors over time by group")
     axs[1].set_title("Talkpage edits over time by group")
-    axs[0].stackplot(
-        datesYears,
-        dataEditorsYear,
-        colors=colors,
-        labels=columns,
-    )
-    axs[1].stackplot(
-        datesYears,
-        dataEditsYear,
-        colors=colors,
-        labels=columns,
-    )
+    axs[0].stackplot(datesYears, dataEditorsYear, colors=colors, labels=columns)
+    axs[1].stackplot(datesYears, dataEditsYear, colors=colors, labels=columns)
     axs[0].set_ylabel("Editors per Year / %")
     axs[1].set_ylabel("Edits per Year / %")
 
@@ -4704,20 +4532,18 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 2
     # distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 3
+    i = i + 1  # 3 - 30 seconds
     # numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 4
     # editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 5
-    # numMainTalkEditsForBiggestUsers(cursor, i, plotDir, dataDir, dryrun)
+    i = i + 1  # 5 - 5 minutes
+    # numMainTalkEditsForBiggestEditors(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 6
-    # numMainTalkEditsForBiggestBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 7
-    # numMainTalkEditsForBiggestIPs(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 8
     # distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun)

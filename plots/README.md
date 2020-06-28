@@ -16,14 +16,23 @@
 ### 4 Edits Main Talk Neither
 ![plot](4-editsMainTalkNeither.png)
 
-### 5 Num Main Talk Edits For Biggest Users
-![plot](5-numMainTalkEditsForBiggestUsers.png)
+### 5.1 Num Main Talk Edits For Biggest Special Users
+![plot](5-Special User-numMainTalkEditsForBiggestEditors.png)
 
-### 6 Num Main Talk Edits For Biggest Bots
-![plot](6-numMainTalkEditsForBiggestBots.png)
+### 5.2 Num Main Talk Edits For Biggest Users
+![plot](5-User-numMainTalkEditsForBiggestEditors.png)
 
-### 7 Num Main Talk Edits For Biggest IPs
-![plot](7-numMainTalkEditsForBiggestIPs.png)
+### 5.3 Num Main Talk Edits For Biggest Blocked Users
+![plot](5-Blocked User-numMainTalkEditsForBiggestEditors.png)
+
+### 5.4 Num Main Talk Edits For Biggest IP Editors
+![plot](5-IP-numMainTalkEditsForBiggestEditors.png)
+
+### 5.5 Num Main Talk Edits For Biggest Blocked IP Editors
+![plot](5-IP Blocked-numMainTalkEditsForBiggestEditors.png)
+
+### 5.6 Num Main Talk Edits For Biggest Blocked Bot Editors
+![plot](5-Bot-numMainTalkEditsForBiggestEditors.png)
 
 ### 8 Distribution Of Main Edits User Bots
 ![plot](8-distributionOfMainEditsUserBots.png)
