@@ -4431,6 +4431,113 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
+def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "compositionOfUserOverTime"
+    plt.figure()
+
+    columns = [
+        "Special",
+        "Users",
+        "Bot",
+        "Blocked",
+        "IP",
+        "IP Blocked",
+    ]
+
+    colors = [
+        "gold",
+        "mediumpurple",
+        "mediumaquamarine",
+        "orangered",
+        "skyblue",
+        "#F08EC1",
+    ]
+
+    conditions = [
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "bot is True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not True",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+    ]
+
+    queryEditsYear = """select count(*) from edit join user on edit.user_table_id = user.id
+    where %s and Year(edit_date) > 2001 and Year(edit_date) < 2020
+    GROUP BY YEAR(edit_date) order by YEAR(edit_date)"""
+    dataEditsYear = []
+
+    queryEditorsYear = """SELECT count(years) FROM (
+        SELECT Year(edit_date) as years FROM edit JOIN user ON edit.user_table_id = user.id     
+        WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020     
+        GROUP BY YEAR(edit_date), edit.user_table_id 
+        ORDER BY YEAR(edit_date)
+        ) AS innerQuery group by years"""
+    dataEditorsYear = []
+
+    for j, column in enumerate(columns):
+        # print(conditions[i])
+        if not dryrun:
+            cursor.execute(queryEditsYear % conditions[j],)
+            yearsData = cursor.fetchall()
+            dataEditsYear.append(yearsData)
+            writeCSV(dataDir + str(i) + "-edits-" + column + ".csv", yearsData)
+        else:
+            with open(dataDir + str(i) + "-edits-" + column + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                yearsData = [line for line in reader]
+                yearsData = list(map(lambda x: float(x[0]), yearsData))
+                dataEditsYear.append(yearsData)
+
+    for j, column in enumerate(columns):
+        if not dryrun:
+            cursor.execute(queryEditorsYear % conditions[j],)
+            yearsData = cursor.fetchall()
+            dataEditorsYear.append(yearsData)
+            writeCSV(dataDir + str(i) + "-editors-" + column + ".csv", yearsData)
+        else:
+            with open(dataDir + str(i) + "-editors-" + column + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                yearsData = [line for line in reader]
+
+                yearsData = list(map(lambda x: float(x[0]), yearsData))
+                dataEditorsYear.append(yearsData)
+
+    datesYears = list(range(2002, 2020))
+
+    _, axs = plt.subplots(2, 1)
+    axs[0].set_title("Talkpage edits over time by group")
+    axs[1].set_title("Number of talkpage editors over time by group")
+    # for i, column in enumerate(columns):
+    axs[0].stackplot(
+        datesYears,
+        dataEditsYear,
+        colors=colors,
+        labels=columns,
+    )
+    axs[1].stackplot(
+        datesYears,
+        dataEditorsYear,
+        colors=colors,
+        labels=columns,
+    )
+    axs[0].set_ylabel("Edits per Year")
+    axs[1].set_ylabel("Editors per Year")
+
+    for ax in axs:
+        ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        showGrid(plt, ax, "y")
+
+    plt.gcf().set_size_inches(16, 12)
+    plt.legend(loc="upper right")
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
 # --------------------------------------------------------------------------------------
 
 
@@ -4663,6 +4770,9 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     i = i + 1  # 36 - 17 minutes
     # talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
+
+    i = i + 1  # 37
+    # compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()

@@ -141,3 +141,6 @@
 
 ### 36 Talkpage Editors Time Groups
 ![plot](36-talkpageEditorsTimeGroups.png)
+
+### 37 Composition Of User Over Time
+![plot](37-compositionOfUserOverTime.png)
