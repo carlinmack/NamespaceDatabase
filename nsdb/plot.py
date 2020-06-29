@@ -12,6 +12,8 @@ from cycler import cycler
 
 import Database
 
+# Plots --------------------------------------------------------------------------------
+
 
 def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     plt.figure()
@@ -161,7 +163,7 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
         totalUsers = 50390420
 
     query = """SELECT
-    (select count(*) as target from user 
+    (select count(*) as target from user
     WHERE talkpage_number_of_edits > 0 and number_of_edits > 0),
     (select count(*) as target from user
     WHERE talkpage_number_of_edits = 0 and number_of_edits > 0),
@@ -369,13 +371,13 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
     and talkpage_number_of_edits = 0),
     (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and  talkpage_number_of_edits = 1),
+    and talkpage_number_of_edits = 1),
     (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and  talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
+    and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
     (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and  talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
+    and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
     (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and  talkpage_number_of_edits > 100);"""
+    and talkpage_number_of_edits > 100);"""
     if not dryrun:
         cursor.execute(talkspaceUser,)
         talkspaceUserData = cursor.fetchall()
@@ -389,13 +391,13 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     (SELECT count(*) FROM user WHERE bot is true
     and talkpage_number_of_edits = 0),
     (SELECT count(*) FROM user WHERE bot is true
-    and  talkpage_number_of_edits = 1),
+    and talkpage_number_of_edits = 1),
     (SELECT count(*) FROM user WHERE bot is true
-    and  talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
+    and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
     (SELECT count(*) FROM user WHERE bot is true
-    and  talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
+    and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
     (SELECT count(*) FROM user WHERE bot is true
-    and  talkpage_number_of_edits > 100);"""
+    and talkpage_number_of_edits > 100);"""
     if not dryrun:
         cursor.execute(talkspaceBot,)
         talkspaceBotData = cursor.fetchall()
@@ -409,13 +411,13 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     (SELECT count(*) FROM user WHERE blocked is true
     and talkpage_number_of_edits = 0),
     (SELECT count(*) FROM user WHERE blocked is true
-    and  talkpage_number_of_edits = 1),
+    and talkpage_number_of_edits = 1),
     (SELECT count(*) FROM user WHERE blocked is true
-    and  talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
+    and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
     (SELECT count(*) FROM user WHERE blocked is true
-    and  talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
+    and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
     (SELECT count(*) FROM user WHERE blocked is true
-    and  talkpage_number_of_edits > 100);"""
+    and talkpage_number_of_edits > 100);"""
     if not dryrun:
         cursor.execute(talkspaceBlocked,)
         talkspaceBlockedData = cursor.fetchall()
@@ -590,7 +592,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     conditions = [
         "user_special is True",
         "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "blocked is True and ip_address is not true",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
         "ip_address is True and blocked is not true",
         "ip_address is True and blocked is true",
         "bot is True",
@@ -795,13 +797,13 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
 
     userTalk = """SELECT
     (SELECT count(*) FROM page WHERE namespace = 3
-    and  number_of_edits = 1),
+    and number_of_edits = 1),
     (SELECT count(*) FROM page WHERE namespace = 3
-    and  number_of_edits > 1 and number_of_edits <= 10),
+    and number_of_edits > 1 and number_of_edits <= 10),
     (SELECT count(*) FROM page WHERE namespace = 3
-    and  number_of_edits > 10 and number_of_edits <= 100),
-    (SELECT count(*) FROM page WHERE  namespace = 3
-    and  number_of_edits > 100);"""
+    and number_of_edits > 10 and number_of_edits <= 100),
+    (SELECT count(*) FROM page WHERE namespace = 3
+    and number_of_edits > 100);"""
     if not dryrun:
         cursor.execute(userTalk,)
         userTalkData = cursor.fetchall()
@@ -966,7 +968,7 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
 
     conditions = [
         "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "blocked is True and ip_address is not true",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
         "ip_address is True and blocked is not true",
         "ip_address is True and blocked is true",
         "bot is True",
@@ -1113,9 +1115,9 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     std = []
 
     specialUsers = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
-    from edit inner join user
+    from edit join user
     on edit.user_table_id = user.id
-    where user.blocked is null and user.bot is null and user_special is true;"""
+    where user_special is true;"""
     if not dryrun:
         cursor.execute(specialUsers,)
         specialUsersData = cursor.fetchall()
@@ -1131,10 +1133,9 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     std.append(specialUsersStd)
 
     users = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
-    from edit
-    inner join user
+    from edit join user
     on edit.user_table_id = user.id
-    where user.blocked is null and user.ip_address is null and user.bot is null;"""
+    where bot is not True and blocked is not true and ip_address is not true and user_special is not True;"""
     if not dryrun:
         cursor.execute(users,)
         userData = cursor.fetchall()
@@ -1150,11 +1151,9 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     std.append(userStd)
 
     blocked = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
-    from edit
-    inner join user
+    from edit join user
     on edit.user_table_id = user.id
-    where user.blocked is true
-    and user.ip_address is not true;"""
+    where blocked is True and ip_address is not true and bot is not true and user_special is not true;"""
     if not dryrun:
         cursor.execute(blocked,)
         blockedData = cursor.fetchall()
@@ -1170,8 +1169,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     std.append(blockedStd)
 
     bots = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
-    from edit
-    inner join user
+    from edit join user
     on edit.user_table_id = user.id
     where user.bot is true;"""
     if not dryrun:
@@ -1189,11 +1187,9 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     std.append(botsStd)
 
     ipAddress = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
-    from edit
-    inner join user
+    from edit join user
     on edit.user_table_id = user.id
-    where user.ip_address is true
-    and user.blocked is not true;"""
+    where user.ip_address is true and user.blocked is not true;"""
     if not dryrun:
         cursor.execute(ipAddress,)
         ipAddressData = cursor.fetchall()
@@ -1209,11 +1205,9 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     std.append(ipAddressStd)
 
     ipAddressBlocked = """select avg(edit.ins_vulgarity), std(edit.ins_vulgarity)
-    from edit
-    inner join user
+    from edit join user
     on edit.user_table_id = user.id
-    where user.ip_address is true
-    and user.blocked is true;"""
+    where user.ip_address is true and user.blocked is true;"""
     if not dryrun:
         cursor.execute(ipAddressBlocked,)
         ipAddressBlockedData = cursor.fetchall()
@@ -1456,7 +1450,6 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     from edit join user
     on edit.user_table_id = user.id
     where user.user_special is true;"""
-    # where user.user_special is true
     if not dryrun:
         cursor.execute(specialUsers,)
         specialUsersData = cursor.fetchall()
@@ -1472,10 +1465,9 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     externalData.append(("users with\nspecial priviliges", specialUsersExternalData))
 
     users = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
-    from edit
-    join user
+    from edit join user
     on edit.user_table_id = user.id
-    where user.blocked is null and user.ip_address is null and user.bot is null;"""
+    where bot is not True and blocked is not true and ip_address is not true and user_special is not True;"""
     if not dryrun:
         cursor.execute(users,)
         userData = cursor.fetchall()
@@ -1491,10 +1483,9 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     externalData.append(("users", userExternalData))
 
     blocked = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
-    from edit
-    join user
+    from edit join user
     on edit.user_table_id = user.id
-    where user.blocked is true;"""
+    where blocked is True and ip_address is not true and bot is not true and user_special is not true;"""
     if not dryrun:
         cursor.execute(blocked,)
         blockedData = cursor.fetchall()
@@ -1510,8 +1501,7 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     externalData.append(("blocked", blockedExternalData))
 
     bots = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
-    from edit
-    join user
+    from edit join user
     on edit.user_table_id = user.id
     where user.bot is true;"""
     if not dryrun:
@@ -1532,7 +1522,7 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     from edit
     join user
     on edit.user_table_id = user.id
-    where user.ip_address is true;"""
+    where user.ip_address is true and blocked is not true;"""
     if not dryrun:
         cursor.execute(ipAddress,)
         ipAddressData = cursor.fetchall()
@@ -1544,8 +1534,8 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
         ipAddressInternalData = 1.0504
         ipAddressExternalData = 0.1154
 
-    internalData.append(("ip", ipAddressInternalData))
-    externalData.append(("ip", ipAddressExternalData))
+    internalData.append(("IP", ipAddressInternalData))
+    externalData.append(("IP", ipAddressExternalData))
 
     _, axs = plt.subplots(2, 1)
     colors = ["gold", "mediumpurple", "orangered", "mediumaquamarine", "skyblue"]
@@ -2418,7 +2408,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
     MAX(ins_external_link),MAX(blanking),MAX(comment_copyedit),MAX(comment_personal_life),
     MAX(comment_special_chars),MAX(ins_capitalization),MAX(ins_digits),MAX(ins_pronouns),
     MAX(ins_special_chars),MAX(ins_vulgarity),MAX(ins_whitespace),MAX(reverted),MAX(added_sentiment),
-    sMAX(deleted_sentiment)  FROM edit;"""
+    MAX(deleted_sentiment)  FROM edit;"""
     if not dryrun:
         cursor.execute(maxs,)
         maxsData = cursor.fetchall()
@@ -3584,7 +3574,7 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(query,)
         data = cursor.fetchall()
 
-        writeCSV(dataDir, i, data)
+        writeCSV(dataDir + str(i) + ".csv", data)
     else:
         with open(dataDir + str(i) + ".csv", "r") as file:
             reader = csv.reader(file, delimiter=",")
@@ -3911,7 +3901,7 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         "user_special is True",
         "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
         "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
         "ip_address is True and blocked is not true",
         "ip_address is True and blocked is true",
     ]
@@ -3982,7 +3972,7 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         )
         axs[1].plot_date(
             datesMonths[i],
-            [x[2] for x in dataMonth[i]],
+            [x[2:] for x in dataMonth[i]],
             color=colors[i],
             label=column,
             linestyle="-",
@@ -4043,7 +4033,7 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         "user_special is True",
         "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
         "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
         "ip_address is True and blocked is not true",
         "ip_address is True and blocked is true",
     ]
@@ -4177,15 +4167,15 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         "user_special is True",
         "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
         "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
         "ip_address is True and blocked is not true",
         "ip_address is True and blocked is true",
     ]
 
     queryYear = """SELECT count(years) FROM (
-        SELECT Year(edit_date) as years FROM edit JOIN user ON edit.user_table_id = user.id     
-        WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020     
-        GROUP BY YEAR(edit_date), edit.user_table_id 
+        SELECT Year(edit_date) as years FROM edit JOIN user ON edit.user_table_id = user.id
+        WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020
+        GROUP BY YEAR(edit_date), edit.user_table_id
         ORDER BY YEAR(edit_date)
         ) AS innerQuery group by years"""
 
@@ -4299,7 +4289,7 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
         "user_special is True",
         "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
         "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
         "ip_address is True and blocked is not true",
         "ip_address is True and blocked is true",
     ]
@@ -4310,9 +4300,9 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     dataEditsYear = []
 
     queryEditorsYear = """SELECT count(years) FROM (
-        SELECT Year(edit_date) as years FROM edit JOIN user ON edit.user_table_id = user.id     
-        WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020     
-        GROUP BY YEAR(edit_date), edit.user_table_id 
+        SELECT Year(edit_date) as years FROM edit JOIN user ON edit.user_table_id = user.id
+        WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020
+        GROUP BY YEAR(edit_date), edit.user_table_id
         ORDER BY YEAR(edit_date)
         ) AS innerQuery group by years"""
     dataEditorsYear = []
@@ -4400,7 +4390,7 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
-# --------------------------------------------------------------------------------------
+# Helpers ------------------------------------------------------------------------------
 
 
 def writeCSV(fileName, data):
@@ -4463,7 +4453,6 @@ def singlePlot(pltObj, ax, axis):
         showGrid(pltObj, ax, "x")
 
 
-# formatter function takes tick label and tick position
 def threeFigureFormatter(x, pos):
     if pos:
         pass  # appeasing the linter
@@ -4485,8 +4474,10 @@ def showGrid(pltObj, ax, axis):
     ax.set_axisbelow(True)
 
 
+# Main ---------------------------------------------------------------------------------
+
+
 def plot(plotDir: str = "../plots/", dryrun=False):
-    """A function"""
     if not os.path.exists(plotDir):
         os.mkdir(plotDir)
 
@@ -4506,8 +4497,6 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     if "Inter" in [f.name for f in font_manager.fontManager.ttflist]:
         matplotlib.rcParams["font.family"] = "Inter"
 
-    # cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-
     matplotlib.rcParams["axes.prop_cycle"] = cycler(
         color=[
             "#2271d3",
@@ -4526,16 +4515,16 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = 0  # 0 - 5 seconds
     # partitionStatus(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 1 - 79 seconds
+    i = i + 1  # 1 - 1 minute
     # distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 2
+    i = i + 1  # 2 - 1 minute
     # distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 3 - 30 seconds
     # numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 4
+    i = i + 1  # 4 - 1 minute
     # editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 5 - 5 minutes
@@ -4545,50 +4534,52 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     i = i + 1  # 7
 
-    i = i + 1  # 8
+    i = i + 1  # 8 - 47 minutes
     # distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 9
+    i = i + 1  # 9 - 5 minutes
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 10 - 2 minutes
     # editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 11
+    i = i + 1  # 11 - 4 minutes
     # distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 12
+    i = i + 1  # 12 - 32 minutes
     # sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 13 - 55 minutes
     # sentimentGroups(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 14
+    i = i + 1  # 14 - 33 minutes
     # profanityAll(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 15
+    i = i + 1  # 15 - 3 minutes
     # averageAll(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 16
+    i = i + 1  # 16 - 20 seconds
     # namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 17
+    i = i + 1  # 17 - 26 minutes
     # internalExternalLinks(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 18
+    i = i + 1  # 18 - 4 seconds
     # specialUsersPlot(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 19
+    i = i + 1  # 19 - 30 minutes
     # averageAllSpecial(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 20
+    i = i + 1  # 20 - 2 minutes
     # compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 21
+    i = i + 1  # 21 - 12 minutes
     # compositionOfUser(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 22
+    # tick = time.time()
+    i = i + 1  # 22 -
     # aggregations(cursor, i, plotDir, dataDir, dryrun)
+    # print('--- 22 %s seconds ---' % (time.time() - tick))
 
     i = i + 1  # 23 - 50 seconds
     # editBooleans(cursor, i, plotDir, dataDir, dryrun)
@@ -4596,31 +4587,31 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 24 - 50 seconds
     # userBooleans(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 25
+    i = i + 1  # 25 - 26 seconds
     # talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 26
+    i = i + 1  # 26 - 6 minutes
     # averageAllEpoch(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 27
+    i = i + 1  # 27 - 4 minutes
     # averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 28
+    i = i + 1  # 28 - 4 minutes
     # averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 29 - 26 minutes
     # namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 30 - minutes
+    i = i + 1  # 30 - 7 minutes
     # talkpageEditsTimeAveraged(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 31
+    i = i + 1  # 31 - 4 minutes
     # talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 32 - 7 minutes
     # averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 33
+    i = i + 1  # 33 -
 
     i = i + 1  # 34 - 54 minutes
     # talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
@@ -4631,8 +4622,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 36 - 17 minutes
     # talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 37
+    # tick = time.time()
+    i = i + 1  # 37 -
     # compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun)
+    # print('--- 37 %s seconds ---' % (time.time() - tick))
 
     if not dryrun:
         cursor.close()
@@ -4659,7 +4652,6 @@ def defineArgParser():
 
 
 if __name__ == "__main__":
-
     argParser = defineArgParser()
     clArgs = argParser.parse_args()
 
