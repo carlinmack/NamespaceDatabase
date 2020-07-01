@@ -44,6 +44,8 @@ def ipGlobalBlocks(dir="lists/"):
                         )
                     )
 
+    # Query OK, 93849 rows affected (3 days 6 hours 15 min 52.43 sec)
+    # Rows matched: 93851  Changed: 93849  Warnings: 0
     query = """update user A
     inner join ( 
         select id from user, globalblocks 
@@ -52,6 +54,7 @@ def ipGlobalBlocks(dir="lists/"):
         and INET_ATON(ip_address) 
             between Cast(CONV(globalblocks.gb_range_start, 16, 10) as unsigned)
             and Cast(CONV(globalblocks.gb_range_end, 16, 10) as unsigned)
+            limit 100000
     ) as B on A.id = B.id
     set blocked = 1; """
 
@@ -109,7 +112,10 @@ def goodUsers(dir="lists/"):
         query = """UPDATE user A
         INNER JOIN user_groups B
         ON A.user_id = B.ug_user
-        SET A.user_special = 1;"""
+        SET A.user_special = 1
+        WHERE ug_group != "confirmed" 
+        and ug_group != "extendedconfirmed"
+        and ug_group != "bot";"""
 
         cursor.execute(query,)
 
@@ -127,6 +133,43 @@ def allBlocked(dir="lists/"):
 
     print(content)
 
+def createBlockedLastFiveEdits(cursor):
+    database, cursor = Database.connect()
+    query = "DROP TABLE IF EXISTS blocked_last_five_edits ;"
+
+    cursor.execute(query,)
+
+    query = """create table blocked_last_five_edits 
+    select t1.* from edit t1 join user
+    on t1.user_table_id = user.id where user.blocked is true 
+    and ip_address is null and t1.edit_date >= (select edit_date from edit t2
+                        where t2.user_table_id = t1.user_table_id
+                        and user.blocked is true and ip_address is null
+                        order by edit_date desc limit 4,1);"""
+
+    cursor.execute(query,)
+
+    cursor.close()
+    database.close()
+
+def createBlockedIPLastFiveEdits(cursor):
+    database, cursor = Database.connect()
+    query = "DROP TABLE IF EXISTS blocked_ip_last_five_edits ;"
+
+    cursor.execute(query,)
+
+    query = """create table blocked_ip_last_five_edits
+    select t1.* from edit t1 join user
+    on t1.user_table_id = user.id where user.blocked is true 
+    and ip_address is not null and t1.edit_date >= (select edit_date from edit t2
+                        where t2.user_table_id = t1.user_table_id
+                        and user.blocked is true and ip_address is not null
+                        order by edit_date desc limit 4,1);"""
+
+    cursor.execute(query,)
+
+    cursor.close()
+    database.close()
 
 def main():
     """A function"""
@@ -136,11 +179,18 @@ def main():
     if not os.path.exists(listDir):
         os.mkdir(listDir)
 
+    # 4 days
     # ipGlobalBlocks(listDir)
 
     # allBlocked(listDir)
 
     # goodUsers(listDir)
+
+    # 1 day, 17 hours
+    # createBlockedLastFiveEdits()
+
+    # 
+    # createBlockedIPLastFiveEdits()
 
     # if os.path.exists(listDir):
     #     os.rmdir(listDir)
