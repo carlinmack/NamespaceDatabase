@@ -1,8 +1,9 @@
-click
+cycler
 profanity
+matplotlib
 mwreverts
 mwxml
 mysql
 mysql-connector-python
-requests
+pandas
 tqdm
