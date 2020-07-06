@@ -3636,18 +3636,18 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(allEdits,)
         allData = cursor.fetchall()
         allData = list(*allData)
-        writeCSV(dataDir + str(i) + "-all.csv", allData)
+        writeCSV(dataDir + str(i) + "-all.csv", [allData])
     else:
         with open(dataDir + str(i) + "-all.csv", "r") as file:
             reader = csv.reader(file, delimiter=",")
-            allData = [line for line in reader]
+            allData = [list(map(float, line)) for line in reader][0]
 
-    optionNames = ["users", "ips"]
+    optionNames = ["users", "IPs"]
+    optionColors = ["orangered","#F08EC1",]
+        
     options = [["not","blocked_last_five_edits"], ["","blocked_ip_last_five_edits"]]
 
-    for i in range(len(options)):
-        if i == 0:
-            next
+    for k in range(len(options)):
         blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
         AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
         AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
@@ -3658,14 +3658,14 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
         on user.id = edit.user_table_id
         where user.blocked is True and ip_address is %s true;"""
         if not dryrun:
-            cursor.execute(blocked % options[i][0],)
+            cursor.execute(blocked % options[k][0],)
             blockedData = cursor.fetchall()
             blockedData = list(*blockedData)
-            writeCSV(dataDir + str(i) + "-" + optionNames[i] + ".csv", blockedData)
+            writeCSV(dataDir + str(i) + "-" + optionNames[k] + ".csv", [blockedData])
         else:
-            with open(dataDir + str(i) + "-" +  optionNames[i] + "-months.csv", "r") as file:
+            with open(dataDir + str(i) + "-" +  optionNames[k] + ".csv", "r") as file:
                 reader = csv.reader(file, delimiter=",")
-                blockedData = [line for line in reader]
+                blockedData = [list(map(float, line)) for line in reader][0]
 
         blockedLastFive = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
         AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
@@ -3674,47 +3674,47 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
         AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
         AVG(deleted_sentiment) FROM %s;"""
         if not dryrun:
-            cursor.execute(blockedLastFive,)
+            cursor.execute(blockedLastFive % options[k][1],)
             blockedLastFiveData = cursor.fetchall()
             blockedLastFiveData = list(*blockedLastFiveData)
-            writeCSV(dataDir + str(i) + "-" + optionNames[i] + "-lastFive.csv", blockedLastFiveData)
+            writeCSV(dataDir + str(i) + "-" + optionNames[k] + "-lastFive.csv", [blockedLastFiveData])
         else:
-            with open(dataDir + str(i) + "-" +  optionNames[i] + "-lastFive.csv", "r") as file:
+            with open(dataDir + str(i) + "-" +  optionNames[k] + "-lastFive.csv", "r") as file:
                 reader = csv.reader(file, delimiter=",")
-                blockedLastFiveData = [line for line in reader]
+                blockedLastFiveData = [list(map(float, line)) for line in reader][0]
 
         plt.figure()
-        figname = plotDir + str(i) + "-" + optionNames[i] + "-averageBlockedLastEdits"
+        figname = plotDir + str(i) + "-" + optionNames[k] + "-averageBlockedLastEdits"
         fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
         fig.suptitle("Average of all integer edit fields")
-
+        print([min(a, b) for a, b in zip(blockedData[0:3], blockedLastFiveData[0:3],)])
         start = [0, 3, 5, 8]
         end = [3, 5, 8, 21]
-        for ax in axs:
-            plotRange = range(start, end)
+        for j, ax in enumerate(axs):
+            plotRange = range(start[j], end[j])
             ax.hlines(
                 y=plotRange,
-                xmin=[min(a, b) for a, b in zip(blockedData[:end], blockedLastFiveData[:end],)],
-                xmax=[max(a, b) for a, b in zip(blockedData[:end], blockedLastFiveData[:end],)],
+                xmin=[min(a, b) for a, b in zip(blockedData[start[j]:end[j]], blockedLastFiveData[start[j]:end[j]],)],
+                xmax=[max(a, b) for a, b in zip(blockedData[start[j]:end[j]], blockedLastFiveData[start[j]:end[j]],)],
                 color="grey",
                 alpha=0.4,
             )
             ax.vlines(
-                x=allData[:2],
+                x=allData[start[j]:end[j]],
                 ymin=list(map(lambda x: x - 0.5, plotRange)),
                 ymax=list(map(lambda x: x + 0.5, plotRange)),
                 color="grey",
                 alpha=0.4,
             )
             ax.scatter(
-                blockedLastFiveData[:2],
+                blockedLastFiveData[start[j]:end[j]],
                 plotRange,
-                color="orangered",
+                color=optionColors[k],
                 marker="D",
-                label="Last five edits of blocked users",
+                label="Last five edits of blocked %s" % optionNames[k],
             )
-            ax.scatter(blockedData[:2], plotRange, color="orangered", label="Blocked users")
-            ax.set_yticklabels(columns[:2])
+            ax.scatter(blockedData[start[j]:end[j]], plotRange, color=optionColors[k], label="Blocked %s" % optionNames[k])
+            ax.set_yticklabels(columns[start[j]:end[j]])
             ax.set_yticks(plotRange)
         
         axs[0].legend(
@@ -4556,10 +4556,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 31 - 4 minutes
     # talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun)
 
-    # i = i + 1  # 32 - 7 minutes
-    tick = time.time()
+    i = i + 1  # 32 - 11 minutes
     # averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun)
-    # print("--- 7 %s seconds ---" % (time.time() - tick))
 
     i = i + 1  # 33 -
 
