@@ -118,8 +118,11 @@
 ### 31 Talkpage Edits Over Time No Bots
 ![plot](31-talkpageEditsOverTimeNoBots.png)
 
-### 32 Average Blocked Last Edits
-![plot](32-averageBlockedLastEdits.png)
+### 32.1 Average Blocked Last Edits Users
+![plot](32-users-averageBlockedLastEdits.png)
+
+### 32.2 Average Blocked Last Edits IPs
+![plot](32-IPs-averageBlockedLastEdits.png)
 
 ### 33 Talkpage Edits Time Averaged No Bots
 ![plot](33-talkpageEditsTimeAveragedNoBots.png)
@@ -159,3 +162,24 @@
 
 ### 37.2 Composition Of User Over Time Proportional
 ![plot](37-proportional-compositionOfUserOverTime.png)
+
+### 38.1 Timespan Of All Contributor Engagement
+![plot](38-All-timespanOfContributorEngagement.png)
+
+### 38.2 Timespan Of Users Contributor Engagement
+![plot](38-Users-timespanOfContributorEngagement.png)
+
+### 38.3 Timespan Of Special Users Contributor Engagement
+![plot](38-Special-timespanOfContributorEngagement.png)
+
+### 38.4 Timespan Of Blocked Users Contributor Engagement
+![plot](38-Blocked-timespanOfContributorEngagement.png)
+
+### 38.5 Timespan Of IP Users Contributor Engagement
+![plot](38-IP-timespanOfContributorEngagement.png)
+
+### 38.6 Timespan Of IP Blocked Contributor Engagement
+![plot](38-IP Blocked-timespanOfContributorEngagement.png)
+
+### 38.7 Timespan Of Bot Contributor Engagement
+![plot](38-Bot-timespanOfContributorEngagement.png)

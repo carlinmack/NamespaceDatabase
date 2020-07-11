@@ -15,6 +15,8 @@ scripts to parallelise and to only import necessary information to the database.
 |---------------------------|-----------------------|-----------------------|
 | ![image](plots/11-distributionOfEditsPerNamespace.png) | ![image](plots/19-averageAllSpecial.png) | ![image](plots/21-compositionOfUser.png) |
 
+👉 View all plots - [Plotting Wikipedia Data](https://carlinmack.com/blog/article/wikipediaplots/)
+
 ## Contents
 
   * [Current Status](#Current-Status)

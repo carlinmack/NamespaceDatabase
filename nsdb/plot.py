@@ -2728,7 +2728,7 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "talkpageEditsOverTime"
     plt.figure()
 
-    query = "select cast(edit_date as date) as date, count(*) from edit group by date order by date;;"
+    query = "select cast(edit_date as date) as date, count(*) from edit group by date order by date;"
 
     if not dryrun:
         cursor.execute(query,)
@@ -3643,9 +3643,10 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
             allData = [list(map(float, line)) for line in reader][0]
 
     optionNames = ["users", "IPs"]
-    optionColors = ["orangered","#F08EC1",]
-        
-    options = [["not","blocked_last_five_edits"], ["","blocked_ip_last_five_edits"]]
+    options = [["not", "blocked_last_five_edits"], ["", "blocked_ip_last_five_edits"]]
+
+    data = []
+    lastFiveData = []
 
     for k in range(len(options)):
         blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
@@ -3663,72 +3664,103 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
             blockedData = list(*blockedData)
             writeCSV(dataDir + str(i) + "-" + optionNames[k] + ".csv", [blockedData])
         else:
-            with open(dataDir + str(i) + "-" +  optionNames[k] + ".csv", "r") as file:
+            with open(dataDir + str(i) + "-" + optionNames[k] + ".csv", "r") as file:
                 reader = csv.reader(file, delimiter=",")
                 blockedData = [list(map(float, line)) for line in reader][0]
 
-        blockedLastFive = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-        AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-        AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-        AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-        AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-        AVG(deleted_sentiment) FROM %s;"""
+        data.append(blockedData)
+
+        blockedLastFive = """select AVG(added_length),AVG(deleted_length),AVG(del_words),
+        AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
+        AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),
+        AVG(comment_personal_life,AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),
+        AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),
+        AVG(reverted),AVG(added_sentiment), AVG(deleted_sentiment) FROM %s;"""
         if not dryrun:
             cursor.execute(blockedLastFive % options[k][1],)
             blockedLastFiveData = cursor.fetchall()
             blockedLastFiveData = list(*blockedLastFiveData)
-            writeCSV(dataDir + str(i) + "-" + optionNames[k] + "-lastFive.csv", [blockedLastFiveData])
+            writeCSV(
+                dataDir + str(i) + "-" + optionNames[k] + "-lastFive.csv",
+                [blockedLastFiveData],
+            )
         else:
-            with open(dataDir + str(i) + "-" +  optionNames[k] + "-lastFive.csv", "r") as file:
+            with open(
+                dataDir + str(i) + "-" + optionNames[k] + "-lastFive.csv", "r"
+            ) as file:
                 reader = csv.reader(file, delimiter=",")
                 blockedLastFiveData = [list(map(float, line)) for line in reader][0]
 
-        plt.figure()
-        figname = plotDir + str(i) + "-" + optionNames[k] + "-averageBlockedLastEdits"
-        fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
-        fig.suptitle("Average of all integer edit fields")
-        print([min(a, b) for a, b in zip(blockedData[0:3], blockedLastFiveData[0:3],)])
-        start = [0, 3, 5, 8]
-        end = [3, 5, 8, 21]
-        for j, ax in enumerate(axs):
-            plotRange = range(start[j], end[j])
-            ax.hlines(
-                y=plotRange,
-                xmin=[min(a, b) for a, b in zip(blockedData[start[j]:end[j]], blockedLastFiveData[start[j]:end[j]],)],
-                xmax=[max(a, b) for a, b in zip(blockedData[start[j]:end[j]], blockedLastFiveData[start[j]:end[j]],)],
-                color="grey",
-                alpha=0.4,
-            )
-            ax.vlines(
-                x=allData[start[j]:end[j]],
-                ymin=list(map(lambda x: x - 0.5, plotRange)),
-                ymax=list(map(lambda x: x + 0.5, plotRange)),
-                color="grey",
-                alpha=0.4,
+        lastFiveData.append(blockedLastFiveData)
+
+    plt.figure()
+    figname = plotDir + str(i) + "-averageBlockedLastEdits"
+    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
+    fig.suptitle("Average of all integer edit fields")
+    print([min(a, b) for a, b in zip(blockedData[0:3], blockedLastFiveData[0:3],)])
+    start = [0, 3, 5, 8]
+    end = [3, 5, 8, 21]
+    optionColors = [
+        "orangered",
+        "#F08EC1",
+    ]
+    for j, ax in enumerate(axs):
+        plotRange = range(start[j], end[j])
+        ax.hlines(
+            y=plotRange,
+            xmin=[
+                min(a, b)
+                for a, b in zip(
+                    list(map(min, list(zip(*data))[start[j] : end[j]])),
+                    list(map(min, list(zip(*lastFiveData))[start[j] : end[j]])),
+                )
+            ],
+            xmax=[
+                max(a, b)
+                for a, b in zip(
+                    list(map(max, list(zip(*data))[start[j] : end[j]])),
+                    list(map(max, list(zip(*lastFiveData))[start[j] : end[j]])),
+                )
+            ],
+            color="grey",
+            alpha=0.4,
+        )
+        ax.vlines(
+            x=allData[start[j] : end[j]],
+            ymin=list(map(lambda x: x - 0.5, plotRange)),
+            ymax=list(map(lambda x: x + 0.5, plotRange)),
+            color="grey",
+            alpha=0.4,
+        )
+        for m in range(len(optionColors)):
+            ax.scatter(
+                lastFiveData[m][start[j] : end[j]],
+                plotRange,
+                color=optionColors[m],
+                marker="D",
+                label="Last five edits of blocked %s" % optionNames[m],
             )
             ax.scatter(
-                blockedLastFiveData[start[j]:end[j]],
+                data[m][start[j] : end[j]],
                 plotRange,
-                color=optionColors[k],
-                marker="D",
-                label="Last five edits of blocked %s" % optionNames[k],
+                color=optionColors[m],
+                label="Blocked %s" % optionNames[m],
             )
-            ax.scatter(blockedData[start[j]:end[j]], plotRange, color=optionColors[k], label="Blocked %s" % optionNames[k])
-            ax.set_yticklabels(columns[start[j]:end[j]])
-            ax.set_yticks(plotRange)
-        
-        axs[0].legend(
-            loc="upper center", bbox_to_anchor=(0.5, 2), ncol=3, fancybox=True, shadow=True,
-        )
-        axs[2].set_xlim(left=0)        
-        axs[3].set_xlim(left=0)
+        ax.set_yticklabels(columns[start[j] : end[j]])
+        ax.set_yticks(plotRange)
 
-        plt.gcf().set_size_inches(9.5, 9.5)
-        for ax in axs:
-            removeSpines(ax)
+    axs[0].legend(
+        loc="upper center", bbox_to_anchor=(0.5, 2), ncol=3, fancybox=True, shadow=True,
+    )
+    axs[2].set_xlim(left=0)
+    axs[3].set_xlim(left=0)
 
-        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-        plt.close()
+    plt.gcf().set_size_inches(9.5, 9.5)
+    for ax in axs:
+        removeSpines(ax)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
 
 
 def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -4038,7 +4070,8 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     # queryMonth = """select Year(edit_date), Month(edit_date) as date, count(*) from edit
     # join user on edit.user_table_id = user.id
     # where %s
-    # GROUP BY YEAR(edit_date), Month(edit_date), edit.user_table_id order by YEAR(edit_date), Month(edit_date)"""
+    # GROUP BY YEAR(edit_date), Month(edit_date), edit.user_table_id
+    # order by YEAR(edit_date), Month(edit_date)"""
 
     dataYear = []
     # dataMonth = []
@@ -4246,96 +4279,106 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
 
 
 def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "timespanOfContributorEngagement"
-    plt.figure()
+    columns = [
+        # "All",
+        "Special",
+        "Users",
+        "Bot",
+        "Blocked",
+        "IP",
+        "IP Blocked",
+    ]
 
-    query = """SELECT
-    (SELECT edit_date as last_edit FROM edit AS t1 JOIN USER
-    ON edit.user_table_id = user.id
-    WHERE user.ip_address IS NULL
-    WHERE date = (SELECT MAX(t2.edit_date)
-        FROM table2 AS t2
-        WHERE t1.user_table_id = t2.user_table_id)
-    ORDER BY user_table_id),
-    (SELECT edit_date as first_edit FROM edit AS t1 JOIN USER
-    ON edit.user_table_id = user.id
-    WHERE user.ip_address IS NULL
-    WHERE date = (SELECT MIN(t2.edit_date)
-        FROM table2 AS t2
-        WHERE t1.user_table_id = t2.user_table_id)
-    ORDER BY user_table_id),
-    (SELECT number_of_edits + talkpage_number_of_edits AS total_edits 
-    FROM USER WHERE ip_address IS NULL ORDER BY id)"""
-    if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        writeCSV(dataDir + str(i) + ".csv", data)
+    markerSizes = [6, 3, 6, 6, 3, 6]
+
+    conditions = [
+        "1",
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "bot is True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+    ]
+
+    for j, condition in enumerate(conditions):
+        figname = (
+            plotDir + str(i) + "-" + columns[j] + "-timespanOfContributorEngagement"
+        )
+        plt.figure()
+        query = """SELECT cast(first_edit as date), cast(last_edit as date), 
+        number_of_edits + talkpage_number_of_edits AS total_edits
+        FROM user join edit_times on user.id = edit_times.id WHERE %s"""
+        if not dryrun:
+            cursor.execute(query % condition,)
+            tick = time.time()
+            data = cursor.fetchall()
+            writeCSV(dataDir + str(i) + "-" + columns[j] + ".csv", data)
+        else:
+            with open(dataDir + str(i) + "-" + columns[j] + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                data = [
+                    [
+                        matplotlib.dates.datestr2num(line[0]),
+                        matplotlib.dates.datestr2num(line[1]),
+                        int(line[2]),
+                    ]
+                    for line in reader
+                ]
 
         df = pd.DataFrame(data)
-        print(df.head())
+        df.columns = ["first_edit", "last_edit", "total_edits"]
 
-    plt.figure(num=None, figsize=(15, 15), facecolor="w", edgecolor="k")
-    # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-    # plt.gca().xaxis.set_major_locator(mdates.YearLocator())
-    # plt.gca().yaxis.set_major_formatter(mdates.DateFormatter('%Y'))
-    # plt.gca().yaxis.set_major_locator(mdates.YearLocator())
-    # plt.xlim([dt(2012,1,1),dt(2019,6,1)])
-    # plt.ylim([dt(2012,1,1),dt(2019,6,1)])
-    plt.xlabel("Date of First Edit", fontsize=16)
-    plt.ylabel("Date of Most Recent Edit", fontsize=16)
-    plt.title("Timespan of HOT OSM Contributor Engagement", fontsize=16)
-    few_edits = df[df.total_edits < 10]
-    some_edits = df[((df.total_edits >= 10) & (df.total_edits < 100))]
-    many_edits = df[((df.total_edits >= 100) & (df.total_edits < 1000))]
-    most_edits = df[df.total_edits >= 1000]
-    plt.plot(
-        most_edits["first_edit"],
-        most_edits["last_edit"],
-        ".",
-        markersize=3,
-        alpha=0.1,
-        color="purple",
-    )
-    plt.plot(
-        many_edits["first_edit"],
-        many_edits["last_edit"],
-        ".",
-        markersize=3,
-        alpha=0.1,
-        color="red",
-    )
-    plt.plot(
-        some_edits["first_edit"],
-        some_edits["last_edit"],
-        ".",
-        markersize=3,
-        alpha=0.1,
-        color="orange",
-    )
-    plt.plot(
-        few_edits["first_edit"],
-        few_edits["last_edit"],
-        ".",
-        markersize=3,
-        alpha=0.1,
-        color="yellow",
-    )
-    lgnd = plt.legend(
-        [
-            "Mappers with more than 1000 edits",
-            "Mappers with between 100 and 1000 edits",
-            "Mappers with between 10 and 100 edits",
-            "Mappers with less than 10 edits",
-        ],
-        fontsize=16,
-    )
-    # change the marker size manually for both lines
-    # for lg in lgnd.legendHandles:
-    #     lg._legmarker.set_markersize(10)
-    #     lg._legmarker.set_alpha(1)
+        plt.figure(num=None, figsize=(15, 15))
+        plt.xlim([dt(2001, 1, 1), dt(2020, 1, 4)])
+        plt.ylim([dt(2001, 1, 1), dt(2020, 1, 4)])
+        plt.xlabel("Date of First Edit", fontsize=16)
+        plt.ylabel("Date of Most Recent Edit", fontsize=16)
+        plt.title(
+            "Timespan of Wikipedia Talkpage %s Editor Engagement" % columns[j],
+            fontsize=16,
+        )
+        few_edits = df[df.total_edits < 10]
+        some_edits = df[((df.total_edits >= 10) & (df.total_edits < 50))]
+        many_edits = df[((df.total_edits >= 50) & (df.total_edits < 1000))]
+        most_edits = df[df.total_edits >= 1000]
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+        data = [most_edits, many_edits, some_edits, few_edits]
+        colors = ["purple", "red", "orange", "yellow"]
+
+        for k, color in enumerate(colors):
+            plt.plot(
+                data[k]["first_edit"],
+                data[k]["last_edit"],
+                ".",
+                markersize=markerSizes[j],
+                alpha=0.1,
+                color=color,
+            )
+
+        # plt.plot([dt(2001, 1, 1), dt(2015, 1, 4)], [dt(2006, 1, 1), dt(2020, 1, 4)], ls="--", c=".3")
+
+        lgnd = plt.legend(
+            [
+                "Talkpage editors with more than 1000 edits",
+                "Talkpage editors with between 50 and 1000 edits",
+                "Talkpage editors with between 10 and 50 edits",
+                "Talkpage editors with less than 10 edits",
+            ],
+            fontsize=16,
+            loc="lower right",
+        )
+        # change the marker size manually for both lines
+        for lg in lgnd.legendHandles:
+            lg._legmarker.set_markersize(5)
+            lg._legmarker.set_alpha(1)
+
+        ax = plt.axes()
+        # ax.set_facecolor('#292722')
+        removeSpines(ax)
+
+        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=300)
+        plt.close()
 
 
 # Helpers ------------------------------------------------------------------------------
@@ -4344,8 +4387,7 @@ def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
 def writeCSV(fileName, data):
     with open(fileName, "w") as file:
         writer = csv.writer(file, delimiter=",")
-        for line in data:
-            writer.writerow(line)
+        writer.writerows(data)
 
 
 def mapNamespace(data):
@@ -4575,10 +4617,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun)
     # print('--- 37 %s seconds ---' % (time.time() - tick))
 
-    # tick = time.time()
-    i = i + 1  # 38 -
+    i = i + 1  # 38 - 20 minutes
     # timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun)
-    # print("--- 38 %s seconds ---" % (time.time() - tick))
 
     if not dryrun:
         cursor.close()
