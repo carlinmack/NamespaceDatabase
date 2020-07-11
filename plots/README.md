@@ -183,3 +183,6 @@
 
 ### 38.7 Timespan Of Bot Contributor Engagement
 ![plot](38-Bot-timespanOfContributorEngagement.png)
+
+### 39 First Last Edits Groups
+![plot](39-firstLastEditsGroups.png)

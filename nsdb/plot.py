@@ -3,6 +3,7 @@ import csv
 import os
 import time
 from datetime import datetime as dt
+from math import floor
 
 import matplotlib
 import matplotlib.font_manager as font_manager
@@ -4280,16 +4281,16 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
 
 def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
     columns = [
-        # "All",
+        "All",
         "Special",
         "Users",
         "Bot",
         "Blocked",
         "IP",
-        "IP Blocked",
+        "Blocked IP",
     ]
 
-    markerSizes = [6, 3, 6, 6, 3, 6]
+    markerSizes = [3, 6, 3, 6, 6, 3, 6]
 
     conditions = [
         "1",
@@ -4306,7 +4307,7 @@ def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
             plotDir + str(i) + "-" + columns[j] + "-timespanOfContributorEngagement"
         )
         plt.figure()
-        query = """SELECT cast(first_edit as date), cast(last_edit as date), 
+        query = """SELECT cast(first_edit as date), cast(last_edit as date),
         number_of_edits + talkpage_number_of_edits AS total_edits
         FROM user join edit_times on user.id = edit_times.id WHERE %s"""
         if not dryrun:
@@ -4377,8 +4378,104 @@ def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
         # ax.set_facecolor('#292722')
         removeSpines(ax)
 
-        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=300)
+        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
         plt.close()
+
+
+def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-firstLastEditsGroups"
+    plt.figure()
+
+    columns = [
+        "Special",
+        "Users",
+        "Bot",
+        "Blocked",
+        "IP",
+        "IP Blocked",
+    ]
+
+    colors = [
+        "gold",
+        "mediumpurple",
+        "mediumaquamarine",
+        "orangered",
+        "skyblue",
+        "#F08EC1",
+    ]
+
+    conditions = [
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "bot is True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+    ]
+
+    tableColumns = ["first_edit", "last_edit"]
+
+    data = []
+
+    for j, condition in enumerate(conditions):
+        groupData = []
+
+        for k, t in enumerate(tableColumns):
+            tableData = []
+            query = """SELECT YEAR(%s), MONTH(%s), count(*)
+            FROM user join edit_times on user.id = edit_times.id WHERE %s
+            group by YEAR(%s), MONTH(%s) order by YEAR(%s), MONTH(%s)"""
+            if not dryrun:
+                cursor.execute(query % (t, t, condition, t, t, t, t,),)
+                tick = time.time()
+                tableData = cursor.fetchall()
+                print(tableData[:20])
+                tableData = list(map(lambda x: (str(x[0]) + "-" + str(x[1]), x[2]), tableData))
+                print(tableData[:20])
+                writeCSV(
+                    dataDir + str(i) + "-" + columns[j] + "-" + t + ".csv", tableData
+                )
+            else:
+                with open(
+                    dataDir + str(i) + "-" + columns[j] + "-" + t + ".csv", "r"
+                ) as file:
+                    reader = csv.reader(file, delimiter=",")
+                    tableData = [
+                        [matplotlib.dates.datestr2num(line[0]), int(line[1]),]
+                        for line in reader
+                    ]
+            groupData.append(list(zip(*tableData)))
+        data.append(groupData)
+
+    fig, axs = plt.subplots(4, 3)
+    axs = axs.ravel(order="F")
+    print(data[0][0][0][:50])
+    print(data[0][0][1][:50])
+
+    fig.suptitle(
+        "How many users made their first and last talkpage edit per day in each group"
+    )
+    for j, ax in enumerate(axs):
+        if not j % 2:
+            ax.set_title("%s first edit" % columns[floor(j / 2)])
+        else:
+            ax.set_title("%s last edit" % columns[floor(j / 2)])
+        ax.plot_date(
+            x=data[floor(j / 2)][j % 2][0],
+            y=data[floor(j / 2)][j % 2][1],
+            linestyle="-",
+            marker=",",
+            color=colors[floor(j / 2)],
+        )
+
+        ax.set_xlim(right=matplotlib.dates.datestr2num("2020-03"))
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+    plt.gcf().set_size_inches(20, 15)
+
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
 
 
 # Helpers ------------------------------------------------------------------------------
@@ -4619,6 +4716,9 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     i = i + 1  # 38 - 20 minutes
     # timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun)
+
+    i = i + 1  # 39 - 17 minutes
+    # firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
