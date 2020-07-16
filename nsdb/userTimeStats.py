@@ -3,8 +3,6 @@ This script ....
 """
 
 import argparse
-import os
-import sys
 import time
 from datetime import datetime
 from statistics import mean
@@ -20,7 +18,8 @@ def statsForAll():
     cursor.execute(query,)
     total = cursor.fetchone()[0]
 
-    query = """SELECT count(*) FROM user_time_stats;"""
+    query = """SELECT count(*) FROM user_time_stats where 
+      first_edit is not null;"""
     cursor.execute(query,)
     found = cursor.fetchone()[0]
 
@@ -67,9 +66,16 @@ def generate(cursor, userId):
         (id, min_time, avg_time, max_time, duration)
         VALUES (%s, %s, %s, %s, %s);"""
 
-    cursor.execute(
-        query, (userId, minimum, average, maximum, duration,),
-    )
+    cursor.execute(query, (userId, minimum, average, maximum, duration,))
+
+
+def firstLast(cursor, userId):
+    query = """UPDATE user_time_stats
+        SET first_edit = (SELECT MAX(edit_date) FROM edit where user_table_id = %s),
+            last_edit  = (SELECT MIN(edit_date) FROM edit where user_table_id = %s)
+        WHERE id = %s;"""
+
+    cursor.execute(query, (userId, userId, userId))
 
 
 def main():
@@ -79,13 +85,14 @@ def main():
     usersToDo = statsForAll()
 
     while usersToDo:
+        print("remake cursors")
         database, cursor = Database.connect()
         generateDatabase, generateCursor = Database.connect()
 
         query = """SELECT user.id FROM user
         LEFT OUTER JOIN user_time_stats
         ON user.id = user_time_stats.id
-        WHERE user_time_stats.id IS null
+        WHERE user_time_stats.first_edit is null
         and user.talkpage_number_of_edits > 1;"""
 
         cursor.execute(query,)
@@ -93,11 +100,13 @@ def main():
             try:
                 userId = cursor.fetchone()
             except:
+                print('remake inner cursor')
                 database, cursor = Database.connect()
                 continue
             if userId:
                 userId = userId[0]
-                generate(generateCursor, userId)
+                # generate(generateCursor, userId)
+                firstLast(generateCursor, userId)
             else:
                 break
 
@@ -115,15 +124,6 @@ def defineArgParser():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-
-    # parser.add_argument(
-    #     "-n",
-    #     "--namespaces",
-    #     help="""Same namespaces which you parsed for [default: 1]""",
-    #     default=[1],
-    #     type=int,
-    #     nargs="+",
-    # )
 
     return parser
 

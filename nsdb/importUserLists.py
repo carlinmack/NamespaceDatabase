@@ -133,24 +133,23 @@ def allBlocked(dir="lists/"):
 
     print(content)
 
+
 def createBlockedLastFiveEdits(cursor):
     database, cursor = Database.connect()
     query = "DROP TABLE IF EXISTS blocked_last_five_edits ;"
 
     cursor.execute(query,)
 
-    query = """create table blocked_last_five_edits 
-    select t1.* from edit t1 join user
-    on t1.user_table_id = user.id where user.blocked is true 
-    and ip_address is null and t1.edit_date >= (select edit_date from edit t2
-                        where t2.user_table_id = t1.user_table_id
-                        and user.blocked is true and ip_address is null
-                        order by edit_date desc limit 4,1);"""
+    query = """create table blocked_last_five_edits
+                    select * from 
+                        (select *, rank() over (partition by user_table_id order by edit_date desc) as rnk 
+                        from edit) as x where rnk <= 5;"""
 
     cursor.execute(query,)
 
     cursor.close()
     database.close()
+
 
 def createBlockedIPLastFiveEdits(cursor):
     database, cursor = Database.connect()
@@ -170,6 +169,7 @@ def createBlockedIPLastFiveEdits(cursor):
 
     cursor.close()
     database.close()
+
 
 def main():
     """A function"""

@@ -589,7 +589,7 @@ def checkReverted(
 ##  FUNCTIONS TO EXTRACT FEATURES
 def cleanString(string: str) -> str:
     """Removes special characters and unnecessary whitespace from text"""
-    removeSymbols = re.sub(r'[$-/:-?{-~!"^_`\[\]]', " ", string)
+    removeSymbols = re.sub(r'[$-/:?{}~!"^_`\[\]]', " ", string)
     removeDoubleSpaces = re.sub(r"\s\s+", " ", removeSymbols)
     return removeDoubleSpaces
 

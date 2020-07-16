@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 import pandas as pd
 from cycler import cycler
+from matplotlib import cm
 
 import Database
 
@@ -1247,115 +1248,54 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
-def averageAll(cursor, i, plotDir, dataDir, dryrun):
+def averageAll(cursor, i, plotDir, dataDir, dryrun, columns):
     figname = plotDir + str(i) + "-" + "averageAll"
     plt.figure()
 
     query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
     AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment), STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),
-    STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),
-    STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),
-    STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),
-    STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),
-    STD(deleted_sentiment)  from edit;"""
-    columns = [
-        "added_length",
-        "deleted_length",
-        "del_words",
-        "comment_length",
-        "ins_longest_inserted_word",
-        "ins_longest_character_sequence",
-        "ins_internal_link",
-        "ins_external_link",
-        "blanking",
-        "comment_copyedit",
-        "comment_personal_life",
-        "comment_special_chars",
-        "ins_capitalization",
-        "ins_digits",
-        "ins_pronouns",
-        "ins_special_chars",
-        "ins_vulgarity",
-        "ins_whitespace",
-        "reverted",
-        "added_sentiment",
-        "deleted_sentiment",
-    ]
+    AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),AVG(blanking),
+    AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),AVG(ins_capitalization),
+    AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),
+    AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment),STD(added_length),
+    STD(deleted_length),STD(del_words),STD(comment_length),STD(ins_longest_inserted_word),
+    STD(ins_longest_character_sequence),STD(ins_internal_link),STD(ins_external_link),
+    STD(ins_avg_word_length), STD(del_avg_word_length),STD(blanking),STD(comment_copyedit),
+    STD(comment_personal_life),STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),
+    STD(ins_pronouns),STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),
+    STD(added_sentiment),STD(deleted_sentiment) from edit;"""
     if not dryrun:
         cursor.execute(query,)
         data = cursor.fetchall()
-        dataStd = list(*data)[21:]
-        data = list(*data)[:21]
-        with open(dataDir + str(i) + ".txt", "w") as file:
-            file.write(str(data) + "\n" + str(dataStd))
+        dataStd = list(*data)[23:]
+        data = list(*data)[:23]
+        writeCSV(dataDir + str(i) + ".csv", [data])
+        writeCSV(dataDir + str(i) + "-std.csv", [dataStd])
     else:
-        data = [
-            442.0422,
-            439.0867,
-            58.0321,
-            49.1949,
-            10.6587,
-            1.8952,
-            1.6529,
-            0.1304,
-            0.0022,
-            0.0005,
-            0.0002,
-            0.11972271,
-            0.10387291,
-            0.02747601,
-            0.00610185,
-            0.12846018,
-            0.0143,
-            0.16946286,
-            0.0293,
-            0.03135975155021137,
-            0.0055170703440406196,
-        ]
-        dataStd = [
-            4654.176162916367,
-            6176.346864990649,
-            951.2080429740175,
-            39.922080083596796,
-            72.77314313715188,
-            45.67935596915416,
-            17.34742048576987,
-            5.371908826641828,
-            0.047305664882096865,
-            0.022598233982907077,
-            0.014979221561754661,
-            0.09649544409376277,
-            0.13556309951733453,
-            0.0529137673082975,
-            0.018949801230515435,
-            0.07763594209856826,
-            0.11881033215053255,
-            0.18192642687661204,
-            0.16869769991099628,
-            0.14008787360862252,
-            0.0690388085081368,
-        ]
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [list(map(float, line)) for line in reader][0]
+        with open(dataDir + str(i) + "-std.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            dataStd = [list(map(float, line)) for line in reader][0]
 
-    fig, axs = plt.subplots(1, 3, gridspec_kw={"width_ratios": [3, 5, 13]})
+    fig, axs = plt.subplots(1, 3, gridspec_kw={"width_ratios": [3, 7, 13]})
+
+    start = [0, 3, 10]
+    end = [3, 10, 23]
 
     fig.suptitle("Average of all integer edit fields")
-    axs[0].bar(columns[:3], data[:3], yerr=dataStd[:3])
-    axs[0].tick_params(labelrotation=90)
-    axs[0].set_ylim(bottom=0)
-    axs[1].bar(columns[3:8], data[3:8], yerr=dataStd[3:8])
-    axs[1].tick_params(labelrotation=90)
-    axs[1].set_ylim(bottom=0)
-    axs[2].bar(columns[8:], data[8:], yerr=dataStd[8:])
-    axs[2].tick_params(labelrotation=90)
-    axs[2].set_ylim(bottom=0)
+    for j, ax in enumerate(axs):
+        ax.bar(
+            columns[start[j] : end[j]],
+            data[start[j] : end[j]],
+            yerr=dataStd[start[j] : end[j]],
+        )
+        ax.tick_params(labelrotation=90)
+        ax.set_ylim(bottom=0)
+        removeSpines(ax)
+
     plt.gcf().set_size_inches(10, 7.5)
-    removeSpines(axs[0])
-    removeSpines(axs[1])
-    removeSpines(axs[2])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -1656,6 +1596,8 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         "reverted",
         "added_sentiment",
         "deleted_sentiment",
+        "ins_avg_word_length",
+        "del_avg_word_length",
     ]
 
     allEdits = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
@@ -2326,222 +2268,154 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
 
-def aggregations(cursor, i, plotDir, dataDir, dryrun):
+def aggregations(cursor, i, plotDir, dataDir, dryrun, columns):
     figname = plotDir + str(i) + "-" + "aggregations"
     plt.figure()
 
-    columns = [
-        "added_length",
-        "deleted_length",
-        "del_words",
-        "comment_length",
-        "ins_longest_inserted_word",
-        "ins_longest_character_sequence",
-        "ins_internal_link",
-        "ins_external_link",
-        "blanking",
-        "comment_copyedit",
-        "comment_personal_life",
-        "comment_special_chars",
-        "ins_capitalization",
-        "ins_digits",
-        "ins_pronouns",
-        "ins_special_chars",
-        "ins_vulgarity",
-        "ins_whitespace",
-        "reverted",
-        "added_sentiment",
-        "deleted_sentiment",
-    ]
-
     if not dryrun:
         modesData = []
-        for i in columns:
-            query = "SELECT {i} FROM edit GROUP BY {i} ORDER BY count(*) DESC LIMIT 1".format(
-                i=i
+        for j in columns:
+            query = "SELECT %s FROM edit GROUP BY %s ORDER BY count(*) DESC LIMIT 1" % (
+                j,
+                j,
             )
             cursor.execute(query,)
             modesData.append(cursor.fetchall()[0][0])
 
-        with open(dataDir + str(i) + "-modes.txt", "w") as file:
-            file.write(str(modesData))
+        writeCSV(dataDir + str(i) + "-modes.csv", [modesData])
     else:
-        modesData = [0, 2, 1, 0, 11, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        with open(dataDir + str(i) + "-modes.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            modesData = [list(map(float, line)) for line in reader][0]
 
     mins = """select MIN(added_length),MIN(deleted_length),MIN(del_words),MIN(comment_length),
     MIN(ins_longest_inserted_word),MIN(ins_longest_character_sequence),MIN(ins_internal_link),
-    MIN(ins_external_link),MIN(blanking),MIN(comment_copyedit),MIN(comment_personal_life),
-    MIN(comment_special_chars),MIN(ins_capitalization),MIN(ins_digits),MIN(ins_pronouns),
-    MIN(ins_special_chars),MIN(ins_vulgarity),MIN(ins_whitespace),MIN(reverted),MIN(added_sentiment),
+    MIN(ins_external_link),MIN(ins_avg_word_length), MIN(del_avg_word_length),MIN(blanking),
+    MIN(comment_copyedit),MIN(comment_personal_life),MIN(comment_special_chars),
+    MIN(ins_capitalization),MIN(ins_digits),MIN(ins_pronouns),MIN(ins_special_chars),
+    MIN(ins_vulgarity),MIN(ins_whitespace),MIN(reverted),MIN(added_sentiment),
     MIN(deleted_sentiment) FROM edit;"""
     if not dryrun:
         cursor.execute(mins,)
         minsData = cursor.fetchall()
         minsData = list(*minsData)
-        with open(dataDir + str(i) + "-mins.txt", "w") as file:
-            file.write(str(minsData))
+
+        writeCSV(dataDir + str(i) + "-mins.csv", [minsData])
     else:
-        minsData = [
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0.0000,
-            0.0000,
-            0.0000,
-            0.0000,
-            0.0000,
-            0,
-            0.0000,
-            0,
-            -1.0,
-            -1.0,
-        ]
+        with open(dataDir + str(i) + "-mins.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            minsData = [list(map(float, line)) for line in reader][0]
 
     maxs = """select MAX(added_length),MAX(deleted_length),MAX(del_words),MAX(comment_length),
     MAX(ins_longest_inserted_word),MAX(ins_longest_character_sequence),MAX(ins_internal_link),
-    MAX(ins_external_link),MAX(blanking),MAX(comment_copyedit),MAX(comment_personal_life),
-    MAX(comment_special_chars),MAX(ins_capitalization),MAX(ins_digits),MAX(ins_pronouns),
-    MAX(ins_special_chars),MAX(ins_vulgarity),MAX(ins_whitespace),MAX(reverted),MAX(added_sentiment),
+    MAX(ins_external_link),MAX(ins_avg_word_length), MAX(del_avg_word_length),MAX(blanking),
+    MAX(comment_copyedit),MAX(comment_personal_life),MAX(comment_special_chars),
+    MAX(ins_capitalization),MAX(ins_digits),MAX(ins_pronouns),MAX(ins_special_chars),
+    MAX(ins_vulgarity),MAX(ins_whitespace),MAX(reverted),MAX(added_sentiment),
     MAX(deleted_sentiment)  FROM edit;"""
     if not dryrun:
         cursor.execute(maxs,)
         maxsData = cursor.fetchall()
         maxsData = list(*maxsData)
-        with open(dataDir + str(i) + "-maxs.txt", "w") as file:
-            file.write(str(maxsData))
+
+        writeCSV(dataDir + str(i) + "-maxs.csv", [maxsData])
     else:
-        maxsData = [
-            8388607,
-            8388607,
-            2426845,
-            127,
-            32767,
-            32767,
-            24365,
-            32767,
-            1,
-            1,
-            1,
-            0.9999,
-            0.9999,
-            0.9999,
-            0.9999,
-            0.9999,
-            1,
-            0.9999,
-            1,
-            1.0,
-            1.0,
-        ]
+        with open(dataDir + str(i) + "-maxs.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            maxsData = [list(map(float, line)) for line in reader][0]
 
     means = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
     AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),AVG(blanking),
+    AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
+    AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+    AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
     AVG(deleted_sentiment) from edit;"""
     if not dryrun:
         cursor.execute(means,)
         meansData = cursor.fetchall()
         meansData = list(*meansData)
-        with open(dataDir + str(i) + "-means.txt", "w") as file:
-            file.write(str(meansData))
+        meansData = list(map(float, meansData))
+
+        writeCSV(dataDir + str(i) + "-means.csv", [meansData])
     else:
-        meansData = [
-            442.0422,
-            439.0867,
-            58.0321,
-            49.1949,
-            10.6587,
-            1.8952,
-            1.6529,
-            0.1304,
-            0.0022,
-            0.0005,
-            0.0002,
-            0.11972271,
-            0.10387291,
-            0.02747601,
-            0.00610185,
-            0.12846018,
-            0.0143,
-            0.16946286,
-            0.0293,
-            0.03135975155021137,
-            0.0055170703440406196,
-        ]
+        with open(dataDir + str(i) + "-means.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            meansData = [list(map(float, line)) for line in reader][0]
 
     stds = """select STD(added_length),STD(deleted_length),STD(del_words),STD(comment_length),
     STD(ins_longest_inserted_word),STD(ins_longest_character_sequence),STD(ins_internal_link),
-    STD(ins_external_link),STD(blanking),STD(comment_copyedit),STD(comment_personal_life),
-    STD(comment_special_chars),STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),
-    STD(ins_special_chars),STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),
+    STD(ins_external_link),STD(ins_avg_word_length),STD(del_avg_word_length),STD(blanking),
+    STD(comment_copyedit),STD(comment_personal_life),STD(comment_special_chars),
+    STD(ins_capitalization),STD(ins_digits),STD(ins_pronouns),STD(ins_special_chars),
+    STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),
     STD(deleted_sentiment) from edit;"""
     if not dryrun:
         cursor.execute(stds,)
         stdsData = cursor.fetchall()
         stdsData = list(*stdsData)
-        with open(dataDir + str(i) + "-stds.txt", "w") as file:
-            file.write(str(stdsData))
+
+        writeCSV(dataDir + str(i) + "-stds.csv", [stdsData])
     else:
-        stdsData = [
-            4654.176162916367,
-            6176.346864990649,
-            951.2080429740175,
-            39.922080083596796,
-            72.77314313715188,
-            45.67935596915416,
-            17.34742048576987,
-            5.371908826641828,
-            0.047305664882096865,
-            0.022598233982907077,
-            0.014979221561754661,
-            0.09649544409376277,
-            0.13556309951733453,
-            0.0529137673082975,
-            0.018949801230515435,
-            0.07763594209856826,
-            0.11881033215053255,
-            0.18192642687661204,
-            0.16869769991099628,
-            0.14008787360862252,
-            0.0690388085081368,
-        ]
+        with open(dataDir + str(i) + "-stds.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            stdsData = [list(map(float, line)) for line in reader][0]
 
     stdsData = list(map(sum, zip(stdsData, meansData)))
 
-    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [3, 4, 12, 2]})
+    fig, axs = plt.subplots(6, 1, gridspec_kw={"height_ratios": [3,1, 5, 2, 11, 2]})
 
     fig.suptitle("Min, max, mean and standard deviation of all fields")
 
-    start = 0
-    end = 3
-    plotRange = range(start, end)
+    start = [0, 3, 4, 8, 10, 21]
+    end = [3, 4, 8, 10, 21, 23]
 
-    axs[0].hlines(
-        y=plotRange, xmin=minsData[:end], xmax=maxsData[:end], color="grey", alpha=0.4,
-    )
-    axs[0].vlines(
-        x=[*minsData[:end], *maxsData[:end]],
-        ymin=list(map(lambda x: x - 0.5, plotRange)),
-        ymax=list(map(lambda x: x + 0.5, plotRange)),
-        color="black",
-    )
-    axs[0].scatter(
-        stdsData[:end], plotRange, color="skyblue", label="Standard Deviation"
-    )
-    axs[0].scatter(meansData[:end], plotRange, color="black", label="Mean")
-    axs[0].set_yticklabels(columns[:end])
-    axs[0].set_yticks(plotRange)
-    axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+    for j, ax in enumerate(axs):
+        plotRange = range(start[j], end[j])
+
+        ax.hlines(
+            y=plotRange,
+            xmin=minsData[start[j] : end[j]],
+            xmax=maxsData[start[j] : end[j]],
+            color="grey",
+            alpha=0.4,
+        )
+        ax.vlines(
+            x=[*minsData[start[j] : end[j]], *maxsData[start[j] : end[j]]],
+            ymin=list(map(lambda x: x - 0.5, plotRange)),
+            ymax=list(map(lambda x: x + 0.5, plotRange)),
+            color="black",
+        )
+        ax.scatter(
+            stdsData[start[j] : end[j]],
+            plotRange,
+            color="skyblue",
+            label="Standard Deviation",
+        )
+        if j < 3:
+            ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        if j in [1, 4]:
+            invertedStds = list(
+                map(
+                    lambda x: max(2 * x[0] - x[1], 0),
+                    zip(meansData[start[j] : end[j]], stdsData[start[j] : end[j]]),
+                )
+            )
+            ax.scatter(invertedStds, plotRange, color="skyblue")
+        elif j == 5:
+            invertedStds = list(
+                map(
+                    lambda x: 2 * x[0] - x[1],
+                    zip(meansData[start[j] : end[j]], stdsData[start[j] : end[j]]),
+                )
+            )
+            ax.scatter(invertedStds, plotRange, color="skyblue")
+        ax.scatter(meansData[start[j] : end[j]], plotRange, color="black", label="Mean")
+        ax.set_yticklabels(columns[start[j] : end[j]])
+        ax.set_yticks(plotRange)
+        ax.invert_yaxis()
+        removeSpines(ax)
+
     axs[0].legend(
         loc="upper center",
         bbox_to_anchor=(0.5, 1.5),
@@ -2550,89 +2424,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun):
         shadow=True,
     )
 
-    start = 4
-    end = 8
-    plotRange = range(1, end - start + 1)
-
-    axs[1].hlines(
-        y=plotRange,
-        xmin=minsData[start:end],
-        xmax=maxsData[start:end],
-        color="grey",
-        alpha=0.4,
-    )
-    axs[1].vlines(
-        x=[*minsData[start:end], *maxsData[start:end]],
-        ymin=list(map(lambda x: x - 0.5, plotRange)),
-        ymax=list(map(lambda x: x + 0.5, plotRange)),
-        color="black",
-    )
-    axs[1].scatter(stdsData[start:end], plotRange, color="skyblue")
-    axs[1].scatter(meansData[start:end], plotRange, color="black")
-    axs[1].set_yticklabels(columns[start:end])
-    axs[1].set_yticks(plotRange)
-    axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-
-    start = 8
-    end = 19
-    plotRange = range(1, end - start + 1)
-
-    axs[2].hlines(
-        y=plotRange,
-        xmin=minsData[start:end],
-        xmax=maxsData[start:end],
-        color="grey",
-        alpha=0.4,
-    )
-    axs[2].vlines(
-        x=[*minsData[start:end], *maxsData[start:end]],
-        ymin=list(map(lambda x: x - 0.5, plotRange)),
-        ymax=list(map(lambda x: x + 0.5, plotRange)),
-        color="black",
-    )
-    axs[2].scatter(stdsData[start:end], plotRange, color="skyblue")
-    invertedStds = list(
-        map(
-            lambda x: max(2 * x[0] - x[1], 0),
-            zip(meansData[start:end], stdsData[start:end]),
-        )
-    )
-    axs[2].scatter(invertedStds, plotRange, color="skyblue")
-    axs[2].scatter(meansData[start:end], plotRange, color="black")
-    axs[2].set_yticklabels(columns[start:end])
-    axs[2].set_yticks(plotRange)
-
-    start = 19
-    end = 21
-    plotRange = range(1, end - start + 1)
-
-    axs[3].hlines(
-        y=plotRange,
-        xmin=minsData[start:end],
-        xmax=maxsData[start:end],
-        color="grey",
-        alpha=0.4,
-    )
-    axs[3].vlines(
-        x=[*minsData[start:end], *maxsData[start:end]],
-        ymin=list(map(lambda x: x - 0.5, plotRange)),
-        ymax=list(map(lambda x: x + 0.5, plotRange)),
-        color="black",
-    )
-    axs[3].scatter(meansData[start:end], plotRange, color="black")
-    axs[3].scatter(stdsData[start:end], plotRange, color="skyblue")
-    invertedStds = list(
-        map(lambda x: 2 * x[0] - x[1], zip(meansData[start:end], stdsData[start:end]))
-    )
-    axs[3].scatter(invertedStds, plotRange, color="skyblue")
-    axs[3].set_yticklabels(columns[start:end])
-    axs[3].set_yticks(plotRange)
-
     plt.gcf().set_size_inches(9.5, 9.5)
-    removeSpines(axs[0])
-    removeSpines(axs[1])
-    removeSpines(axs[2])
-    removeSpines(axs[3])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
