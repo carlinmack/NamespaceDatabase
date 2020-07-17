@@ -1583,6 +1583,8 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         "ins_longest_character_sequence",
         "ins_internal_link",
         "ins_external_link",
+        "ins_avg_word_length",
+        "del_avg_word_length",
         "blanking",
         "comment_copyedit",
         "comment_personal_life",
@@ -1596,498 +1598,124 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         "reverted",
         "added_sentiment",
         "deleted_sentiment",
-        "ins_avg_word_length",
-        "del_avg_word_length",
     ]
 
-    allEdits = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit;"""
-    if not dryrun:
-        cursor.execute(allEdits,)
-        allData = cursor.fetchall()
-        allData = list(*allData)
-        with open(dataDir + str(i) + "-all.txt", "w") as file:
-            file.write(str(allData))
-    else:
-        allData = [
-            442.0422,
-            439.0867,
-            58.0321,
-            49.1949,
-            10.6587,
-            1.8952,
-            1.6529,
-            0.1304,
-            0.0022,
-            0.0005,
-            0.0002,
-            0.11972271,
-            0.10387291,
-            0.02747601,
-            0.00610185,
-            0.12846018,
-            0.0143,
-            0.16946286,
-            0.0293,
-            0.03135975155021137,
-            0.0055170703440406196,
-        ]
+    groups = [
+        "all",
+        "special",
+        "user",
+        "bot",
+        "blocked",
+        "ip",
+        "ipBlocked",
+    ]
 
-    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit
-    inner join user
-    on user.id = edit.user_table_id
-    where user.blocked is null
-    and user.user_special is null
-    and user.ip_address is null
-    and user.bot is null;"""
-    if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        data = list(*data)
-        with open(dataDir + str(i) + "-user.txt", "w") as file:
-            file.write(str(data))
-    else:
-        data = [
-            482.2263,
-            384.6865,
-            52.4005,
-            37.8249,
-            10.3969,
-            1.8504,
-            1.7145,
-            0.1331,
-            0.0024,
-            0.0007,
-            0.0003,
-            0.11470288,
-            0.10220409,
-            0.02810473,
-            0.00839849,
-            0.11358946,
-            0.0167,
-            0.17759977,
-            0.0243,
-            0.048819411249298277,
-            0.005998387005003988,
-        ]
+    conditions = [
+        "1",
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "bot is True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+    ]
 
-    special = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
-    AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
-    inner join user
-    on user.id = edit.user_table_id
-    where user.user_special is True;"""
-    if not dryrun:
-        cursor.execute(special,)
-        specialData = cursor.fetchall()
-        specialData = list(*specialData)
-        with open(dataDir + str(i) + "-special.txt", "w") as file:
-            file.write(str(specialData))
-    else:
-        specialData = [
-            440.9023,
-            462.0706,
-            60.3628,
-            47.2563,
-            10.3737,
-            1.7691,
-            1.7508,
-            0.1538,
-            0.0016,
-            0.0006,
-            0.0001,
-            0.11234557,
-            0.10580707,
-            0.02121139,
-            0.00586263,
-            0.13506474,
-            0.0100,
-            0.15924664,
-            0.0100,
-            0.02477164276923664,
-            0.0053575857156795016,
-        ]
+    data = []
 
-    ip = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit
-    inner join user
-    on user.id = edit.user_table_id
-    where user.ip_address is True
-    and user.blocked is not true;"""
-    if not dryrun:
-        cursor.execute(ip,)
-        ipData = cursor.fetchall()
-        ipData = list(*ipData)
-        with open(dataDir + str(i) + "-ip.txt", "w") as file:
-            file.write(str(ipData))
-    else:
-        ipData = [
-            478.6787,
-            540.9392,
-            75.8385,
-            25.4024,
-            12.7483,
-            2.9722,
-            1.0498,
-            0.1154,
-            0.0066,
-            0.0002,
-            0.0005,
-            0.10915781,
-            0.09348089,
-            0.04645136,
-            0.00952301,
-            0.08899232,
-            0.0434,
-            0.22379311,
-            0.1437,
-            0.05003652881927706,
-            0.008112887395128948,
-        ]
+    for j, condition in enumerate(conditions):
+        query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+        AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+        AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),AVG(blanking),
+        AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
+        AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+        AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+        AVG(deleted_sentiment)  FROM edit
+        inner join user
+        on user.id = edit.user_table_id
+        where %s;"""
+        if not dryrun:
+            cursor.execute(query % condition,)
+            groupData = cursor.fetchall()
+            groupData = list(*groupData)
 
-    ipBlocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit
-    inner join user
-    on user.id = edit.user_table_id
-    where user.ip_address is True
-    and user.blocked is true;"""
-    if not dryrun:
-        cursor.execute(ipBlocked,)
-        ipBlockedData = cursor.fetchall()
-        ipBlockedData = list(*ipBlockedData)
-        with open(dataDir + str(i) + "-ipBlocked.txt", "w") as file:
-            file.write(str(ipBlockedData))
-    else:
-        ipBlockedData = [
-            574.6621,
-            321.4382,
-            42.5342,
-            32.2950,
-            11.4884,
-            2.4286,
-            1.4061,
-            0.1595,
-            0.0406,
-            0.0004,
-            0.0010,
-            0.10968559,
-            0.08657087,
-            0.05258113,
-            0.00762512,
-            0.09092609,
-            0.0437,
-            0.20707933,
-            0.2118,
-            0.039283604989237844,
-            0.005879388956523799,
-        ]
+            writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [groupData])
+        else:
+            with open(dataDir + str(i) + "-" + groups[j] + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                groupData = [list(map(float, line)) for line in reader][0]
 
-    blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit
-    inner join user
-    on user.id = edit.user_table_id
-    where user.blocked is True and ip_address is not true;"""
-    if not dryrun:
-        cursor.execute(blocked,)
-        blockedData = cursor.fetchall()
-        blockedData = list(*blockedData)
-        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
-            file.write(str(blockedData))
-    else:
-        blockedData = [
-            376.9058,
-            374.0861,
-            49.9100,
-            48.6153,
-            9.6661,
-            1.7168,
-            1.3400,
-            0.1222,
-            0.0022,
-            0.0005,
-            0.0002,
-            0.12568887,
-            0.10028163,
-            0.01931273,
-            0.00505370,
-            0.12080836,
-            0.0153,
-            0.16692144,
-            0.0281,
-            0.027887433037106706,
-            0.00475190706470203,
-        ]
+        data.append(groupData)
 
-    bot = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit
-    inner join user
-    on user.id = edit.user_table_id
-    where user.bot is True;"""
-    if not dryrun:
-        cursor.execute(bot,)
-        botData = cursor.fetchall()
-        botData = list(*botData)
-        with open(dataDir + str(i) + "-bot.txt", "w") as file:
-            file.write(str(botData))
-    else:
-        botData = [
-            549.0619,
-            487.8700,
-            62.0877,
-            87.5882,
-            12.1183,
-            1.8673,
-            2.3044,
-            0.1800,
-            0.0011,
-            0.0000,
-            0.0001,
-            0.14624979,
-            0.09998104,
-            0.03534354,
-            0.00527977,
-            0.15460378,
-            0.0080,
-            0.15773835,
-            0.0248,
-            0.005518091804445644,
-            0.004024606970162133,
-        ]
-
-    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
-
-    start = 0
-    end = 2
-    plotRange = range(start, end)
+    fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [4,6, 13]})
 
     fig.suptitle("Average of all integer edit fields")
-    axs[0].hlines(
-        y=plotRange,
-        xmin=[
-            min(a, b, c, d, e, f)
-            for a, b, c, d, e, f in zip(
-                data[:end],
-                specialData[:end],
-                blockedData[:end],
-                ipData[:end],
-                ipBlockedData[:end],
-                botData[:end],
+
+    start = [0, 4, 10]
+    end = [4, 10, 23]
+
+    colors = [
+        "gold",
+        "mediumpurple",
+        "mediumaquamarine",
+        "orangered",
+        "skyblue",
+        "#F08EC1",
+    ]
+
+    labels = [
+        "users with privileges",
+        "all users",
+        "bots",
+        "blocked users",
+        "IP users",
+        "blocked IP users",
+    ]
+
+    for j, ax in enumerate(axs):
+        plotRange = range(start[j], end[j])
+
+        ax.hlines(
+            y=plotRange,
+            xmin=[
+                min(a, b, c, d, e, f)
+                for a, b, c, d, e, f in list(zip(*data[1:]))[start[j] : end[j]]
+            ],
+            xmax=[
+                max(a, b, c, d, e, f)
+                for a, b, c, d, e, f in list(zip(*data[1:]))[start[j] : end[j]]
+            ],
+            color="grey",
+            alpha=0.4,
+        )
+        ax.vlines(
+            x=data[0][start[j] : end[j]],
+            ymin=list(map(lambda x: x - 0.5, plotRange)),
+            ymax=list(map(lambda x: x + 0.5, plotRange)),
+            color="grey",
+            alpha=0.4,
+        )
+        print(start[j], end[j])
+        for k, group in enumerate(data):
+            if k == 0:
+                continue
+            ax.scatter(
+                group[start[j] : end[j]],
+                plotRange,
+                color=colors[k - 1],
+                label=labels[k - 1],
             )
-        ],
-        xmax=[
-            max(a, b, c, d, e, f)
-            for a, b, c, d, e, f in zip(
-                data[:end],
-                specialData[:end],
-                blockedData[:end],
-                ipData[:end],
-                ipBlockedData[:end],
-                botData[:end],
-            )
-        ],
-        color="grey",
-        alpha=0.4,
-    )
-    axs[0].vlines(
-        x=allData[:2],
-        ymin=list(map(lambda x: x - 0.5, plotRange)),
-        ymax=list(map(lambda x: x + 0.5, plotRange)),
-        color="grey",
-        alpha=0.4,
-    )
-    axs[0].scatter(data[:2], plotRange, color="mediumpurple", label="all users")
-    axs[0].scatter(
-        specialData[:2], plotRange, color="gold", label="users with privileges"
-    )
-    axs[0].scatter(botData[:2], plotRange, color="mediumaquamarine", label="bots")
-    axs[0].scatter(ipData[:2], plotRange, color="skyblue", label="IP users")
-    axs[0].scatter(
-        ipBlockedData[:2], plotRange, color="#F08EC1", label="blocked IP users"
-    )
-    axs[0].scatter(blockedData[:2], plotRange, color="orangered", label="blocked users")
-    axs[0].set_yticklabels(columns[:2])
-    axs[0].set_yticks(plotRange)
+        ax.set_yticklabels(columns[start[j] : end[j]])
+        ax.set_yticks(plotRange)
+        removeSpines(ax)
+        ax.invert_yaxis()
+        if j > 1:
+            ax.set_xlim(left=0)
+
     axs[0].legend(
-        loc="upper center", bbox_to_anchor=(0.5, 2), ncol=3, fancybox=True, shadow=True,
+        loc="upper center", bbox_to_anchor=(0.5, 1.6), ncol=3, fancybox=True, shadow=True,
     )
-    # axs[0].set_ylim([start - 0.5, end + 0.5])
-
-    start = 3
-    end = 5
-    plotRange = range(1, end - start + 1)
-    axs[1].hlines(
-        y=plotRange,
-        xmin=[
-            min(a, b, c, d, e, f)
-            for a, b, c, d, e, f in zip(
-                data[start:end],
-                specialData[start:end],
-                blockedData[start:end],
-                ipData[start:end],
-                ipBlockedData[start:end],
-                botData[start:end],
-            )
-        ],
-        xmax=[
-            max(a, b, c, d, e, f)
-            for a, b, c, d, e, f in zip(
-                data[start:end],
-                specialData[start:end],
-                blockedData[start:end],
-                ipData[start:end],
-                ipBlockedData[start:end],
-                botData[start:end],
-            )
-        ],
-        color="grey",
-        alpha=0.4,
-    )
-    axs[1].vlines(
-        x=allData[start:end],
-        ymin=list(map(lambda x: x - 0.5, plotRange)),
-        ymax=list(map(lambda x: x + 0.5, plotRange)),
-        color="grey",
-        alpha=0.4,
-    )
-    axs[1].scatter(data[start:end], plotRange, color="mediumpurple")
-    axs[1].scatter(specialData[start:end], plotRange, color="gold")
-    axs[1].scatter(botData[start:end], plotRange, color="mediumaquamarine")
-    axs[1].scatter(ipData[start:end], plotRange, color="skyblue")
-    axs[1].scatter(ipBlockedData[start:end], plotRange, color="#F08EC1")
-    axs[1].scatter(blockedData[start:end], plotRange, color="orangered")
-    axs[1].set_yticklabels(columns[start:end])
-    axs[1].set_yticks(plotRange)
-
-    start = 5
-    end = 8
-    plotRange = range(1, end - start + 1)
-    axs[2].hlines(
-        y=plotRange,
-        xmin=[
-            min(a, b, c, d, e, f)
-            for a, b, c, d, e, f in zip(
-                data[start:end],
-                specialData[start:end],
-                blockedData[start:end],
-                ipData[start:end],
-                ipBlockedData[start:end],
-                botData[start:end],
-            )
-        ],
-        xmax=[
-            max(a, b, c, d, e, f)
-            for a, b, c, d, e, f in zip(
-                data[start:end],
-                specialData[start:end],
-                blockedData[start:end],
-                ipData[start:end],
-                ipBlockedData[start:end],
-                botData[start:end],
-            )
-        ],
-        color="grey",
-        alpha=0.4,
-    )
-    axs[2].vlines(
-        x=allData[start:end],
-        ymin=list(map(lambda x: x - 0.5, plotRange)),
-        ymax=list(map(lambda x: x + 0.5, plotRange)),
-        color="grey",
-        alpha=0.4,
-    )
-    axs[2].scatter(data[start:end], plotRange, color="mediumpurple")
-    axs[2].scatter(
-        specialData[start:end], plotRange, color="gold", label="users with privileges"
-    )
-    axs[2].scatter(
-        botData[start:end], plotRange, color="mediumaquamarine", label="bots"
-    )
-    axs[2].scatter(ipData[start:end], plotRange, color="skyblue")
-    axs[2].scatter(ipBlockedData[start:end], plotRange, color="#F08EC1")
-    axs[2].scatter(blockedData[start:end], plotRange, color="orangered")
-    axs[2].set_yticklabels(columns[start:end])
-    axs[2].set_yticks(plotRange)
-    axs[2].set_xlim(left=0)
-
-    start = 8
-    end = 21
-    plotRange = range(1, end - start + 1)
-    axs[3].hlines(
-        y=plotRange,
-        xmin=[
-            min(a, b, c, d, e, f)
-            for a, b, c, d, e, f in zip(
-                data[start:],
-                specialData[start:],
-                blockedData[start:],
-                ipData[start:],
-                ipBlockedData[start:],
-                botData[start:],
-            )
-        ],
-        xmax=[
-            max(a, b, c, d, e, f)
-            for a, b, c, d, e, f in zip(
-                data[start:],
-                specialData[start:],
-                blockedData[start:],
-                ipData[start:],
-                ipBlockedData[start:],
-                botData[start:],
-            )
-        ],
-        color="grey",
-        alpha=0.4,
-    )
-    axs[3].vlines(
-        x=allData[start:],
-        ymin=list(map(lambda x: x - 0.5, plotRange)),
-        ymax=list(map(lambda x: x + 0.5, plotRange)),
-        color="grey",
-        alpha=0.4,
-    )
-    axs[3].scatter(data[start:], plotRange, color="mediumpurple")
-    axs[3].scatter(specialData[start:], plotRange, color="gold")
-    axs[3].scatter(botData[start:], plotRange, color="mediumaquamarine")
-    axs[3].scatter(ipData[start:], plotRange, color="skyblue")
-    axs[3].scatter(ipBlockedData[start:], plotRange, color="#F08EC1")
-    axs[3].scatter(blockedData[start:], plotRange, color="orangered")
-    axs[3].set_yticklabels(columns[start:])
-    axs[3].set_yticks(plotRange)
-    axs[3].set_xlim(left=0)
 
     plt.gcf().set_size_inches(9.5, 9.5)
-    removeSpines(axs[0])
-    removeSpines(axs[1])
-    removeSpines(axs[2])
-    removeSpines(axs[3])
 
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
@@ -2363,7 +1991,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun, columns):
 
     stdsData = list(map(sum, zip(stdsData, meansData)))
 
-    fig, axs = plt.subplots(6, 1, gridspec_kw={"height_ratios": [3,1, 5, 2, 11, 2]})
+    fig, axs = plt.subplots(6, 1, gridspec_kw={"height_ratios": [3, 1, 5, 2, 11, 2]})
 
     fig.suptitle("Min, max, mean and standard deviation of all fields")
 
@@ -4391,6 +4019,32 @@ def plot(plotDir: str = "../plots/", dryrun=False):
         ]
     )
 
+    columns = [
+        "added_length",
+        "deleted_length",
+        "del_words",
+        "comment_length",
+        "ins_longest_inserted_word",
+        "ins_longest_character_sequence",
+        "ins_internal_link",
+        "ins_external_link",
+        "ins_avg_word_length",
+        "del_avg_word_length",
+        "blanking",
+        "comment_copyedit",
+        "comment_personal_life",
+        "comment_special_chars",
+        "ins_capitalization",
+        "ins_digits",
+        "ins_pronouns",
+        "ins_special_chars",
+        "ins_vulgarity",
+        "ins_whitespace",
+        "reverted",
+        "added_sentiment",
+        "deleted_sentiment",
+    ]
+
     i = 0  # 0 - 5 seconds
     # partitionStatus(cursor, i, plotDir, dataDir, dryrun)
 
@@ -4434,8 +4088,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 14 - 33 minutes
     # profanityAll(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 15 - 3 minutes
-    # averageAll(cursor, i, plotDir, dataDir, dryrun)
+    i = i + 1  # 15 - 4 minutes
+    # averageAll(cursor, i, plotDir, dataDir, dryrun, columns)
 
     i = i + 1  # 16 - 20 seconds
     # namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun)
@@ -4446,7 +4100,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 18 - 4 seconds
     # specialUsersPlot(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 19 - 30 minutes
+    i = i + 1  # 19 - 37 minutes
     # averageAllSpecial(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 20 - 2 minutes
@@ -4455,10 +4109,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 21 - 12 minutes
     # compositionOfUser(cursor, i, plotDir, dataDir, dryrun)
 
-    # tick = time.time()
-    i = i + 1  # 22 -
-    # aggregations(cursor, i, plotDir, dataDir, dryrun)
-    # print('--- 22 %s seconds ---' % (time.time() - tick))
+    i = i + 1  # 22 - 37 minutes
+    # aggregations(cursor, i, plotDir, dataDir, dryrun, columns)
 
     i = i + 1  # 23 - 50 seconds
     # editBooleans(cursor, i, plotDir, dataDir, dryrun)
