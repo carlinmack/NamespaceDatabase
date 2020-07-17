@@ -476,11 +476,11 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         "skyblue",
         "skyblue",
     ]
-    for i in range(8):
-        axs[i].set_title(types[i] + " edits in " + namespaces[i % 2] + " space")
-        axs[i].bar(columns, data[i], color=colors[i])
-        axs[i].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        removeSpines(axs[i])
+    for j, ax in enumerate(axs):
+        ax.set_title(types[j] + " edits in " + namespaces[j % 2] + " space")
+        ax.bar(columns, data[j], color=colors[j])
+        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        removeSpines(ax)
 
     plt.gcf().set_size_inches(12, 18)
 
@@ -577,11 +577,11 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     colors = ["mediumpurple", "mediumaquamarine", "orangered", "skyblue"]
     data = [userData, botData, blockedData, ipData]
 
-    for i in range(4):
-        axs[i].set_title("Namespaces that " + types[i] + " edit")
-        axs[i].bar(columns, data[i], color=colors[i])
-        axs[i].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        removeSpines(axs[i])
+    for j, ax in enumerate(axs):
+        ax.set_title("Namespaces that " + types[j] + " edit")
+        ax.bar(columns, data[j], color=colors[j])
+        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        removeSpines(ax)
 
     # fig.tight_layout()
     plt.gcf().set_size_inches(14, 14)
@@ -1007,7 +1007,7 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
             with open(dataDir + str(i) + "-" + group + ".csv", "r") as file:
                 reader = csv.reader(file, delimiter=",")
                 for line in reader:
-                    groupData.append([float(i) for i in line])
+                    groupData.append([float(k) for k in line])
 
             # print(groupData)
             data.append(groupData)
@@ -1712,7 +1712,11 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             ax.set_xlim(left=0)
 
     axs[0].legend(
-        loc="upper center", bbox_to_anchor=(0.5, 1.6), ncol=3, fancybox=True, shadow=True,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.6),
+        ncol=3,
+        fancybox=True,
+        shadow=True,
     )
 
     plt.gcf().set_size_inches(9.5, 9.5)
@@ -1752,7 +1756,7 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
         data[3] / sumIP,
     ]
 
-    data = [data[i : i + 2] for i in range(0, len(data), 2)]
+    data = [data[j : j + 2] for j in range(0, len(data), 2)]
 
     xticks = ["users", "ip"]
     labels = ["non-blocked", "blocked"]
@@ -1774,7 +1778,7 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     removeSpines(axs[0])
 
     data = proportinateData
-    data = [data[i : i + 2] for i in range(0, len(data), 2)]
+    data = [data[j : j + 2] for j in range(0, len(data), 2)]
     axs[1].set_title("Proportional")
     axs[1].set_ylabel("Percent")
     yPosOne = yPosTwo = 0
@@ -2183,10 +2187,14 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
     plt.figure()
 
     groups = ["all", "before", "after"]
-    conditions = ["1", "cast(edit_date as date) < '2010-09-01'", "cast(edit_date as date) >= '2010-09-01'"]
-    
+    conditions = [
+        "1",
+        "cast(edit_date as date) < '2010-09-01'",
+        "cast(edit_date as date) >= '2010-09-01'",
+    ]
+
     data = []
-    
+
     for j, condition in enumerate(conditions):
         query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
         AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
@@ -2207,7 +2215,7 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
                 condData = [list(map(float, line)) for line in reader][0]
 
         data.append(condData)
-        
+
     fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [4, 6, 13]})
 
     fig.suptitle("Average of edit fields before and after the midpoint of the dataset")
@@ -2230,14 +2238,8 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
 
         ax.hlines(
             y=plotRange,
-            xmin=[
-                min(a, b)
-                for a, b in list(zip(*data[1:]))[start[j] : end[j]]
-            ],
-            xmax=[
-                max(a, b)
-                for a, b in list(zip(*data[1:]))[start[j] : end[j]]
-            ],
+            xmin=[min(a, b) for a, b in list(zip(*data[1:]))[start[j] : end[j]]],
+            xmax=[max(a, b) for a, b in list(zip(*data[1:]))[start[j] : end[j]]],
             color="grey",
             alpha=0.4,
         )
@@ -2266,7 +2268,11 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
             ax.set_xlim(left=0)
 
     axs[0].legend(
-        loc="upper center", bbox_to_anchor=(0.5, 1.6), ncol=3, fancybox=True, shadow=True,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.6),
+        ncol=3,
+        fancybox=True,
+        shadow=True,
     )
 
     plt.gcf().set_size_inches(9.5, 9.5)
@@ -2275,165 +2281,83 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
     plt.close()
 
 
-def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "averageFeaturesOverTime"
-    plt.figure()
+def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun, columns):
 
-    columns = [
-        "added_length",
-        "deleted_length",
-        "del_words",
-        "comment_length",
-        "ins_longest_inserted_word",
-        "ins_longest_character_sequence",
-        "ins_internal_link",
-        "ins_external_link",
-        "blanking",
-        "comment_copyedit",
-        "comment_personal_life",
-        "comment_special_chars",
-        "ins_capitalization",
-        "ins_digits",
-        "ins_pronouns",
-        "ins_special_chars",
-        "ins_vulgarity",
-        "ins_whitespace",
-        "reverted",
-        "added_sentiment",
-        "deleted_sentiment",
-    ]
+    conditions = [", MONTH(edit_date)", ""]
+    names = ["Month", "Year"]
 
-    query = """select YEAR(edit_date), MONTH(edit_date), AVG(added_length),AVG(deleted_length),
-    AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
-    AVG(ins_internal_link),AVG(ins_external_link),AVG(comment_special_chars),AVG(blanking),
-    AVG(comment_copyedit),AVG(comment_personal_life),AVG(ins_capitalization),AVG(ins_digits),
-    AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),
-    AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit
-    GROUP BY YEAR(edit_date), MONTH(edit_date)
-    order by YEAR(edit_date), MONTH(edit_date) ;"""
+    for l, condition in enumerate(conditions):
+        figname = plotDir + str(i) + "-" + "averageFeaturesOver" + names[l]
+        plt.figure()
 
-    if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
+        query = """select YEAR(edit_date)%s, AVG(added_length),AVG(deleted_length),
+        AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
+        AVG(ins_internal_link),AVG(ins_external_link),AVG(ins_avg_word_length), AVG(del_avg_word_length)
+        ,AVG(comment_special_chars),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+        AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+        AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)
+        FROM edit
+        GROUP BY YEAR(edit_date)%s
+        order by YEAR(edit_date)%s;"""
 
-        writeCSV(dataDir + str(i) + ".csv", data)
-    else:
-        with open(dataDir + str(i) + ".csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            data = [line for line in reader]
+        if not dryrun:
+            cursor.execute(query % (condition, condition, condition),)
+            data = cursor.fetchall()
 
-            data = list(map(lambda x: tuple(map(float, x)), data))
+            writeCSV(dataDir + str(i) + "-" + names[l] + ".csv", data)
+        else:
+            with open(dataDir + str(i) + "-" + names[l] + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                data = [line for line in reader]
 
-    dates = list(
-        map(
-            lambda x: matplotlib.dates.datestr2num(
-                str(int(x[0])) + "-" + str(int(x[1]))
-            ),
-            data,
+                data = list(map(lambda x: tuple(map(float, x)), data))
+
+        if l == 0:
+            dates = list(
+                map(
+                    lambda x: matplotlib.dates.datestr2num(
+                        str(int(x[0])) + "-" + str(int(x[1]))
+                    ),
+                    data,
+                )
+            )
+
+            values = list(map(lambda x: x[2:], data))
+        elif l == 1:
+            dates = list(
+                map(lambda x: matplotlib.dates.datestr2num(str(int(x[0]))), data,)
+            )
+
+            values = list(map(lambda x: x[1:], data))
+
+        _, axs = plt.subplots(
+            5, 1, gridspec_kw={"height_ratios": [1, 1, 1, 2, 1]}, sharex=True
         )
-    )
 
-    values = list(map(lambda x: x[2:], data))
+        axs[0].set_title("Talkpage edits over time")
 
-    _, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [1, 1, 1, 2]})
-
-    axs[0].set_title("Talkpage edits over time")
-
-    colors = ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]
-    start = [0, 3, 5, 9]
-    end = [3, 5, 9, 21]
-    for j in range(4):
-        for i in range(start[j], end[j]):
-            axs[j].plot_date(
-                dates,
-                list(map(lambda x: x[i], values)),
-                "C0-",
-                label=columns[i],
-                c=colors[i % 10],
+        colors = ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]
+        start = [0, 3, 5, 11, 21]
+        end = [3, 5, 11, 21, 23]
+        for j, ax in enumerate(axs):
+            for k in range(start[j], end[j]):
+                ax.plot_date(
+                    dates,
+                    list(map(lambda x: x[k], values)),
+                    "C0-",
+                    label=columns[k],
+                    c=colors[k % 10],
+                )
+            ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+            removeSpines(ax)
+            ax.set_xlim(
+                matplotlib.dates.datestr2num("2000-12"),
+                matplotlib.dates.datestr2num("2020-05"),
             )
-        axs[j].legend(loc="best")
-        removeSpines(axs[j])
-    plt.gcf().set_size_inches(20, 15)
+        plt.gcf().set_size_inches(20, 15)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
-
-
-def averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "averageFeaturesOverYear"
-    plt.figure()
-
-    columns = [
-        "added_length",
-        "deleted_length",
-        "del_words",
-        "comment_length",
-        "ins_longest_inserted_word",
-        "ins_longest_character_sequence",
-        "ins_internal_link",
-        "ins_external_link",
-        "blanking",
-        "comment_copyedit",
-        "comment_personal_life",
-        "comment_special_chars",
-        "ins_capitalization",
-        "ins_digits",
-        "ins_pronouns",
-        "ins_special_chars",
-        "ins_vulgarity",
-        "ins_whitespace",
-        "reverted",
-        "added_sentiment",
-        "deleted_sentiment",
-    ]
-
-    query = """select YEAR(edit_date), AVG(added_length),AVG(deleted_length),
-    AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
-    AVG(ins_internal_link),AVG(ins_external_link),AVG(comment_special_chars),AVG(blanking),
-    AVG(comment_copyedit),AVG(comment_personal_life),AVG(ins_capitalization),AVG(ins_digits),
-    AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),
-    AVG(added_sentiment),AVG(deleted_sentiment) FROM edit
-    GROUP BY YEAR(edit_date)
-    order by YEAR(edit_date) ;"""
-
-    if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-
-        writeCSV(dataDir + str(i) + ".csv", data)
-    else:
-        with open(dataDir + str(i) + ".csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            data = [line for line in reader]
-
-            data = list(map(lambda x: tuple(map(float, x)), data))
-
-    dates = list(map(lambda x: matplotlib.dates.datestr2num(str(int(x[0]))), data,))
-
-    values = list(map(lambda x: x[1:], data))
-
-    _, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [1, 1, 1, 2]})
-
-    axs[0].set_title("Talkpage edits by averaged by year")
-
-    colors = ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]
-    start = [0, 3, 5, 9]
-    end = [3, 5, 9, 21]
-    for j in range(4):
-        for i in range(start[j], end[j]):
-            axs[j].plot_date(
-                dates,
-                list(map(lambda x: x[i], values)),
-                "C0-",
-                label=columns[i],
-                c=colors[i % 10],
-            )
-        axs[j].legend(loc="best")
-        removeSpines(axs[j])
-    plt.gcf().set_size_inches(20, 15)
-
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+        plt.close()
 
 
 def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
