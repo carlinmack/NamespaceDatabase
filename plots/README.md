@@ -23,13 +23,13 @@
 ![plot](5-User-numMainTalkEditsForBiggestEditors.png)
 
 ### 5.3 Num Main Talk Edits For Biggest Blocked Users
-![plot](5-Blocked User-numMainTalkEditsForBiggestEditors.png)
+![plot](5-Blocked%20User-numMainTalkEditsForBiggestEditors.png)
 
 ### 5.4 Num Main Talk Edits For Biggest IP Editors
 ![plot](5-IP-numMainTalkEditsForBiggestEditors.png)
 
 ### 5.5 Num Main Talk Edits For Biggest Blocked IP Editors
-![plot](5-IP Blocked-numMainTalkEditsForBiggestEditors.png)
+![plot](5-IP%20Blocked-numMainTalkEditsForBiggestEditors.png)
 
 ### 5.6 Num Main Talk Edits For Biggest Blocked Bot Editors
 ![plot](5-Bot-numMainTalkEditsForBiggestEditors.png)
@@ -57,6 +57,9 @@
 
 ### 13.2 Sentiment Groups
 ![plot](13-2-sentimentGroups.png)
+
+### 13.3 Sentiment Groups
+![plot](13-3-sentimentGroups.png)
 
 ### 14 Profanity All
 ![plot](14-profanityAll.png)
@@ -100,11 +103,11 @@
 ### 26 Average All Epoch
 ![plot](26-averageAllEpoch.png)
 
-### 27 Average Features Over Time
-![plot](27-averageFeaturesOverTime.png)
+### 27 Average Features Over Month
+![plot](27-averageFeaturesOverMonth.png)
 
 ### 28 Average Features Over Year
-![plot](28-averageFeaturesOverYear.png)
+![plot](27-averageFeaturesOverYear.png)
 
 ### 29 Namespaces Edited By User Groups
 ![plot](29-namespacesEditedByUserGroups.png)
@@ -123,9 +126,6 @@
 
 ### 32.2 Average Blocked Last Edits IPs
 ![plot](32-IPs-averageBlockedLastEdits.png)
-
-### 33 Talkpage Edits Time Averaged No Bots
-![plot](33-talkpageEditsTimeAveragedNoBots.png)
 
 ### 34 Talkpage Edits Time Groups
 ![plot](34-talkpageEditsTimeGroups.png)

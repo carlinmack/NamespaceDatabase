@@ -41,8 +41,7 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
 
     singlePlot(plt, ax, "y")
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
@@ -77,8 +76,7 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
     singlePlot(plt, ax, "y")
     ax.set_ylim(top=50)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
@@ -113,8 +111,7 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
     singlePlot(plt, ax, "y")
     ax.set_ylim(top=100)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
@@ -146,13 +143,13 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(8, 8)
     singlePlot(plt, ax, "x")
 
-    plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
+    savePlot(figname + "-log")
 
     ax.set_xlabel("Number of Pages (linear)")
     ax.set_xscale("linear")
     singlePlot(plt, ax, "x")
 
-    plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25, dpi=200)
+    savePlot(figname + "-linear")
 
 
 def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
@@ -199,8 +196,7 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     singlePlot(plt, ax, "y")
     ax.set_ylim(top=100)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def numMainTalkEditsForBiggestEditors(cursor, i, plotDir, dataDir, dryrun):
@@ -282,8 +278,7 @@ def numMainTalkEditsForBiggestEditors(cursor, i, plotDir, dataDir, dryrun):
         removeSpines(axs[0])
         removeSpines(axs[1])
 
-        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-        plt.close()
+        savePlot(figname)
 
 
 def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
@@ -485,8 +480,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     plt.gcf().set_size_inches(12, 18)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
@@ -586,8 +580,7 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     # fig.tight_layout()
     plt.gcf().set_size_inches(14, 14)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
@@ -626,7 +619,6 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
                 reader = csv.reader(file, delimiter=",")
                 temp = [list(map(float, line)) for line in reader]
 
-            # print(groupData)
             data.append(temp[0])
             dataStd.append(temp[1])
 
@@ -690,8 +682,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         ax.legend()
 
     plt.gcf().set_size_inches(15, 7)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
     figname = plotDir + str(i) + "-2-" + "editTimesUserBots"
     plt.figure()
@@ -736,8 +727,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     plt.gcf().set_size_inches(9.5, 5.5)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
@@ -849,8 +839,7 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     axs[1, 0].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
     # ax.set_axisbelow(True)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
@@ -963,8 +952,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     plt.gcf().set_size_inches(12, 7)
 
     plt.legend(loc="best")
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
@@ -1010,7 +998,6 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
                 for line in reader:
                     groupData.append([float(k) for k in line])
 
-            # print(groupData)
             data.append(groupData)
 
     figname = plotDir + str(i) + "-1-" + "sentimentGroups"
@@ -1053,10 +1040,8 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
             )
 
     plt.gcf().set_size_inches(14, 17)
-    # Finding the best position for legends and putting it
     plt.legend(loc="best")
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
     colors = [
         "gold",
@@ -1107,6 +1092,34 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
 
     plt.gcf().set_size_inches(9.5, 5.5)
 
+    savePlot(figname)
+
+    figname = plotDir + str(i) + "-3-" + "sentimentGroups"
+    plt.figure()
+    _, axs = plt.subplots(3, 2)
+    axs = axs.ravel()
+
+    for j, label in enumerate(labels):
+        ax = axs[j]
+        ax.set_title(label)
+        ax.set_ylabel("unit ?")
+        ax.set_xticks(range(0, 6))
+        ax.set_xticklabels(groups)
+        removeSpines(ax)
+        ax.grid(color="#ccc", which="major", axis="y", linestyle="solid")
+        ax.set_axisbelow(True)
+
+        for k, group in enumerate(groups):
+            if j in [2, 3]:
+                ax.bar(k, data[k][j][1] - data[k][j][0], label=group)
+            else:
+                ax.bar(k, data[k][j][0] - data[k][j][1], label=group)
+
+    plt.gcf().set_size_inches(14, 17)
+    savePlot(figname)
+
+
+def savePlot(figname):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -1245,8 +1258,7 @@ def profanityAll(cursor, i, plotDir, dataDir, dryrun):
     plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
     ax.set_axisbelow(True)
     removeSpines(ax)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def averageAll(cursor, i, plotDir, dataDir, dryrun, columns):
@@ -1298,8 +1310,7 @@ def averageAll(cursor, i, plotDir, dataDir, dryrun, columns):
 
     plt.gcf().set_size_inches(10, 7.5)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
@@ -1343,8 +1354,7 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
     plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
     ax.set_axisbelow(True)
     plt.gcf().set_size_inches(9, 5)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
@@ -1458,8 +1468,7 @@ def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     axs[0].set_axisbelow(True)
     axs[1].grid(color="#ccc", which="major", axis="y", linestyle="solid")
     axs[1].set_axisbelow(True)
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
@@ -1526,14 +1535,14 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
     ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     plt.gcf().set_size_inches(7, 7)
     singlePlot(plt, ax, "x")
-    plt.savefig(figname + "-log", bbox_inches="tight", pad_inches=0.25, dpi=200)
+    savePlot(figname + "-log")
 
     ax.set_xlabel("Number of Users (linear)")
     ax.set_xscale("linear")
 
     plt.gcf().set_size_inches(7, 7)
     singlePlot(plt, ax, "x")
-    plt.savefig(figname + "-linear", bbox_inches="tight", pad_inches=0.25, dpi=200)
+    savePlot(figname + "-linear")
 
 
 def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
@@ -1687,8 +1696,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
 
     plt.gcf().set_size_inches(9.5, 9.5)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
@@ -1759,8 +1767,7 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     removeSpines(axs[1])
     plt.gcf().set_size_inches(5, 10)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
@@ -1862,8 +1869,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(5, 10)
     removeSpines(ax)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def aggregations(cursor, i, plotDir, dataDir, dryrun, columns):
@@ -2024,8 +2030,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun, columns):
 
     plt.gcf().set_size_inches(9.5, 9.5)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def editBooleans(cursor, i, plotDir, dataDir, dryrun):
@@ -2070,8 +2075,7 @@ def editBooleans(cursor, i, plotDir, dataDir, dryrun):
 
     plt.gcf().set_size_inches(8, 6)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def userBooleans(cursor, i, plotDir, dataDir, dryrun):
@@ -2111,8 +2115,7 @@ def userBooleans(cursor, i, plotDir, dataDir, dryrun):
 
     plt.gcf().set_size_inches(8, 6)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
@@ -2144,8 +2147,7 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(12, 7.5)
     singlePlot(plt, ax, "y")
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
@@ -2243,8 +2245,7 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
 
     plt.gcf().set_size_inches(9.5, 9.5)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun, columns):
@@ -2322,8 +2323,7 @@ def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun, columns):
             )
         plt.gcf().set_size_inches(20, 15)
 
-        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-        plt.close()
+        savePlot(figname)
 
 
 def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -2634,8 +2634,7 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(9.5, 9.5)
     removeSpines(ax)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def talkpageEditsTimeAveraged(cursor, i, plotDir, dataDir, dryrun):
@@ -2714,8 +2713,7 @@ def talkpageEditsTimeAveraged(cursor, i, plotDir, dataDir, dryrun):
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
         ax2.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
-        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-        plt.close()
+        savePlot(figname)
 
 
 def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
@@ -2966,7 +2964,6 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     datesMonths = []
 
     for j, column in enumerate(columns):
-        # print(conditions[i])
         if not dryrun:
             cursor.execute(queryYear % conditions[j],)
             yearsData = cursor.fetchall()
@@ -3038,8 +3035,7 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(16, 12)
     plt.legend(loc="upper right")
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -3189,8 +3185,7 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
             axs[0].legend(loc="best")
             plt.gcf().set_size_inches(20, 20)
 
-            plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-            plt.close()
+            savePlot(figname)
 
 
 def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -3245,7 +3240,6 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     datesMonths = []
 
     for j, column in enumerate(columns):
-        # print(conditions[i])
         if not dryrun:
             cursor.execute(queryYear % conditions[j],)
             yearsData = cursor.fetchall()
@@ -3262,8 +3256,7 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         if not dryrun:
             cursor.execute(queryMonth % conditions[j],)
             monthData = cursor.fetchall()
-            print(monthData[:50])
-            
+
             writeCSV(dataDir + str(i) + "-month-" + column + ".csv", monthData)
         else:
             with open(dataDir + str(i) + "-month-" + column + ".csv", "r") as file:
@@ -3279,7 +3272,7 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         dataMonth.append(values)
 
     datesYears = [dt.strptime(str(x), "%Y") for x in range(2002, 2020)]
-    
+
     _, axs = plt.subplots(2, 1, sharex=True)
     axs[0].set_title("Number of talkpage editors over time by group")
 
@@ -3306,7 +3299,7 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
 
     for ax in axs:
         ax.xaxis.set_major_locator(mdates.YearLocator())
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
         ax.xaxis.set_tick_params(labelbottom=True)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
@@ -3315,8 +3308,7 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(16, 12)
     plt.legend(loc="upper right")
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
@@ -3361,7 +3353,6 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     dataEditorsYear = []
 
     for j, column in enumerate(columns):
-        # print(conditions[i])
         if not dryrun:
             cursor.execute(queryEditsYear % conditions[j],)
             yearsData = cursor.fetchall()
@@ -3413,8 +3404,7 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(16, 12)
     plt.legend()
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
     sums = [sum(x) for x in list(zip(*dataEditsYear))]
     dataEditsYear = [[z / sums[j] for j, z in enumerate(y)] for y in dataEditsYear]
@@ -3439,8 +3429,7 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(16, 12)
     plt.legend()
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
@@ -3542,8 +3531,7 @@ def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
         # ax.set_facecolor('#292722')
         removeSpines(ax)
 
-        plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-        plt.close()
+        savePlot(figname)
 
 
 def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -3636,8 +3624,7 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
 
     plt.gcf().set_size_inches(20, 15)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
 # Helpers ------------------------------------------------------------------------------
@@ -3864,13 +3851,12 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 26 - 6 minutes
-    # averageAllEpoch(cursor, i, plotDir, dataDir, dryrun)
+    # averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns)
 
-    i = i + 1  # 27 - 4 minutes
-    # averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun)
+    i = i + 1  # 27 - 8 minutes
+    # averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun, columns)
 
-    i = i + 1  # 28 - 4 minutes
-    # averageFeaturesOverYear(cursor, i, plotDir, dataDir, dryrun)
+    i = i + 1  # 28
 
     i = i + 1  # 29 - 26 minutes
     # namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun)
@@ -3882,7 +3868,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 32 - 11 minutes
-    # averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun)
+    # averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns)
 
     i = i + 1  # 33 -
 
@@ -3892,8 +3878,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 35 - 48 minutes
     # averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun)
 
+    # tick = time.time()
     i = i + 1  # 36 - 17 minutes
     # talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
+    # print('--- %s seconds ---' % (time.time() - tick))
 
     # tick = time.time()
     i = i + 1  # 37 -
