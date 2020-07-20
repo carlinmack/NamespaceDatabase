@@ -6,6 +6,7 @@ from datetime import datetime as dt
 from math import floor
 
 import matplotlib
+import matplotlib.dates as mdates
 import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
@@ -1325,45 +1326,11 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
         cursor.execute(query,)
         data = cursor.fetchall()
         data = list(map(lambda x: (str(x[0]), x[1]), data))
-        with open(dataDir + str(i) + ".txt", "w") as file:
-            file.write(str(data))
+        writeCSV(dataDir + str(i) + ".csv", data)
     else:
-        data = [
-            ("0", 500),
-            ("1", 500),
-            ("2", 499),
-            ("3", 500),
-            ("4", 499),
-            ("5", 494),
-            ("6", 475),
-            ("7", 351),
-            ("8", 102),
-            ("9", 266),
-            ("10", 497),
-            ("11", 481),
-            ("12", 280),
-            ("13", 292),
-            ("14", 492),
-            ("15", 450),
-            ("-1", 0),
-            ("-2", 0),
-            ("100", 444),
-            ("101", 267),
-            ("118", 439),
-            ("119", 258),
-            ("710", 31),
-            ("711", 9),
-            ("828", 169),
-            ("829", 159),
-            ("108", 229),
-            ("109", 117),
-            ("446", 0),
-            ("447", 31),
-            ("2300", 0),
-            ("2301", 2),
-            ("2302", 0),
-            ("2303", 0),
-        ]
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [(str(line[0]), int(line[1])) for line in reader]
 
     data = mapNamespace(data)
 
@@ -1371,12 +1338,11 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
     ax.set_title("Namespaces that the top 500 users have edited")
     labels = list(map(lambda x: x[0], data))
     ax.set_xticklabels(labels=labels, rotation=90)
-    # plt.ylabel("? (log)")
-    # # plt.yscale("log")
     ax.bar(*zip(*data))
     removeSpines(ax)
     plt.grid(color="#ccc", which="major", axis="y", linestyle="solid")
     ax.set_axisbelow(True)
+    plt.gcf().set_size_inches(9, 5)
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.close()
 
@@ -2779,6 +2745,9 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
     ax.set_title("Talkpage edits over time excluding bots")
 
     ax.plot_date(dates, values, "C0-")
+    ax.set_xlim(
+        matplotlib.dates.datestr2num("2001-01"), matplotlib.dates.datestr2num("2019-12")
+    )
 
     plt.gcf().set_size_inches(12, 7.5)
     singlePlot(plt, ax, "y")
@@ -3038,19 +3007,19 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     _, axs = plt.subplots(2, 1)
 
     axs[0].set_title("Talkpage edits over time by group")
-    for i, column in enumerate(columns):
+    for j, column in enumerate(columns):
         axs[0].plot(
             datesYears,
-            dataYear[i],
-            color=colors[i],
+            dataYear[j],
+            color=colors[j],
             label=column,
             linestyle="-",
             marker=",",
         )
         axs[1].plot_date(
-            datesMonths[i],
-            [x[2:] for x in dataMonth[i]],
-            color=colors[i],
+            datesMonths[j],
+            [x[2:] for x in dataMonth[j]],
+            color=colors[j],
             label=column,
             linestyle="-",
             marker=",",
@@ -3080,11 +3049,11 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         "Deleted words",
         "Length of comment",
         "Characters in Longest inserted word",
-        "Longest Character Sequence",
         "Number of internal links inserted",
         "Number of external links inserted",
+        "Average word length in added",
+        "Average word length in deleted",
         "Blanking talkpage",
-        "Comment contains 'copyedit'",
         "Special characters in comment",
         "Percent of capitalization in added",
         "Percent of digits in added",
@@ -3126,12 +3095,13 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         data = []
 
         for j, condition in enumerate(conditions):
-            query = """select %s AVG(added_length),AVG(deleted_length),
-            AVG(del_words),AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
-            AVG(ins_internal_link),AVG(ins_external_link),AVG(comment_special_chars),AVG(blanking),
-            AVG(comment_copyedit),AVG(ins_capitalization),AVG(ins_digits),
-            AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),
-            AVG(added_sentiment),AVG(deleted_sentiment)  FROM edit join user
+            query = """select %s AVG(added_length),AVG(deleted_length),AVG(del_words),
+            AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_internal_link),
+            AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),
+            AVG(comment_special_chars),AVG(blanking),AVG(ins_capitalization),
+            AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),
+            AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  
+            FROM edit join user
             on edit.user_table_id = user.id
             where %s
             %s ;"""
@@ -3143,12 +3113,12 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
                 groupData = cursor.fetchall()
                 data.append(groupData)
                 writeCSV(
-                    dataDir + str(i) + "-" + names[m] + "-" + groups[j] + ".csv",
+                    "%s%s-%s-%s.csv" % (dataDir, str(i), names[m], groups[j]),
                     groupData,
                 )
             else:
                 with open(
-                    dataDir + str(i) + "-" + names[m] + "-" + groups[j] + ".csv", "r"
+                    "%s%s-%s-%s.csv" % (dataDir, str(i), names[m], groups[j]), "r"
                 ) as file:
                     reader = csv.reader(file, delimiter=",")
                     groupData = [line for line in reader]
@@ -3197,20 +3167,25 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
                 + "averageFeaturesOverTimeGroups"
             )
             plt.figure()
-            _, axs = plt.subplots(5, 1)
+            _, axs = plt.subplots(5, 1, sharex=True)
 
             axs[0].set_title("Talkpage edits over time")
             for k, group in enumerate(groups):
-                for l in range(0, 5):
-                    axs[l].set_title(columns[(5 * j) + l])
-                    axs[l].plot_date(
+                for l, ax in enumerate(axs):
+                    ax.set_title(columns[(5 * j) + l])
+                    ax.plot_date(
                         dates[k],
                         list(map(lambda x: x[(5 * j) + l], values[k])),
                         "C0-",
                         label=group,
                         c=colors[k],
                     )
-                    removeSpines(axs[l])
+                    removeSpines(ax)
+                    if m == 1:
+                        ax.set_xlim(
+                            matplotlib.dates.datestr2num("2001-01"),
+                            matplotlib.dates.datestr2num("2019-12"),
+                        )
             axs[0].legend(loc="best")
             plt.gcf().set_size_inches(20, 20)
 
@@ -3250,21 +3225,24 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     ]
 
     queryYear = """SELECT count(years) FROM (
-        SELECT Year(edit_date) as years FROM edit JOIN user ON edit.user_table_id = user.id
-        WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020
-        GROUP BY YEAR(edit_date), edit.user_table_id
-        ORDER BY YEAR(edit_date)
-        ) AS innerQuery group by years"""
+            SELECT Year(edit_date) as years FROM edit JOIN user 
+                ON edit.user_table_id = user.id 
+            WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020 
+            GROUP BY YEAR(edit_date), edit.user_table_id 
+            ORDER BY YEAR(edit_date)
+        ) AS innerQuery GROUP BY years;"""
 
-    # queryMonth = """select Year(edit_date), Month(edit_date) as date, count(*) from edit
-    # join user on edit.user_table_id = user.id
-    # where %s
-    # GROUP BY YEAR(edit_date), Month(edit_date), edit.user_table_id
-    # order by YEAR(edit_date), Month(edit_date)"""
+    queryMonth = """SELECT Concat(year, "-", month), count(user_table_id) FROM (
+            SELECT Year(edit_date) as year, Month(edit_date) as month, user_table_id FROM edit JOIN user 
+                ON edit.user_table_id = user.id 
+            WHERE %s
+            GROUP BY YEAR(edit_date), Month(edit_date), edit.user_table_id
+            order by YEAR(edit_date), Month(edit_date)
+        ) AS innerQuery GROUP BY year, month;"""
 
     dataYear = []
-    # dataMonth = []
-    # datesMonths = []
+    dataMonth = []
+    datesMonths = []
 
     for j, column in enumerate(columns):
         # print(conditions[i])
@@ -3281,60 +3259,58 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
                 yearsData = list(map(lambda x: tuple(map(float, x)), yearsData))
                 dataYear.append(yearsData)
 
-        # if not dryrun:
-        #     cursor.execute(queryMonth % conditions[j],)
-        #     monthData = cursor.fetchall()
-        #     dataMonth.append(monthData)
-        #     writeCSV(dataDir + str(i) + "-month-" + column + ".csv", monthData)
-        # else:
-        #     with open(dataDir + str(i) + "-month-" + column + ".csv", "r") as file:
-        #         reader = csv.reader(file, delimiter=",")
-        #         monthData = [line for line in reader]
+        if not dryrun:
+            cursor.execute(queryMonth % conditions[j],)
+            monthData = cursor.fetchall()
+            print(monthData[:50])
+            
+            writeCSV(dataDir + str(i) + "-month-" + column + ".csv", monthData)
+        else:
+            with open(dataDir + str(i) + "-month-" + column + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                monthData = [line for line in reader]
+                monthData = list(
+                    map(lambda x: (dt.strptime(x[0], "%Y-%m"), int(x[1])), monthData)
+                )
 
-        #         monthData = list(map(lambda x: tuple(map(float, x)), monthData))
-        #         monthDates = list(
-        #             map(
-        #                 lambda x: matplotlib.dates.datestr2num(
-        #                     str(int(x[0])) + "-" + str(int(x[1]))
-        #                 ),
-        #                 monthData,
-        #             )
-        #         )
-        #         dataMonth.append(monthData)
-        #         datesMonths.append(monthDates)
+        dates = list(map(lambda x: x[0], monthData))
+        values = [x[1] for x in monthData]
+        datesMonths.append(dates)
+        dataMonth.append(values)
 
-    datesYears = list(range(2002, 2020))
-
-    _, axs = plt.subplots(2, 1)
-
+    datesYears = [dt.strptime(str(x), "%Y") for x in range(2002, 2020)]
+    
+    _, axs = plt.subplots(2, 1, sharex=True)
     axs[0].set_title("Number of talkpage editors over time by group")
-    for i, column in enumerate(columns):
-        axs[0].plot(
+
+    for j, column in enumerate(columns):
+        axs[0].plot_date(
             datesYears,
-            dataYear[i],
-            color=colors[i],
+            dataYear[j],
+            color=colors[j],
             label=column,
             linestyle="-",
             marker=",",
         )
-        # axs[1].plot_date(
-        #     datesMonths[i],
-        #     [x[2] for x in dataMonth[i]],
-        #     color=colors[i],
-        #     label=column,
-        #     linestyle="-",
-        #     marker=",",
-        # )
+        axs[1].plot_date(
+            datesMonths[j],
+            dataMonth[j],
+            color=colors[j],
+            label=column,
+            linestyle="-",
+            marker=",",
+        )
 
     axs[0].set_ylabel("Editors per Year")
     axs[1].set_ylabel("Editors per Month")
 
     for ax in axs:
-        ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+        ax.xaxis.set_major_locator(mdates.YearLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+        ax.xaxis.set_tick_params(labelbottom=True)
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        showGrid(plt, ax, "y")
 
     plt.gcf().set_size_inches(16, 12)
     plt.legend(loc="upper right")
@@ -3441,9 +3417,9 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     plt.close()
 
     sums = [sum(x) for x in list(zip(*dataEditsYear))]
-    dataEditsYear = [[z / sums[i] for i, z in enumerate(y)] for y in dataEditsYear]
+    dataEditsYear = [[z / sums[j] for j, z in enumerate(y)] for y in dataEditsYear]
     sums = [sum(x) for x in list(zip(*dataEditorsYear))]
-    dataEditorsYear = [[z / sums[i] for i, z in enumerate(y)] for y in dataEditorsYear]
+    dataEditorsYear = [[z / sums[j] for j, z in enumerate(y)] for y in dataEditorsYear]
 
     figname = plotDir + str(i) + "-proportional-compositionOfUserOverTime"
     plt.figure()
@@ -3637,8 +3613,6 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
 
     fig, axs = plt.subplots(4, 3)
     axs = axs.ravel(order="F")
-    print(data[0][0][0][:50])
-    print(data[0][0][1][:50])
 
     fig.suptitle(
         "How many users made their first and last talkpage edit per day in each group"
