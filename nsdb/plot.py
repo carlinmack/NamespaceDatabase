@@ -1044,12 +1044,12 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
     savePlot(figname)
 
     colors = [
-        "gold",
         "mediumpurple",
         "orangered",
-        "mediumaquamarine",
         "skyblue",
         "#F08EC1",
+        "mediumaquamarine",
+        "gold",
     ]
 
     figname = plotDir + str(i) + "-2-" + "sentimentGroups"
@@ -1111,9 +1111,10 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
 
         for k, group in enumerate(groups):
             if j in [2, 3]:
-                ax.bar(k, data[k][j][1] - data[k][j][0], label=group)
+                value = data[k][j][1] - data[k][j][0]
             else:
-                ax.bar(k, data[k][j][0] - data[k][j][1], label=group)
+                value = data[k][j][0] - data[k][j][1]
+            ax.bar(k, value, label=group, color=colors[k])
 
     plt.gcf().set_size_inches(14, 17)
     savePlot(figname)
@@ -2366,270 +2367,104 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         "Gadget Definition Talk",
     ]
 
-    # https://stackoverflow.com/questions/28620904/how-to-count-unique-set-values-in-mysql
-    count = "SELECT COUNT(*) FROM user"
-    allUsers = """SELECT COUNT(user.namespaces) FROM
-    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
-    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces'),
-    ',', @r:=@r+1), ',', -1)) AS namespaces
-    FROM (SELECT @r:=0) deriv1,
-    (SELECT ID FROM information_schema.COLLATIONS) deriv2
-    HAVING @r <=
-    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
-    FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
-    LEFT OUTER JOIN (SELECT namespaces FROM user) user
-    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
-    GROUP BY set_list.namespaces
-    ;"""
-    if not dryrun:
-        cursor.execute(allUsers,)
-        allUsersData = cursor.fetchall()
+    groups = [
+        "All",
+        "Special",
+        "Users",
+        "Bot",
+        "Blocked",
+        "IP",
+        "IP Blocked",
+    ]
 
-        cursor.execute(count,)
-        total = cursor.fetchall()[0][0]
-        allUsersData = list(map(lambda x: x[0] / total, allUsersData))
+    colors = [
+        "black",
+        "gold",
+        "mediumpurple",
+        "mediumaquamarine",
+        "orangered",
+        "skyblue",
+        "#F08EC1",
+    ]
 
-        writeCSV(dataDir + str(i) + "-all.csv", [allUsersData])
-    else:
-        with open(dataDir + str(i) + "-all.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            allUsersData = [line for line in reader]
-            allUsersData = allUsersData[0]
-            allUsersData = list(map(float, allUsersData))
+    conditions = [
+        "1",
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "bot is True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+    ]
 
-    count = "SELECT COUNT(*) FROM user where bot is null and blocked is null and ip_address is null"
-    users = """SELECT COUNT(user.namespaces) FROM
-    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
-    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces'),
-    ',', @r:=@r+1), ',', -1)) AS namespaces
-    FROM (SELECT @r:=0) deriv1,
-    (SELECT ID FROM information_schema.COLLATIONS) deriv2
-    HAVING @r <=
-    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
-    FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
-    LEFT OUTER JOIN (SELECT namespaces FROM user
-        where bot is null and blocked is null and ip_address is null) user
-    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
-    GROUP BY set_list.namespaces
-    ;"""
-    if not dryrun:
-        cursor.execute(users,)
-        usersData = cursor.fetchall()
-        cursor.execute(count,)
-        total = cursor.fetchall()[0][0]
-        usersData = list(map(lambda x: x[0] / total, usersData))
+    data = []
+    for j, condition in enumerate(conditions):
+        # https://stackoverflow.com/questions/28620904/how-to-count-unique-set-values-in-mysql
+        count = "SELECT COUNT(*) FROM user where %s"
+        group = """SELECT COUNT(user.namespaces) FROM
+        (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
+        (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
+        WHERE table_name = 'user' AND column_name = 'namespaces'),
+        ',', @r:=@r+1), ',', -1)) AS namespaces
+        FROM (SELECT @r:=0) deriv1,
+        (SELECT ID FROM information_schema.COLLATIONS) deriv2
+        HAVING @r <=
+        (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
+        FROM information_schema.columns
+        WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
+        LEFT OUTER JOIN (SELECT namespaces FROM user
+            where %s) user
+        ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
+        GROUP BY set_list.namespaces
+        ;"""
+        if not dryrun:
+            cursor.execute(group % condition,)
+            groupData = cursor.fetchall()
+            cursor.execute(count % condition,)
+            total = cursor.fetchall()[0][0]
+            groupData = list(map(lambda x: x[0] / total, groupData))
 
-        writeCSV(dataDir + str(i) + "-user.csv", [usersData])
-    else:
-        with open(dataDir + str(i) + "-user.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            usersData = [line for line in reader]
-            usersData = usersData[0]
-            usersData = list(map(float, usersData))
+            writeCSV(dataDir + str(i) + "-%s.csv" % groups[j], [groupData])
+        else:
+            with open(dataDir + str(i) + "-%s.csv" % groups[j], "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                groupData = [line for line in reader]
+                groupData = groupData[0]
+                groupData = list(map(float, groupData))
 
-    count = "SELECT COUNT(*) FROM user where user_special is true"
-    specialUsers = """SELECT COUNT(user.namespaces) FROM
-    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
-    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces'),
-    ',', @r:=@r+1), ',', -1)) AS namespaces
-    FROM (SELECT @r:=0) deriv1,
-    (SELECT ID FROM information_schema.COLLATIONS) deriv2
-    HAVING @r <=
-    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
-    FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
-    LEFT OUTER JOIN (SELECT namespaces FROM user
-        where user_special is true) user
-    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
-    GROUP BY set_list.namespaces
-    ;"""
-    if not dryrun:
-        cursor.execute(specialUsers,)
-        specialUsersData = cursor.fetchall()
-        cursor.execute(count,)
-        total = cursor.fetchall()[0][0]
-        specialUsersData = list(map(lambda x: x[0] / total, specialUsersData))
-
-        writeCSV(dataDir + str(i) + "-special.csv", [specialUsersData])
-    else:
-        with open(dataDir + str(i) + "-special.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            specialUsersData = [line for line in reader]
-            specialUsersData = specialUsersData[0]
-            specialUsersData = list(map(float, specialUsersData))
-
-    count = "SELECT COUNT(*) FROM user where bot is true"
-    bots = """SELECT COUNT(user.namespaces) FROM
-    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
-    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces'),
-    ',', @r:=@r+1), ',', -1)) AS namespaces
-    FROM (SELECT @r:=0) deriv1,
-    (SELECT ID FROM information_schema.COLLATIONS) deriv2
-    HAVING @r <=
-    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
-    FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
-    LEFT OUTER JOIN (SELECT namespaces FROM user
-        where bot is true and (number_of_edits > 0 or
-    talkpage_number_of_edits > 0)) user
-    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
-    GROUP BY set_list.namespaces
-    ;"""
-    if not dryrun:
-        cursor.execute(bots,)
-        botsData = cursor.fetchall()
-        cursor.execute(count,)
-        total = cursor.fetchall()[0][0]
-        botsData = list(map(lambda x: x[0] / total, botsData))
-
-        writeCSV(dataDir + str(i) + "-bots.csv", [botsData])
-    else:
-        with open(dataDir + str(i) + "-bots.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            botsData = [line for line in reader]
-            botsData = botsData[0]
-            botsData = list(map(float, botsData))
-
-    count = "SELECT COUNT(*) FROM user where blocked is true and ip_address is null"
-    blocked = """SELECT COUNT(user.namespaces) FROM
-    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
-    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces'),
-    ',', @r:=@r+1), ',', -1)) AS namespaces
-    FROM (SELECT @r:=0) deriv1,
-    (SELECT ID FROM information_schema.COLLATIONS) deriv2
-    HAVING @r <=
-    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
-    FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
-    LEFT OUTER JOIN (SELECT namespaces FROM user
-        where blocked is true and ip_address is null) user
-    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
-    GROUP BY set_list.namespaces
-    ;"""
-    if not dryrun:
-        cursor.execute(blocked,)
-        blockedData = cursor.fetchall()
-        cursor.execute(count,)
-        total = cursor.fetchall()[0][0]
-        blockedData = list(map(lambda x: x[0] / total, blockedData))
-
-        writeCSV(dataDir + str(i) + "-blocked.csv", [blockedData])
-    else:
-        with open(dataDir + str(i) + "-blocked.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            blockedData = [line for line in reader]
-            blockedData = blockedData[0]
-            blockedData = list(map(float, blockedData))
-
-    count = "SELECT COUNT(*) FROM user where ip_address is true"
-    ip = """SELECT COUNT(user.namespaces) FROM
-    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
-    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces'),
-    ',', @r:=@r+1), ',', -1)) AS namespaces
-    FROM (SELECT @r:=0) deriv1,
-    (SELECT ID FROM information_schema.COLLATIONS) deriv2
-    HAVING @r <=
-    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
-    FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
-    LEFT OUTER JOIN (SELECT namespaces FROM user
-        where ip_address is true) user
-    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
-    GROUP BY set_list.namespaces
-    ;"""
-    if not dryrun:
-        cursor.execute(ip,)
-        ipData = cursor.fetchall()
-        cursor.execute(count,)
-        total = cursor.fetchall()[0][0]
-        ipData = list(map(lambda x: x[0] / total, ipData))
-        writeCSV(dataDir + str(i) + "-ip.csv", [ipData])
-    else:
-        with open(dataDir + str(i) + "-ip.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            ipData = [line for line in reader]
-            ipData = ipData[0]
-            ipData = list(map(float, ipData))
-
-    count = "SELECT COUNT(*) FROM user where blocked is true and ip_address is true"
-    ipBlocked = """SELECT COUNT(user.namespaces) FROM
-    (SELECT TRIM("'" FROM SUBSTRING_INDEX(SUBSTRING_INDEX(
-    (SELECT TRIM(')' FROM SUBSTR(column_type, 5)) FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces'),
-    ',', @r:=@r+1), ',', -1)) AS namespaces
-    FROM (SELECT @r:=0) deriv1,
-    (SELECT ID FROM information_schema.COLLATIONS) deriv2
-    HAVING @r <=
-    (SELECT LENGTH(column_type) - LENGTH(REPLACE(column_type, ',', ''))
-    FROM information_schema.columns
-    WHERE table_name = 'user' AND column_name = 'namespaces')) set_list
-    LEFT OUTER JOIN (SELECT namespaces FROM user
-        where blocked is true and ip_address is true) user
-    ON FIND_IN_SET(set_list.namespaces, user.namespaces) > 0
-    GROUP BY set_list.namespaces
-    ;"""
-    if not dryrun:
-        cursor.execute(ipBlocked,)
-        ipBlockedData = cursor.fetchall()
-        cursor.execute(count,)
-        total = cursor.fetchall()[0][0]
-        ipBlockedData = list(map(lambda x: x[0] / total, ipBlockedData))
-        writeCSV(dataDir + str(i) + "-ip-blocked.csv", [ipBlockedData])
-    else:
-        with open(dataDir + str(i) + "-ip-blocked.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            ipBlockedData = [line for line in reader]
-            ipBlockedData = ipBlockedData[0]
-            ipBlockedData = list(map(float, ipBlockedData))
+        data.append(groupData)
 
     _, ax = plt.subplots()
-
-    start = 0
-    end = len(usersData)
-    plotRange = range(start, end)
-
+    plotRange = range(0, len(data[0]))
     ax.set_title("Namespaces Edited By Different Groups of Users")
     ax.hlines(
         y=plotRange,
-        xmin=[
-            min(a, b, c, d)
-            for a, b, c, d in zip(
-                specialUsersData[start:end],
-                botsData[start:end],
-                blockedData[start:end],
-                ipBlockedData[start:end],
-            )
-        ],
-        xmax=specialUsersData[start:end],
+        xmin=[min(a, b, c, d, e, f, g) for a, b, c, d, e, f, g in list(zip(*data))],
+        xmax=[max(a, b, c, d, e, f, g) for a, b, c, d, e, f, g in list(zip(*data))],
         color="grey",
         alpha=0.4,
     )
     ax.vlines(
-        x=allUsersData[start:end],
+        x=data[0],
         ymin=list(map(lambda x: x - 0.5, plotRange)),
         ymax=list(map(lambda x: x + 0.5, plotRange)),
         color="grey",
         alpha=0.4,
     )
-    ax.scatter(usersData, plotRange, color="mediumpurple", label="all users")
-    ax.scatter(specialUsersData, plotRange, color="gold", label="users with privileges")
-    ax.scatter(botsData, plotRange, color="mediumaquamarine", label="bots")
-    ax.scatter(ipData, plotRange, color="skyblue", label="IP users")
-    ax.scatter(blockedData, plotRange, color="orangered", label="blocked users")
-    ax.scatter(ipBlockedData, plotRange, color="#F08EC1", label="blocked IP users")
-    ax.set_yticklabels(columns[start:end])
-    ax.set_yticks(plotRange)
-    ax.legend(
-        loc="upper center", bbox_to_anchor=(0.5, 1), ncol=3, fancybox=True, shadow=True,
-    )
+
+    for j, group in enumerate(data):
+        if j == 0:
+            continue
+        ax.scatter(group, plotRange, color=colors[j], label=groups[j])
+        ax.set_yticklabels(columns)
+        ax.set_yticks(plotRange)
+        ax.legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, 1),
+            ncol=3,
+            fancybox=True,
+            shadow=True,
+        )
 
     plt.gcf().set_size_inches(9.5, 9.5)
     removeSpines(ax)
