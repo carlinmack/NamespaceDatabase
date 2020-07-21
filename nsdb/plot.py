@@ -846,65 +846,32 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     figname = plotDir + str(i) + "-" + "sentimentUserBotsBlockedIP"
     plt.figure()
 
+    groups, conditions, colors = groupInfo()
+
     columns = [
         "added sentiment",
         "deleted sentiment",
     ]
 
-    users = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.blocked is null and user.ip_address is null and user.bot is null;"""
-    if not dryrun:
-        cursor.execute(users,)
-        userData = cursor.fetchall()
-        userData = list(*userData)
-        with open(dataDir + str(i) + "-user.txt", "w") as file:
-            file.write(str(userData))
-    else:
-        userData = [0.03575823190161788, 0.005590118354446301]
+    data = []
 
-    blocked = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user
-    on edit.user_table_id = user.id
-    where user.blocked is true;"""
-    if not dryrun:
-        cursor.execute(blocked,)
-        blockedData = cursor.fetchall()
-        blockedData = list(*blockedData)
-        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
-            file.write(str(blockedData))
-    else:
-        blockedData = [0.027887433037106706, 0.00475190706470203]
+    for j, condition in enumerate(conditions):
+        groupQuery = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
+        from edit join user
+        on edit.user_table_id = user.id
+        where %s;"""
+        if not dryrun:
+            cursor.execute(groupQuery % condition,)
+            groupData = cursor.fetchall()
+            groupData = list(*groupData)
+            writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [groupData])
+        else:
+            with open(dataDir + str(i) + "-" + groups[j] + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                for line in reader:
+                    groupData.append([float(k) for k in line])
 
-    bots = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user
-    on edit.user_table_id = user.id
-    where user.bot is true;"""
-    if not dryrun:
-        cursor.execute(bots,)
-        botsData = cursor.fetchall()
-        botsData = list(*botsData)
-        with open(dataDir + str(i) + "-bot.txt", "w") as file:
-            file.write(str(botsData))
-    else:
-        botsData = [0.005499846173827871, 0.004018131754929727]
-
-    ipAddress = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-    from edit
-    join user
-    on edit.user_table_id = user.id
-    where user.ip_address is true;"""
-    if not dryrun:
-        cursor.execute(ipAddress,)
-        ipAddressData = cursor.fetchall()
-        ipAddressData = list(*ipAddressData)
-        with open(dataDir + str(i) + "-ipAddress.txt", "w") as file:
-            file.write(str(ipAddressData))
-    else:
-        ipAddressData = [0.05001974686845408, 0.008109401602654984]
+        data.append(groupData)
 
     _, ax = plt.subplots()
 
@@ -912,31 +879,17 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     ind = list(range(len(columns)))
 
     # Width of a bar
-    width = 0.2
+    width = 0.15
 
     # Plotting
-    ax.bar(ind, userData, width, label="Non blocked users", color="mediumpurple")
-    ax.bar(
-        list(map(lambda x: x + width, ind)),
-        blockedData,
-        width,
-        label="Blocked users",
-        color="orangered",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 2, ind)),
-        botsData,
-        width,
-        label="Bots",
-        color="mediumaquamarine",
-    )
-    ax.bar(
-        list(map(lambda x: x + width * 3, ind)),
-        ipAddressData,
-        width,
-        label="IP address",
-        color="skyblue",
-    )
+    for j, groupData in enumerate(data):
+        ax.bar(
+            list(map(lambda x: x + width * j, ind)),
+            groupData,
+            width,
+            label=groups[j],
+            color=colors[j],
+        )
 
     ax.set_ylabel("unit ?")
     ax.set_title("Average sentiment of different subsets of users")
@@ -944,7 +897,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     # xticks()
     # First argument - A list of positions at which ticks should be placed
     # Second argument -  A list of labels to place at the given locations
-    plt.xticks(list(map(lambda x: x + (width * 3) / 2, ind)), columns)
+    plt.xticks(list(map(lambda x: x + (width * 5) / 2, ind)), columns)
 
     ax.set_ylim(bottom=0)
     removeSpines(ax)
@@ -956,16 +909,8 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
 
 
 def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
-    groups = ["User", "Blocked User", "IP", "IP Blocked", "Bot", "Special User"]
+    groups, conditions, colors = groupInfo()
 
-    conditions = [
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-        "bot is True",
-        "user_special is True",
-    ]
     sentimentConditions = [
         "edit.added_sentiment > 0 and edit.deleted_length > 2",
         "edit.added_sentiment < 0 and edit.deleted_length > 2",
@@ -1043,15 +988,6 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
     plt.legend(loc="best")
     savePlot(figname)
 
-    colors = [
-        "mediumpurple",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-        "mediumaquamarine",
-        "gold",
-    ]
-
     figname = plotDir + str(i) + "-2-" + "sentimentGroups"
     plt.figure()
     fig, axs = plt.subplots(1, 2, sharey=True)
@@ -1118,11 +1054,6 @@ def sentimentGroups(cursor, i, plotDir, dataDir, dryrun=False):
 
     plt.gcf().set_size_inches(14, 17)
     savePlot(figname)
-
-
-def savePlot(figname):
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
 
 
 def profanityAll(cursor, i, plotDir, dataDir, dryrun):
@@ -1361,114 +1292,43 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
 def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "internalExternalLinks"
     plt.figure()
+    
+    groups, conditions, colors = groupInfo()
 
     internalData = []
     externalData = []
 
-    specialUsers = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.user_special is true;"""
-    if not dryrun:
-        cursor.execute(specialUsers,)
-        specialUsersData = cursor.fetchall()
-        specialUsersInternalData = specialUsersData[0][0]
-        specialUsersExternalData = specialUsersData[0][1]
-        with open(dataDir + str(i) + "-specialUsers.txt", "w") as file:
-            file.write(str([specialUsersInternalData, specialUsersExternalData]))
-    else:
-        specialUsersInternalData = 1.6357
-        specialUsersExternalData = 0.1278
+    for j, condition in enumerate(conditions):
+        userGroup = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
+        from edit join user
+        on edit.user_table_id = user.id
+        where %s;"""
+        if not dryrun:
+            cursor.execute(userGroup % condition,)
+            userGroupData = cursor.fetchall()
+            writeCSV(dataDir + str(i) + "-%s.csv" % groups[j], userGroupData)
+        else:
+            with open(dataDir + str(i) + "-%s.csv" % groups[j], "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                userGroupData = [(float(line[0]), float(line[1])) for line in reader]
 
-    internalData.append(("users with\nspecial priviliges", specialUsersInternalData))
-    externalData.append(("users with\nspecial priviliges", specialUsersExternalData))
+        userGroupInternalData = userGroupData[0][0]
+        userGroupExternalData = userGroupData[0][1]
 
-    users = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
-    from edit join user
-    on edit.user_table_id = user.id
-    where bot is not True and blocked is not true and ip_address is not true and user_special is not True;"""
-    if not dryrun:
-        cursor.execute(users,)
-        userData = cursor.fetchall()
-        userInternalData = userData[0][0]
-        userExternalData = userData[0][1]
-        with open(dataDir + str(i) + "-user.txt", "w") as file:
-            file.write(str([userInternalData, userExternalData]))
-    else:
-        userInternalData = 1.5574
-        userExternalData = 0.1189
-
-    internalData.append(("users", userInternalData))
-    externalData.append(("users", userExternalData))
-
-    blocked = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
-    from edit join user
-    on edit.user_table_id = user.id
-    where blocked is True and ip_address is not true and bot is not true and user_special is not true;"""
-    if not dryrun:
-        cursor.execute(blocked,)
-        blockedData = cursor.fetchall()
-        blockedInternalData = blockedData[0][0]
-        blockedExternalData = blockedData[0][1]
-        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
-            file.write(str([blockedInternalData, blockedExternalData]))
-    else:
-        blockedInternalData = 1.3400
-        blockedExternalData = 0.1222
-
-    internalData.append(("blocked", blockedInternalData))
-    externalData.append(("blocked", blockedExternalData))
-
-    bots = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
-    from edit join user
-    on edit.user_table_id = user.id
-    where user.bot is true;"""
-    if not dryrun:
-        cursor.execute(bots,)
-        botsData = cursor.fetchall()
-        botsInternalData = botsData[0][0]
-        botsExternalData = botsData[0][1]
-        with open(dataDir + str(i) + "-bot.txt", "w") as file:
-            file.write(str([botsInternalData, botsExternalData]))
-    else:
-        botsInternalData = 2.3044
-        botsExternalData = 0.1800
-
-    internalData.append(("bots", botsInternalData))
-    externalData.append(("bots", botsExternalData))
-
-    ipAddress = """select avg(edit.ins_internal_link), avg(edit.ins_external_link)
-    from edit
-    join user
-    on edit.user_table_id = user.id
-    where user.ip_address is true and blocked is not true;"""
-    if not dryrun:
-        cursor.execute(ipAddress,)
-        ipAddressData = cursor.fetchall()
-        ipAddressInternalData = ipAddressData[0][0]
-        ipAddressExternalData = ipAddressData[0][1]
-        with open(dataDir + str(i) + "-ipAddress.txt", "w") as file:
-            file.write(str([ipAddressInternalData, ipAddressExternalData]))
-    else:
-        ipAddressInternalData = 1.0504
-        ipAddressExternalData = 0.1154
-
-    internalData.append(("IP", ipAddressInternalData))
-    externalData.append(("IP", ipAddressExternalData))
+        internalData.append(userGroupInternalData)
+        externalData.append(userGroupExternalData)
 
     _, axs = plt.subplots(2, 1)
-    colors = ["gold", "mediumpurple", "orangered", "mediumaquamarine", "skyblue"]
-    axs[0].bar(*zip(*internalData), color=colors)
+    axs[0].bar(groups, internalData, color=colors)
     axs[0].set_title("Average added internal links per type of user")
-    axs[1].bar(*zip(*externalData), color=colors)
+    axs[1].bar(groups, externalData, color=colors)
     axs[1].set_title("Average added external links per type of user")
-    plt.gcf().set_size_inches(5, 10)
-    removeSpines(axs[0])
-    removeSpines(axs[1])
-    axs[0].grid(color="#ccc", which="major", axis="y", linestyle="solid")
-    axs[0].set_axisbelow(True)
-    axs[1].grid(color="#ccc", which="major", axis="y", linestyle="solid")
-    axs[1].set_axisbelow(True)
+    plt.gcf().set_size_inches(6.5, 12)
+    for ax in axs:
+        removeSpines(ax)
+        ax.grid(color="#ccc", which="major", axis="y", linestyle="solid")
+        ax.set_axisbelow(True)
+
     savePlot(figname)
 
 
@@ -2338,7 +2198,7 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         "Wikipedia",
         "Wikipedia Talk",
         "File",
-        "FIle Talk",
+        "File Talk",
         "MediaWiki",
         "MediaWiki Talk",
         "Template",
@@ -3465,11 +3325,39 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
 # Helpers ------------------------------------------------------------------------------
 
 
+def savePlot(figname):
+    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.close()
+
+
 def writeCSV(fileName, data):
     with open(fileName, "w") as file:
         writer = csv.writer(file, delimiter=",")
         writer.writerows(data)
 
+
+def groupInfo():
+    groups = ["Special User", "User", "Blocked User", "IP", "IP Blocked", "Bot"]
+
+    conditions = [
+        "user_special is True",
+        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
+        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
+        "ip_address is True and blocked is not true",
+        "ip_address is True and blocked is true",
+        "bot is True",
+    ]
+
+    colors = [
+        "gold",
+        "mediumpurple",
+        "orangered",
+        "skyblue",
+        "#F08EC1",
+        "mediumaquamarine",
+    ]
+
+    return groups, conditions, colors
 
 def mapNamespace(data):
     mapping = {
@@ -3658,7 +3546,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 16 - 20 seconds
     # namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 17 - 26 minutes
+    i = i + 1  # 17 - 18 minutes
     # internalExternalLinks(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 18 - 4 seconds
@@ -3693,7 +3581,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     i = i + 1  # 28
 
-    i = i + 1  # 29 - 26 minutes
+    i = i + 1  # 29 - 12 minutes
     # namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 30 - 7 minutes
