@@ -200,16 +200,7 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
 
 
 def numMainTalkEditsForBiggestEditors(cursor, i, plotDir, dataDir, dryrun):
-    groups = ["Special User", "User", "Blocked User", "IP", "IP Blocked", "Bot"]
-
-    conditions = [
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-        "bot is True",
-    ]
+    groups, conditions, colors = groupInfo()
 
     selectConditions = [
         "username",
@@ -251,32 +242,21 @@ def numMainTalkEditsForBiggestEditors(cursor, i, plotDir, dataDir, dryrun):
                 talkspaceData = [[str(line[0]), int(line[1])] for line in reader]
                 dataTalkspace.append(talkspaceData)
 
-    colors = [
-        "gold",
-        "mediumpurple",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-        "mediumaquamarine",
-    ]
-
     for j, group in enumerate(groups):
         figname = plotDir + str(i) + "-" + group + "-numMainTalkEditsForBiggestEditors"
         plt.figure()
         fig, axs = plt.subplots(2, 1)  # Create a figure and an axes.
         fig.suptitle("Top 10 mainspace and talkpage %s editors" % group)
         axs[0].barh(*zip(*dataMainspace[j]), color=colors[j])
-        axs[0].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
         axs[0].set_title("Main space edits")  # Add a title to the axes.
-        axs[0].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
         axs[1].barh(*zip(*dataTalkspace[j]), color=colors[j])
-        axs[1].set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
         axs[1].set_title("Talk space edits")  # Add a title to the axes.
-        axs[1].xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
         plt.gcf().set_size_inches(8, 11)
-        removeSpines(axs[0])
-        removeSpines(axs[1])
+        for ax in axs:
+            removeSpines(ax)
+            ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+            ax.set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
 
         savePlot(figname)
 
@@ -584,16 +564,7 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
 
 def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
-    groups = ["Special User", "User", "Blocked User", "IP", "IP Blocked", "Bot"]
-
-    conditions = [
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-        "bot is True",
-    ]
+    groups, conditions, colors = groupInfo()
 
     data = []
     dataStd = []
@@ -638,15 +609,6 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
 
     # Width of a bar
     width = 0.14
-
-    colors = [
-        "gold",
-        "mediumpurple",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-        "mediumaquamarine",
-    ]
 
     # Plotting
     for j, group in enumerate(groups):
@@ -1292,7 +1254,7 @@ def namespacesEditedByTopFiveHundred(cursor, i, plotDir, dataDir, dryrun):
 def internalExternalLinks(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "internalExternalLinks"
     plt.figure()
-    
+
     groups, conditions, colors = groupInfo()
 
     internalData = []
@@ -1436,25 +1398,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
         "deleted_sentiment",
     ]
 
-    groups = [
-        "all",
-        "special",
-        "user",
-        "bot",
-        "blocked",
-        "ip",
-        "ipBlocked",
-    ]
-
-    conditions = [
-        "1",
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-    ]
+    groups, conditions, colors = groupInfo(all=True)
 
     data = []
 
@@ -1489,16 +1433,8 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
     start = [0, 4, 10]
     end = [4, 10, 23]
 
-    colors = [
-        "gold",
-        "mediumpurple",
-        "mediumaquamarine",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-    ]
-
     labels = [
+        "none",
         "users with privileges",
         "all users",
         "bots",
@@ -1535,10 +1471,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
             if k == 0:
                 continue
             ax.scatter(
-                group[start[j] : end[j]],
-                plotRange,
-                color=colors[k - 1],
-                label=labels[k - 1],
+                group[start[j] : end[j]], plotRange, color=colors[k], label=labels[k],
             )
         ax.set_yticklabels(columns[start[j] : end[j]])
         ax.set_yticks(plotRange)
@@ -2110,7 +2043,6 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
 
 
 def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun, columns):
-
     conditions = [", MONTH(edit_date)", ""]
     names = ["Month", "Year"]
 
@@ -2227,35 +2159,7 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
         "Gadget Definition Talk",
     ]
 
-    groups = [
-        "All",
-        "Special",
-        "Users",
-        "Bot",
-        "Blocked",
-        "IP",
-        "IP Blocked",
-    ]
-
-    colors = [
-        "black",
-        "gold",
-        "mediumpurple",
-        "mediumaquamarine",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-    ]
-
-    conditions = [
-        "1",
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-    ]
+    groups, conditions, colors = groupInfo(all=True)
 
     data = []
     for j, condition in enumerate(conditions):
@@ -2445,41 +2349,17 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
     plt.gcf().set_size_inches(12, 7.5)
     singlePlot(plt, ax, "y")
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+    savePlot(figname)
 
 
-def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
-    columns = [
-        "added_length",
-        "deleted_length",
-        "del_words",
-        "comment_length",
-        "ins_longest_inserted_word",
-        "ins_longest_character_sequence",
-        "ins_internal_link",
-        "ins_external_link",
-        "blanking",
-        "comment_copyedit",
-        "comment_personal_life",
-        "comment_special_chars",
-        "ins_capitalization",
-        "ins_digits",
-        "ins_pronouns",
-        "ins_special_chars",
-        "ins_vulgarity",
-        "ins_whitespace",
-        "reverted",
-        "added_sentiment",
-        "deleted_sentiment",
-    ]
-
+def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
     allEdits = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
     AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-    AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-    AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-    AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment)  FROM edit
+    AVG(ins_external_link),AVG(ins_avg_word_length), AVG(del_avg_word_length),AVG(blanking),
+    AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
+    AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+    AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment) FROM edit
     inner join user
     on user.id = edit.user_table_id
     where ip_address is not true;"""
@@ -2495,17 +2375,16 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
 
     optionNames = ["users", "IPs"]
     options = [["not", "blocked_last_five_edits"], ["", "blocked_ip_last_five_edits"]]
-
-    data = []
-    lastFiveData = []
+    optionColors = ["orangered", "#F08EC1"]
 
     for k in range(len(options)):
         blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
         AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-        AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-        AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-        AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-        AVG(deleted_sentiment)  FROM edit
+        AVG(ins_external_link),AVG(ins_avg_word_length), AVG(del_avg_word_length),AVG(blanking),
+        AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
+        AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+        AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+        AVG(deleted_sentiment) FROM edit
         inner join user
         on user.id = edit.user_table_id
         where user.blocked is True and ip_address is %s true;"""
@@ -2519,14 +2398,15 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
                 reader = csv.reader(file, delimiter=",")
                 blockedData = [list(map(float, line)) for line in reader][0]
 
-        data.append(blockedData)
-
+        data = blockedData
+        
         blockedLastFive = """select AVG(added_length),AVG(deleted_length),AVG(del_words),
         AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
-        AVG(ins_internal_link),AVG(ins_external_link),AVG(blanking),AVG(comment_copyedit),
-        AVG(comment_personal_life,AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),
-        AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),
-        AVG(reverted),AVG(added_sentiment), AVG(deleted_sentiment) FROM %s;"""
+        AVG(ins_internal_link),AVG(ins_external_link),AVG(ins_avg_word_length),
+        AVG(del_avg_word_length),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
+        AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
+        AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+        AVG(deleted_sentiment) FROM %s;"""
         if not dryrun:
             cursor.execute(blockedLastFive % options[k][1],)
             blockedLastFiveData = cursor.fetchall()
@@ -2541,109 +2421,84 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun):
             ) as file:
                 reader = csv.reader(file, delimiter=",")
                 blockedLastFiveData = [list(map(float, line)) for line in reader][0]
+        print([a_i - b_i for a_i, b_i in zip(blockedData, blockedLastFiveData)])
+        print([a_i - b_i for a_i, b_i in zip(blockedLastFiveData, blockedData)])
 
-        lastFiveData.append(blockedLastFiveData)
+        lastFiveData = blockedLastFiveData
 
-    plt.figure()
-    figname = plotDir + str(i) + "-averageBlockedLastEdits"
-    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios": [2, 2, 3, 11]})
-    fig.suptitle("Average of all integer edit fields")
-    print([min(a, b) for a, b in zip(blockedData[0:3], blockedLastFiveData[0:3],)])
-    start = [0, 3, 5, 8]
-    end = [3, 5, 8, 21]
-    optionColors = [
-        "orangered",
-        "#F08EC1",
-    ]
-    for j, ax in enumerate(axs):
-        plotRange = range(start[j], end[j])
-        ax.hlines(
-            y=plotRange,
-            xmin=[
-                min(a, b)
-                for a, b in zip(
-                    list(map(min, list(zip(*data))[start[j] : end[j]])),
-                    list(map(min, list(zip(*lastFiveData))[start[j] : end[j]])),
-                )
-            ],
-            xmax=[
-                max(a, b)
-                for a, b in zip(
-                    list(map(max, list(zip(*data))[start[j] : end[j]])),
-                    list(map(max, list(zip(*lastFiveData))[start[j] : end[j]])),
-                )
-            ],
-            color="grey",
-            alpha=0.4,
-        )
-        ax.vlines(
-            x=allData[start[j] : end[j]],
-            ymin=list(map(lambda x: x - 0.5, plotRange)),
-            ymax=list(map(lambda x: x + 0.5, plotRange)),
-            color="grey",
-            alpha=0.4,
-        )
-        for m in range(len(optionColors)):
+        plt.figure()
+        figname = plotDir + str(i) + "-" + optionNames[k] + "-averageBlockedLastEdits"
+
+        fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [4, 6, 13]})
+        fig.suptitle("Average of all integer edit fields")
+
+        start = [0, 4, 10]
+        end = [4, 10, 23]
+
+        for j, ax in enumerate(axs):
+            plotRange = range(start[j], end[j])
+            ax.hlines(
+                y=plotRange,
+                xmin=[
+                    min(a, b)
+                    for a, b in zip(
+                        data[start[j] : end[j]], lastFiveData[start[j] : end[j]]
+                    )
+                ],
+                xmax=[
+                    max(a, b)
+                    for a, b in zip(
+                        data[start[j] : end[j]], lastFiveData[start[j] : end[j]]
+                    )
+                ],
+                color="grey",
+                alpha=0.4,
+            )
+            ax.vlines(
+                x=allData[start[j] : end[j]],
+                ymin=list(map(lambda x: x - 0.5, plotRange)),
+                ymax=list(map(lambda x: x + 0.5, plotRange)),
+                color="grey",
+                alpha=0.4,
+            )
             ax.scatter(
-                lastFiveData[m][start[j] : end[j]],
+                lastFiveData[start[j] : end[j]],
                 plotRange,
-                color=optionColors[m],
+                color=optionColors[k],
                 marker="D",
-                label="Last five edits of blocked %s" % optionNames[m],
+                label="Last five edits of blocked %s" % optionNames[k],
             )
             ax.scatter(
-                data[m][start[j] : end[j]],
+                data[start[j] : end[j]],
                 plotRange,
-                color=optionColors[m],
-                label="Blocked %s" % optionNames[m],
+                color=optionColors[k],
+                label="Blocked %s" % optionNames[k],
             )
-        ax.set_yticklabels(columns[start[j] : end[j]])
-        ax.set_yticks(plotRange)
+            ax.set_yticklabels(columns[start[j] : end[j]])
+            ax.set_yticks(plotRange)
+            removeSpines(ax)
+            ax.invert_yaxis()
 
-    axs[0].legend(
-        loc="upper center", bbox_to_anchor=(0.5, 2), ncol=3, fancybox=True, shadow=True,
-    )
-    axs[2].set_xlim(left=0)
-    axs[3].set_xlim(left=0)
+        axs[0].legend(
+            loc="upper center",
+            bbox_to_anchor=(0.5, 1.6),
+            ncol=2,
+            fancybox=True,
+            shadow=True,
+        )
+        axs[1].set_xlim(left=0)
+        axs[2].set_xlim(left=0)
 
-    plt.gcf().set_size_inches(9.5, 9.5)
-    for ax in axs:
-        removeSpines(ax)
+        plt.gcf().set_size_inches(9.5, 9.5)
 
-    plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
-    plt.close()
+        savePlot(figname)
 
 
 def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "talkpageEditsTimeGroups"
     plt.figure()
 
-    columns = [
-        "Special",
-        "Users",
-        "Bot",
-        "Blocked",
-        "IP",
-        "IP Blocked",
-    ]
-
-    colors = [
-        "gold",
-        "mediumpurple",
-        "mediumaquamarine",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-    ]
-
-    conditions = [
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-    ]
+    columns, conditions, colors = groupInfo()
 
     queryYear = """select count(*) from edit join user on edit.user_table_id = user.id
     where %s and Year(edit_date) > 2001 and Year(edit_date) < 2020
@@ -2757,23 +2612,7 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         "Deleted sentiment",
     ]
 
-    groups = [
-        "Special",
-        "Users",
-        "Bot",
-        "Blocked",
-        "IP",
-        "IP Blocked",
-    ]
-
-    conditions = [
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-    ]
+    groups, conditions, colors = groupInfo()
 
     timeSpanConditions = ["YEAR(edit_date), MONTH(edit_date), ", "YEAR(edit_date),"]
     groupByConditions = [
@@ -2837,15 +2676,6 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
             ]
             values = [list(map(lambda x: x[1:], y)) for y in data]
 
-        colors = [
-            "gold",
-            "mediumpurple",
-            "mediumaquamarine",
-            "orangered",
-            "skyblue",
-            "#F08EC1",
-        ]
-
         for j in range(4):
             figname = (
                 plotDir
@@ -2887,32 +2717,7 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "talkpageEditorsTimeGroups"
     plt.figure()
 
-    columns = [
-        "Special",
-        "Users",
-        "Bot",
-        "Blocked",
-        "IP",
-        "IP Blocked",
-    ]
-
-    colors = [
-        "gold",
-        "mediumpurple",
-        "mediumaquamarine",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-    ]
-
-    conditions = [
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-    ]
+    columns, conditions, colors = groupInfo()
 
     queryYear = """SELECT count(years) FROM (
             SELECT Year(edit_date) as years FROM edit JOIN user 
@@ -3007,32 +2812,7 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
 
 
 def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
-    columns = [
-        "Special",
-        "Users",
-        "Bot",
-        "Blocked",
-        "IP",
-        "IP Blocked",
-    ]
-
-    colors = [
-        "gold",
-        "mediumpurple",
-        "mediumaquamarine",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-    ]
-
-    conditions = [
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-    ]
+    columns, conditions, colors = groupInfo()
 
     queryEditsYear = """select count(*) from edit join user on edit.user_table_id = user.id
     where %s and Year(edit_date) > 2001 and Year(edit_date) < 2020
@@ -3097,7 +2877,8 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
 
     plt.gcf().set_size_inches(16, 12)
-    plt.legend()
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(reversed(handles), reversed(labels))
 
     savePlot(figname)
 
@@ -3122,33 +2903,16 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
         ax.spines["right"].set_visible(False)
 
     plt.gcf().set_size_inches(16, 12)
-    plt.legend()
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(reversed(handles), reversed(labels))
 
     savePlot(figname)
 
 
 def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
-    columns = [
-        "All",
-        "Special",
-        "Users",
-        "Bot",
-        "Blocked",
-        "IP",
-        "Blocked IP",
-    ]
+    columns, conditions, _ = groupInfo(all=True)
 
     markerSizes = [3, 6, 3, 6, 6, 3, 6]
-
-    conditions = [
-        "1",
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-    ]
 
     for j, condition in enumerate(conditions):
         figname = (
@@ -3193,6 +2957,7 @@ def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
         most_edits = df[df.total_edits >= 1000]
 
         data = [most_edits, many_edits, some_edits, few_edits]
+        # colors = [cm.plasma(x) for x in [0.16, 0.42333333, 0.68666667, 0.95]]
         colors = ["purple", "red", "orange", "yellow"]
 
         for k, color in enumerate(colors):
@@ -3233,32 +2998,7 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-firstLastEditsGroups"
     plt.figure()
 
-    columns = [
-        "Special",
-        "Users",
-        "Bot",
-        "Blocked",
-        "IP",
-        "IP Blocked",
-    ]
-
-    colors = [
-        "gold",
-        "mediumpurple",
-        "mediumaquamarine",
-        "orangered",
-        "skyblue",
-        "#F08EC1",
-    ]
-
-    conditions = [
-        "user_special is True",
-        "bot is not True and blocked is not true and ip_address is not true and user_special is not True",
-        "bot is True",
-        "blocked is True and ip_address is not true and bot is not true and user_special is not true",
-        "ip_address is True and blocked is not true",
-        "ip_address is True and blocked is true",
-    ]
+    columns, conditions, colors = groupInfo()
 
     tableColumns = ["first_edit", "last_edit"]
 
@@ -3276,15 +3016,13 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
                 cursor.execute(query % (t, t, condition, t, t, t, t,),)
                 tick = time.time()
                 tableData = cursor.fetchall()
-                print(tableData[:20])
-                tableData = list(map(lambda x: (str(x[0]) + "-" + str(x[1]), x[2]), tableData))
-                print(tableData[:20])
-                writeCSV(
-                    dataDir + str(i) + "-" + columns[j] + "-" + t + ".csv", tableData
+                tableData = list(
+                    map(lambda x: (str(x[0]) + "-" + str(x[1]), x[2]), tableData)
                 )
+                writeCSV("%s%s-%s-%s.csv" % (dataDir, str(i), columns[j], t), tableData)
             else:
                 with open(
-                    dataDir + str(i) + "-" + columns[j] + "-" + t + ".csv", "r"
+                    "%s%s-%s-%s.csv" % (dataDir, str(i), columns[j], t), "r"
                 ) as file:
                     reader = csv.reader(file, delimiter=",")
                     tableData = [
@@ -3336,7 +3074,7 @@ def writeCSV(fileName, data):
         writer.writerows(data)
 
 
-def groupInfo():
+def groupInfo(all=False):
     groups = ["Special User", "User", "Blocked User", "IP", "IP Blocked", "Bot"]
 
     conditions = [
@@ -3357,7 +3095,13 @@ def groupInfo():
         "mediumaquamarine",
     ]
 
+    if all == True:
+        groups.insert(0, "All")
+        conditions.insert(0, "1")
+        colors.insert(0, "black")
+
     return groups, conditions, colors
+
 
 def mapNamespace(data):
     mapping = {
@@ -3531,10 +3275,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 11 - 4 minutes
     # distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 12 - 32 minutes
+    i = i + 1  # 12 - 20 minutes
     # sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 13 - 55 minutes
+    i = i + 1  # 13 - 52 minutes
     # sentimentGroups(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 14 - 33 minutes
