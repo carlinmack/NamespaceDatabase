@@ -1379,7 +1379,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
                 color=colors[k],
                 label=labels[k],
                 alpha=0.75,
-                edgecolors='none',
+                edgecolors="none",
             )
         ax.set_yticklabels(columns[start[j] : end[j]])
         ax.set_yticks(plotRange)
@@ -2735,32 +2735,30 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
         ) AS innerQuery group by years"""
     dataEditorsYear = []
 
-    for j, column in enumerate(columns):
-        if not dryrun:
+    if not dryrun:
+        for j, column in enumerate(columns):
             cursor.execute(queryEditsYear % conditions[j],)
-            yearsData = cursor.fetchall()
-            dataEditsYear.append(yearsData)
-            writeCSV(dataDir + str(i) + "-edits-" + column + ".csv", yearsData)
-        else:
-            with open(dataDir + str(i) + "-edits-" + column + ".csv", "r") as file:
-                reader = csv.reader(file, delimiter=",")
-                yearsData = [line for line in reader]
-                yearsData = list(map(lambda x: float(x[0]), yearsData))
-                dataEditsYear.append(yearsData)
+            editorsData = cursor.fetchall()
+            editorsData = [y[0] for y in editorsData]
+            dataEditsYear.append(editorsData)
 
-    for j, column in enumerate(columns):
-        if not dryrun:
             cursor.execute(queryEditorsYear % conditions[j],)
-            yearsData = cursor.fetchall()
-            dataEditorsYear.append(yearsData)
-            writeCSV(dataDir + str(i) + "-editors-" + column + ".csv", yearsData)
-        else:
-            with open(dataDir + str(i) + "-editors-" + column + ".csv", "r") as file:
-                reader = csv.reader(file, delimiter=",")
-                yearsData = [line for line in reader]
+            editsData = cursor.fetchall()
+            editsData = [y[0] for y in editsData]
+            dataEditorsYear.append(editsData)
 
-                yearsData = list(map(lambda x: float(x[0]), yearsData))
-                dataEditorsYear.append(yearsData)
+        writeCSV(dataDir + str(i) + "-dataEditsYear.csv", dataEditsYear)
+        writeCSV(dataDir + str(i) + "-dataEditorsYear.csv", dataEditorsYear)
+    else:
+        with open(dataDir + str(i) + "-dataEditorsYear.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            dataEditorsYear = [line for line in reader]
+            dataEditorsYear = [[int(y) for y in x] for x in dataEditorsYear]
+
+        with open(dataDir + str(i) + "-dataEditsYear.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            dataEditsYear = [line for line in reader]
+            dataEditsYear = [[int(y) for y in x] for x in dataEditsYear]
 
     datesYears = list(range(2002, 2020))
 
@@ -2768,15 +2766,15 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
     plt.figure()
     _, axs = plt.subplots(2, 1)
     axs[0].set_title("Number of talkpage editors over time by group")
-    axs[1].set_title("Talkpage edits over time by group")
+    axs[0].set_ylabel("Editors per Year")
     axs[0].stackplot(
         datesYears, dataEditorsYear, colors=colors, labels=columns,
     )
+    axs[1].set_title("Talkpage edits over time by group")
+    axs[1].set_ylabel("Edits per Year")
     axs[1].stackplot(
         datesYears, dataEditsYear, colors=colors, labels=columns,
     )
-    axs[0].set_ylabel("Editors per Year")
-    axs[1].set_ylabel("Edits per Year")
 
     for ax in axs:
         ax.xaxis.set_major_locator(plt.MaxNLocator(10))
@@ -2820,7 +2818,7 @@ def compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun):
 def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
     columns, conditions, _ = groupInfo(all=True)
 
-    markerSizes = [3, 6, 3, 6, 3, 6, 6]
+    markerSizes = [5, 9, 5, 9, 5, 9, 9]
 
     for j, condition in enumerate(conditions):
         figname = (
@@ -2876,6 +2874,7 @@ def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
                 markersize=markerSizes[j],
                 alpha=0.1,
                 color=color,
+                markeredgewidth=0,
             )
 
         # plt.plot([dt(2001, 1, 1), dt(2015, 1, 4)], [dt(2006, 1, 1), dt(2020, 1, 4)], ls="--", c=".3")
@@ -2892,7 +2891,7 @@ def timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun):
         )
         # change the marker size manually for both lines
         for lg in lgnd.legendHandles:
-            lg._legmarker.set_markersize(5)
+            lg._legmarker.set_markersize(9)
             lg._legmarker.set_alpha(1)
 
         ax = plt.axes()
@@ -3189,7 +3188,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 13 - 52 minutes
     # sentimentGroups(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 14 - 33 minutes
+    i = i + 1  # 14 - 17 minutes
     # profanityAll(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 15 - 4 minutes
@@ -3253,15 +3252,11 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 35 - 48 minutes
     # averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun)
 
-    # tick = time.time()
     i = i + 1  # 36 - 17 minutes
     # talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
-    # print('--- %s seconds ---' % (time.time() - tick))
 
-    # tick = time.time()
-    i = i + 1  # 37 -
+    i = i + 1  # 37 - 36 minutes
     # compositionOfUserOverTime(cursor, i, plotDir, dataDir, dryrun)
-    # print('--- 37 %s seconds ---' % (time.time() - tick))
 
     i = i + 1  # 38 - 20 minutes
     # timespanOfContributorEngagement(cursor, i, plotDir, dataDir, dryrun)
