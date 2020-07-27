@@ -265,200 +265,63 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     figname = plotDir + str(i) + "-" + "distributionOfMainEditsUserBots"
     plt.figure()
 
+    groups, conditions, colors = groupInfo()
+    data = []
+
     columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
-    mainspaceUser = """SELECT
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and number_of_edits > 1 and number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and number_of_edits > 10 and number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and number_of_edits > 100);"""
-    if not dryrun:
-        cursor.execute(mainspaceUser,)
-        mainspaceUserData = cursor.fetchall()
-        mainspaceUserData = list(*mainspaceUserData)
-        with open(dataDir + str(i) + "-mainspace-user.txt", "w") as file:
-            file.write(str(mainspaceUserData))
-    else:
-        mainspaceUserData = [187156, 3040977, 4133614, 1176582, 223369]
+    for j, condition in enumerate(conditions):
+        conditionTuple = (condition,) * 5
+        mainspaceGroup = """SELECT
+        (SELECT count(*) FROM user WHERE %s and number_of_edits = 0),
+        (SELECT count(*) FROM user WHERE %s and number_of_edits = 1),
+        (SELECT count(*) FROM user WHERE %s and number_of_edits > 1 and number_of_edits <= 10),
+        (SELECT count(*) FROM user WHERE %s and number_of_edits > 10 and number_of_edits <= 100),
+        (SELECT count(*) FROM user WHERE %s and number_of_edits > 100);"""
+        if not dryrun:
+            cursor.execute(mainspaceGroup % conditionTuple,)
+            mainspaceGroupData = cursor.fetchall()
+            mainspaceGroupData = list(*mainspaceGroupData)
+            writeCSV(dataDir + str(i) + "-mainspace-%s.csv" % groups[j], [mainspaceGroupData])
+        else:
+            with open(dataDir + str(i) + "-mainspace-%s.csv" % groups[j], "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                mainspaceGroupData = list(reader)[0]
+                mainspaceGroupData = [int(x) for x in mainspaceGroupData]
 
-    mainspaceBot = """SELECT
-    (SELECT count(*) FROM user WHERE bot is true
-    and number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE bot is true
-    and number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE bot is true
-    and number_of_edits > 1 and number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE bot is true
-    and number_of_edits > 10 and number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE bot is true
-    and number_of_edits > 100);"""
-    if not dryrun:
-        cursor.execute(mainspaceBot,)
-        mainspaceBotData = cursor.fetchall()
-        mainspaceBotData = list(*mainspaceBotData)
-        with open(dataDir + str(i) + "-mainspace-bot.txt", "w") as file:
-            file.write(str(mainspaceBotData))
-    else:
-        mainspaceBotData = [4, 101, 272, 211, 996]
+        data.append(mainspaceGroupData)
 
-    mainspaceBlocked = """SELECT
-    (SELECT count(*) FROM user WHERE blocked is true
-    and number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE blocked is true
-    and number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE blocked is true
-    and number_of_edits > 1 and number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE blocked is true
-    and number_of_edits > 10 and number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE blocked is true
-    and number_of_edits > 100);"""
-    if not dryrun:
-        cursor.execute(mainspaceBlocked,)
-        mainspaceBlockedData = cursor.fetchall()
-        mainspaceBlockedData = list(*mainspaceBlockedData)
-        with open(dataDir + str(i) + "-mainspace-blocked.txt", "w") as file:
-            file.write(str(mainspaceBlockedData))
-    else:
-        mainspaceBlockedData = [3851, 95484, 123939, 37727, 6677]
+        talkspaceUser = """SELECT
+        (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits = 0),
+        (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits = 1),
+        (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
+        (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
+        (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits > 100);"""
+        if not dryrun:
+            cursor.execute(talkspaceUser % conditionTuple,)
+            talkspaceGroupData = cursor.fetchall()
+            talkspaceGroupData = list(*talkspaceGroupData)
+            writeCSV(dataDir + str(i) + "-talkspace-%s.csv" % groups[j], [talkspaceGroupData])
+        else:
+            with open(dataDir + str(i) + "-talkspace-%s.csv" % groups[j], "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                talkspaceGroupData = list(reader)[0]
+                talkspaceGroupData = [int(x) for x in talkspaceGroupData]
 
-    mainspaceIp = """SELECT
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and number_of_edits > 1 and number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and number_of_edits > 10 and number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and number_of_edits > 100);"""
-    if not dryrun:
-        cursor.execute(mainspaceIp,)
-        mainspaceIpData = cursor.fetchall()
-        mainspaceIpData = list(*mainspaceIpData)
-        with open(dataDir + str(i) + "-mainspace-ip.txt", "w") as file:
-            file.write(str(mainspaceIpData))
-    else:
-        mainspaceIpData = [872725, 20386443, 18001533, 2058493, 133467]
+        data.append(talkspaceGroupData)
 
-    talkspaceUser = """SELECT
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and talkpage_number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and talkpage_number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE bot is null and ip_address is null and blocked is null
-    and talkpage_number_of_edits > 100);"""
-    if not dryrun:
-        cursor.execute(talkspaceUser,)
-        talkspaceUserData = cursor.fetchall()
-        talkspaceUserData = list(*talkspaceUserData)
-        with open(dataDir + str(i) + "-talkspace-user.txt", "w") as file:
-            file.write(str(talkspaceUserData))
-    else:
-        talkspaceUserData = [7887493, 340977, 385875, 115498, 31855]
-
-    talkspaceBot = """SELECT
-    (SELECT count(*) FROM user WHERE bot is true
-    and talkpage_number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE bot is true
-    and talkpage_number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE bot is true
-    and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE bot is true
-    and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE bot is true
-    and talkpage_number_of_edits > 100);"""
-    if not dryrun:
-        cursor.execute(talkspaceBot,)
-        talkspaceBotData = cursor.fetchall()
-        talkspaceBotData = list(*talkspaceBotData)
-        with open(dataDir + str(i) + "-talkspace-bot.txt", "w") as file:
-            file.write(str(talkspaceBotData))
-    else:
-        talkspaceBotData = [1031, 63, 119, 103, 268]
-
-    talkspaceBlocked = """SELECT
-    (SELECT count(*) FROM user WHERE blocked is true
-    and talkpage_number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE blocked is true
-    and talkpage_number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE blocked is true
-    and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE blocked is true
-    and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE blocked is true
-    and talkpage_number_of_edits > 100);"""
-    if not dryrun:
-        cursor.execute(talkspaceBlocked,)
-        talkspaceBlockedData = cursor.fetchall()
-        talkspaceBlockedData = list(*talkspaceBlockedData)
-        with open(dataDir + str(i) + "-talkspace-blocked.txt", "w") as file:
-            file.write(str(talkspaceBlockedData))
-    else:
-        talkspaceBlockedData = [245284, 8522, 9849, 3235, 788]
-
-    talkspaceIp = """SELECT
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and talkpage_number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and talkpage_number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE ip_address is true
-    and talkpage_number_of_edits > 100);"""
-    if not dryrun:
-        cursor.execute(talkspaceIp,)
-        talkspaceIpData = cursor.fetchall()
-        talkspaceIpData = list(*talkspaceIpData)
-        with open(dataDir + str(i) + "-talkspace-ip.txt", "w") as file:
-            file.write(str(talkspaceIpData))
-    else:
-        talkspaceIpData = [39464189, 1237805, 697702, 51210, 1755]
-
-    _, axs = plt.subplots(4, 2)
+    _, axs = plt.subplots(3, 4)
     axs = axs.ravel()
-    types = ["User", "User", "Bot", "Bot", "Blocked", "Blocked", "IP", "IP"]
     namespaces = ["main", "talk"]
-    data = [
-        mainspaceUserData,
-        talkspaceUserData,
-        mainspaceBotData,
-        talkspaceBotData,
-        mainspaceBlockedData,
-        talkspaceBlockedData,
-        mainspaceIpData,
-        talkspaceIpData,
-    ]
-
+    
     # fig.suptitle("Distribution of edits across name spaces for bots and users")
-    colors = [
-        "mediumpurple",
-        "mediumpurple",
-        "mediumaquamarine",
-        "mediumaquamarine",
-        "orangered",
-        "orangered",
-        "skyblue",
-        "skyblue",
-    ]
+    
     for j, ax in enumerate(axs):
-        ax.set_title(types[j] + " edits in " + namespaces[j % 2] + " space")
-        ax.bar(columns, data[j], color=colors[j])
+        ax.set_title(groups[floor(j / 2)] + " edits in " + namespaces[j % 2] + " space")
+        ax.bar(columns, data[j], color=colors[floor(j / 2)])
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
         removeSpines(ax)
 
-    plt.gcf().set_size_inches(12, 18)
+    plt.gcf().set_size_inches(25, 13)
 
     savePlot(figname)
 
@@ -474,92 +337,42 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         "edits neither",
     ]
 
-    users = """SELECT
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and bot is null),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and bot is null),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and bot is null),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and bot is null);"""
-    if not dryrun:
-        cursor.execute(users,)
-        userData = cursor.fetchall()
-        userData = list(*userData)
-        with open(dataDir + str(i) + "-user.txt", "w") as file:
-            file.write(str(userData))
-    else:
-        userData = [1823459, 47502424, 1058210, 4407]
+    groups, conditions, colors = groupInfo()
 
-    bots = """SELECT
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and bot is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and bot is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and bot is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and bot is true);"""
-    if not dryrun:
-        cursor.execute(bots,)
-        botData = cursor.fetchall()
-        botData = list(*botData)
-        with open(dataDir + str(i) + "-bot.txt", "w") as file:
-            file.write(str(botData))
-    else:
-        botData = [549, 1031, 4, 0]
+    data = []
+    for j, condition in enumerate(conditions):
+        groupQuery = """SELECT
+        (select count(*) as target from user
+        WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and %s),
+        (select count(*) as target from user
+        WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and %s),
+        (select count(*) as target from user
+        WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and %s),
+        (select count(*) as target from user
+        WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and %s);"""
+        if not dryrun:
+            cursor.execute(groupQuery % (condition,condition,condition,condition),)
+            groupData = cursor.fetchall()
+            groupData = list(*groupData)
+            writeCSV(dataDir + str(i) + "-%s.csv" % groups[j], [groupData])
+        else:
+            with open(dataDir + str(i) + "-%s.csv" % groups[j]) as file:
+                reader = csv.reader(file, delimiter=",")
+                groupData = [line for line in reader][0]
+                groupData = [int(x) for x in groupData]
 
-    blocked = """SELECT
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and blocked is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and blocked is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and blocked is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and blocked is true);"""
-    if not dryrun:
-        cursor.execute(blocked,)
-        blockedData = cursor.fetchall()
-        blockedData = list(*blockedData)
-        with open(dataDir + str(i) + "-blocked.txt", "w") as file:
-            file.write(str(blockedData))
-    else:
-        blockedData = [18557, 245270, 3837, 14]
+        data.append(groupData)
 
-    ip = """SELECT
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and ip_address is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and ip_address is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and ip_address is true),
-    (select count(*) as target from user
-    WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and ip_address is true);"""
-    if not dryrun:
-        cursor.execute(ip,)
-        ipData = cursor.fetchall()
-        ipData = list(*ipData)
-        with open(dataDir + str(i) + "-ip.txt", "w") as file:
-            file.write(str(ipData))
-    else:
-        ipData = [1116049, 39463887, 872423, 302]
-
-    _, axs = plt.subplots(2, 2)
+    _, axs = plt.subplots(2, 3)
     axs = axs.ravel()
-    types = ["users", "bots", "blocked users", "IP users"]
-    colors = ["mediumpurple", "mediumaquamarine", "orangered", "skyblue"]
-    data = [userData, botData, blockedData, ipData]
 
     for j, ax in enumerate(axs):
-        ax.set_title("Namespaces that " + types[j] + " edit")
+        ax.set_title("Namespaces that " + groups[j] + "s edit")
         ax.bar(columns, data[j], color=colors[j])
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
         removeSpines(ax)
 
-    # fig.tight_layout()
-    plt.gcf().set_size_inches(14, 14)
+    plt.gcf().set_size_inches(22.5, 12)
     savePlot(figname)
 
 
@@ -2285,6 +2098,8 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
     options = [["not", "blocked_last_five_edits"], ["", "blocked_ip_last_five_edits"]]
     optionColors = ["orangered", "#F08EC1"]
 
+    excel = []
+
     for k in range(len(options)):
         blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
         AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
@@ -2329,8 +2144,7 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
             ) as file:
                 reader = csv.reader(file, delimiter=",")
                 blockedLastFiveData = [list(map(float, line)) for line in reader][0]
-        print([a_i - b_i for a_i, b_i in zip(blockedData, blockedLastFiveData)])
-        print([a_i - b_i for a_i, b_i in zip(blockedLastFiveData, blockedData)])
+        excel.append([1 if a_i - b_i > 0 else 0 for a_i, b_i in zip(blockedLastFiveData, blockedData)])
 
         lastFiveData = blockedLastFiveData
 
@@ -2400,6 +2214,8 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
         plt.gcf().set_size_inches(9.5, 9.5)
 
         savePlot(figname)
+    excel.append(["added_length","deleted_length","del_words","comment_length","ins_longest_inserted_word","ins_longest_character_sequence","ins_internal_link","ins_external_link","ins_avg_word_length","del_avg_word_length","blanking","comment_copyedit","comment_personal_life","comment_special_chars","ins_capitalization","ins_digits","ins_pronouns","ins_special_chars","ins_vulgarity","ins_whitespace","reverted","added_sentiment","deleted_sentiment"])
+    writeCSV(dataDir + "excel.csv", excel)
 
 
 def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -2982,7 +2798,7 @@ def writeCSV(fileName, data):
 
 
 def groupInfo(all=False):
-    groups = ["Special User", "User", "Blocked User", "IP", "IP Blocked", "Bot"]
+    groups = ["Special User", "User", "Blocked User", "IP", "Blocked IP", "Bot"]
 
     conditions = [
         "user_special is True",
@@ -3170,10 +2986,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     i = i + 1  # 7
 
-    i = i + 1  # 8 - 47 minutes
+    i = i + 1  # 8 - 20 minutes
     # distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 9 - 5 minutes
+    i = i + 1  # 9 - 7 minutes
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 10 - 2 minutes
