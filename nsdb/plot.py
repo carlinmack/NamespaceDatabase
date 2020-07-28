@@ -133,23 +133,19 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
 
     data = mapNamespace(data)
 
-    _, ax = plt.subplots()  # Create a figure and an axes.
-    ax.barh(*zip(*data))
-    ax.set_ylabel("Namespace")  # Add an x-label to the axes.
-    ax.set_xlabel("Number of Pages (log)")  # Add a y-label to the axes.
-    ax.set_xscale("log")
-    ax.set_title("Number of Pages per namespace")  # Add a title to the axes.
+    scales = ["log", "linear"]
+    for scale in scales:
+        _, ax = plt.subplots()  # Create a figure and an axes.
+        ax.barh(*zip(*data))
+        ax.set_ylabel("Namespace")  # Add an x-label to the axes.
+        ax.set_xlabel("Number of Pages (%s)" % scale)  # Add a y-label to the axes.
+        ax.set_xscale(scale)
+        ax.set_title("Number of Pages per namespace")  # Add a title to the axes.
 
-    plt.gcf().set_size_inches(8, 8)
-    singlePlot(plt, ax, "x")
+        plt.gcf().set_size_inches(8, 8)
+        singlePlot(plt, ax, "x")
 
-    savePlot(figname + "-log")
-
-    ax.set_xlabel("Number of Pages (linear)")
-    ax.set_xscale("linear")
-    singlePlot(plt, ax, "x")
-
-    savePlot(figname + "-linear")
+        savePlot(figname + "-%s" % scale)
 
 
 def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
@@ -281,7 +277,9 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
             cursor.execute(mainspaceGroup % conditionTuple,)
             mainspaceGroupData = cursor.fetchall()
             mainspaceGroupData = list(*mainspaceGroupData)
-            writeCSV(dataDir + str(i) + "-mainspace-%s.csv" % groups[j], [mainspaceGroupData])
+            writeCSV(
+                dataDir + str(i) + "-mainspace-%s.csv" % groups[j], [mainspaceGroupData]
+            )
         else:
             with open(dataDir + str(i) + "-mainspace-%s.csv" % groups[j], "r") as file:
                 reader = csv.reader(file, delimiter=",")
@@ -300,7 +298,9 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
             cursor.execute(talkspaceUser % conditionTuple,)
             talkspaceGroupData = cursor.fetchall()
             talkspaceGroupData = list(*talkspaceGroupData)
-            writeCSV(dataDir + str(i) + "-talkspace-%s.csv" % groups[j], [talkspaceGroupData])
+            writeCSV(
+                dataDir + str(i) + "-talkspace-%s.csv" % groups[j], [talkspaceGroupData]
+            )
         else:
             with open(dataDir + str(i) + "-talkspace-%s.csv" % groups[j], "r") as file:
                 reader = csv.reader(file, delimiter=",")
@@ -312,9 +312,9 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     _, axs = plt.subplots(3, 4)
     axs = axs.ravel()
     namespaces = ["main", "talk"]
-    
+
     # fig.suptitle("Distribution of edits across name spaces for bots and users")
-    
+
     for j, ax in enumerate(axs):
         ax.set_title(groups[floor(j / 2)] + " edits in " + namespaces[j % 2] + " space")
         ax.bar(columns, data[j], color=colors[floor(j / 2)])
@@ -351,7 +351,7 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         (select count(*) as target from user
         WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and %s);"""
         if not dryrun:
-            cursor.execute(groupQuery % (condition,condition,condition,condition),)
+            cursor.execute(groupQuery % (condition, condition, condition, condition),)
             groupData = cursor.fetchall()
             groupData = list(*groupData)
             writeCSV(dataDir + str(i) + "-%s.csv" % groups[j], [groupData])
@@ -643,8 +643,10 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
         else:
             with open(dataDir + str(i) + "-" + groups[j] + ".csv", "r") as file:
                 reader = csv.reader(file, delimiter=",")
+                groupData = []
                 for line in reader:
                     groupData.append([float(k) for k in line])
+                groupData = groupData[0]
 
         data.append(groupData)
 
@@ -1064,24 +1066,20 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
         + ["mediumpurple"]
         + ["gold"] * 15
     )
-    _, ax = plt.subplots()  # Create a figure and an axes.
-    ax.barh(*zip(*data), color=colors)
-    ax.invert_yaxis()
-    ax.set_ylabel("User groups")  # Add an x-label to the axes.
-    ax.set_xlabel("Number of Users (log)")  # Add a y-label to the axes.
-    ax.set_xscale("log")
-    ax.set_title("Number of Users per User Group")  # Add a title to the axes.
-    ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-    plt.gcf().set_size_inches(7, 7)
-    singlePlot(plt, ax, "x")
-    savePlot(figname + "-log")
 
-    ax.set_xlabel("Number of Users (linear)")
-    ax.set_xscale("linear")
-
-    plt.gcf().set_size_inches(7, 7)
-    singlePlot(plt, ax, "x")
-    savePlot(figname + "-linear")
+    scales = ["log", "linear"]
+    for scale in scales:
+        _, ax = plt.subplots()  # Create a figure and an axes.
+        ax.barh(*zip(*data), color=colors)
+        ax.invert_yaxis()
+        ax.set_ylabel("User groups")  # Add an x-label to the axes.
+        ax.set_xlabel("Number of Users (%s)" % scale)  # Add a y-label to the axes.
+        ax.set_xscale(scale)
+        ax.set_title("Number of Users per User Group")  # Add a title to the axes.
+        ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        plt.gcf().set_size_inches(7, 7)
+        singlePlot(plt, ax, "x")
+        savePlot(figname + "-%s" % scale)
 
 
 def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
@@ -2144,7 +2142,6 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
             ) as file:
                 reader = csv.reader(file, delimiter=",")
                 blockedLastFiveData = [list(map(float, line)) for line in reader][0]
-        excel.append([1 if a_i - b_i > 0 else 0 for a_i, b_i in zip(blockedLastFiveData, blockedData)])
 
         lastFiveData = blockedLastFiveData
 
@@ -2214,7 +2211,6 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
         plt.gcf().set_size_inches(9.5, 9.5)
 
         savePlot(figname)
-    excel.append(["added_length","deleted_length","del_words","comment_length","ins_longest_inserted_word","ins_longest_character_sequence","ins_internal_link","ins_external_link","ins_avg_word_length","del_avg_word_length","blanking","comment_copyedit","comment_personal_life","comment_special_chars","ins_capitalization","ins_digits","ins_pronouns","ins_special_chars","ins_vulgarity","ins_whitespace","reverted","added_sentiment","deleted_sentiment"])
     writeCSV(dataDir + "excel.csv", excel)
 
 
@@ -2788,6 +2784,7 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
 
 def savePlot(figname):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
+    plt.cla()
     plt.close()
 
 
@@ -3093,7 +3090,7 @@ def defineArgParser():
 
     parser.add_argument(
         "--dryrun",
-        help="Don't use a database, no partitions will be deleted",
+        help="Don't use a database connection, takes 12 minutes to generate all plots",
         action="store_true",
     )
 
