@@ -1082,35 +1082,9 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
         savePlot(figname + "-%s" % scale)
 
 
-def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
+def averageAllSpecial(cursor, i, plotDir, dataDir, columns):
     figname = plotDir + str(i) + "-" + "averageAllSpecial"
     plt.figure()
-
-    columns = [
-        "added_length",
-        "deleted_length",
-        "del_words",
-        "comment_length",
-        "ins_longest_inserted_word",
-        "ins_longest_character_sequence",
-        "ins_internal_link",
-        "ins_external_link",
-        "ins_avg_word_length",
-        "del_avg_word_length",
-        "blanking",
-        "comment_copyedit",
-        "comment_personal_life",
-        "comment_special_chars",
-        "ins_capitalization",
-        "ins_digits",
-        "ins_pronouns",
-        "ins_special_chars",
-        "ins_vulgarity",
-        "ins_whitespace",
-        "reverted",
-        "added_sentiment",
-        "deleted_sentiment",
-    ]
 
     groups, conditions, colors = groupInfo(all=True)
 
@@ -2097,8 +2071,6 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
     options = [["not", "blocked_last_five_edits"], ["", "blocked_ip_last_five_edits"]]
     optionColors = ["orangered", "#F08EC1"]
 
-    excel = []
-
     for k in range(len(options)):
         blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
         AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
@@ -2215,6 +2187,115 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
 
         savePlot(figname)
     writeCSV(dataDir + "excel.csv", excel)
+
+
+def proportionLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
+    plt.figure()
+    figname = plotDir + str(i) + "-proportionLastFiveEdits"
+
+    groups, conditions, colors = groupInfo(all=True)
+    data = []
+
+    for j, condition in enumerate(conditions):
+        groupQuery = """select 
+        IFNULL(AVG(la.added_length), 0) / IFNULL(AVG(su.added_length), 1),
+        IFNULL(AVG(la.deleted_length), 0) / IFNULL(AVG(su.deleted_length), 1),
+        IFNULL(AVG(la.del_words), 0) / IFNULL(AVG(su.del_words), 1),
+        IFNULL(AVG(la.comment_length), 0) / IFNULL(AVG(su.comment_length), 1),
+        IFNULL(AVG(la.ins_longest_inserted_word), 0) / IFNULL(AVG(su.ins_longest_inserted_word), 1),
+        IFNULL(AVG(la.ins_longest_character_sequence), 0) / IFNULL(AVG(su.ins_longest_character_sequence), 1),
+        IFNULL(AVG(la.ins_internal_link), 0) / IFNULL(AVG(su.ins_internal_link), 1),
+        IFNULL(AVG(la.ins_external_link), 0) / IFNULL(AVG(su.ins_external_link), 1),
+        IFNULL(AVG(la.ins_avg_word_length), 0) / IFNULL(AVG(su.ins_avg_word_length), 1),
+        IFNULL(AVG(la.del_avg_word_length), 0) / IFNULL(AVG(su.del_avg_word_length), 1),
+        IFNULL(AVG(la.blanking), 0) / IFNULL(AVG(su.blanking), 1),
+        IFNULL(AVG(la.comment_copyedit), 0) / IFNULL(AVG(su.comment_copyedit), 1),
+        IFNULL(AVG(la.comment_personal_life), 0) / IFNULL(AVG(su.comment_personal_life), 1),
+        IFNULL(AVG(la.comment_special_chars), 0) / IFNULL(AVG(su.comment_special_chars), 1),
+        IFNULL(AVG(la.ins_capitalization), 0) / IFNULL(AVG(su.ins_capitalization), 1),
+        IFNULL(AVG(la.ins_digits), 0) / IFNULL(AVG(su.ins_digits), 1),
+        IFNULL(AVG(la.ins_pronouns), 0) / IFNULL(AVG(su.ins_pronouns), 1),
+        IFNULL(AVG(la.ins_special_chars), 0) / IFNULL(AVG(su.ins_special_chars), 1),
+        IFNULL(AVG(la.ins_vulgarity), 0) / IFNULL(AVG(su.ins_vulgarity), 1),
+        IFNULL(AVG(la.ins_whitespace), 0) / IFNULL(AVG(su.ins_whitespace), 1),
+        IFNULL(AVG(la.reverted), 0) / IFNULL(AVG(su.reverted), 1),
+        IFNULL(AVG(la.added_sentiment), 0) / IFNULL(AVG(su.added_sentiment), 1),
+        IFNULL(AVG(la.deleted_sentiment), 0) / IFNULL(AVG(su.deleted_sentiment),1)
+        FROM last_five_edits_sums la
+        join edit_sums su on la.id = su.id
+        inner join user on la.id = user.id 
+        where %s;"""
+        if not dryrun:
+            cursor.execute(groupQuery % condition,)
+            groupData = cursor.fetchall()
+            groupData = list(*groupData)
+            writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [groupData])
+        else:
+            with open(dataDir + str(i) + "-" + groups[j] + ".csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                groupData = [list(map(float, line)) for line in reader][0]
+
+        data.append(groupData)
+
+    fig, ax = plt.subplots()
+
+    fig.suptitle("Proportion of feature in last five edits")
+
+    labels = [
+        "none",
+        "users with privileges",
+        "all users",
+        "blocked users",
+        "IP users",
+        "blocked IP users",
+        "bots",
+    ]
+
+    plotRange = range(0, 23)
+
+    ax.hlines(
+        y=plotRange,
+        xmin=[min(a, b, c, d, e, f) for a, b, c, d, e, f in list(zip(*data[1:]))],
+        xmax=[max(a, b, c, d, e, f) for a, b, c, d, e, f in list(zip(*data[1:]))],
+        color="grey",
+        alpha=0.4,
+    )
+    ax.vlines(
+        x=data[0],
+        ymin=list(map(lambda x: x - 0.5, plotRange)),
+        ymax=list(map(lambda x: x + 0.5, plotRange)),
+        color="grey",
+        alpha=0.4,
+    )
+
+    for k, group in enumerate(data):
+        if k == 0:
+            continue
+        ax.scatter(
+            group,
+            plotRange,
+            color=colors[k],
+            label=labels[k],
+            alpha=0.75,
+            edgecolors="none",
+            s=100,
+        )
+    ax.set_yticklabels(columns)
+    ax.set_yticks(plotRange)
+    removeSpines(ax)
+    ax.invert_yaxis()
+
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.1),
+        ncol=3,
+        fancybox=True,
+        shadow=True,
+    )
+
+    plt.gcf().set_size_inches(9.5, 9.5)
+
+    savePlot(figname)
 
 
 def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -3020,7 +3101,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # specialUsersPlot(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 19 - 37 minutes
-    # averageAllSpecial(cursor, i, plotDir, dataDir, dryrun)
+    # averageAllSpecial(cursor, i, plotDir, dataDir, dryrun, columns)
 
     i = i + 1  # 20 - 2 minutes
     # compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun)
@@ -3060,7 +3141,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 32 - 11 minutes
     # averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns)
 
-    i = i + 1  # 33 -
+    i = i + 1  # 33 - 40 seconds
+    # proportionLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns)
 
     i = i + 1  # 34 - 54 minutes
     # talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun)
