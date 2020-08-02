@@ -39,7 +39,7 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     ax.set_ylabel("Number of Partitions")
     ax.bar(*zip(*data))
 
-    singlePlot(plt, ax, "y")
+    singlePlot(ax, "y")
 
     savePlot(figname)
 
@@ -73,7 +73,7 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
 
-    singlePlot(plt, ax, "y")
+    singlePlot(ax, "y")
     ax.set_ylim(top=50)
 
     savePlot(figname)
@@ -108,7 +108,7 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
 
-    singlePlot(plt, ax, "y")
+    singlePlot(ax, "y")
     ax.set_ylim(top=100)
 
     savePlot(figname)
@@ -143,7 +143,7 @@ def numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun):
         ax.set_title("Number of Pages per namespace")  # Add a title to the axes.
 
         plt.gcf().set_size_inches(8, 8)
-        singlePlot(plt, ax, "x")
+        singlePlot(ax, "x")
 
         savePlot(figname + "-%s" % scale)
 
@@ -189,7 +189,7 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
     ax.set_ylabel("Percentage")
     ax.bar(columns, data)
 
-    singlePlot(plt, ax, "y")
+    singlePlot(ax, "y")
     ax.set_ylim(top=100)
 
     savePlot(figname)
@@ -255,6 +255,54 @@ def numMainTalkEditsForBiggestEditors(cursor, i, plotDir, dataDir, dryrun):
             ax.set_xlabel("Number of edits (linear)")  # Add a y-label to the axes.
 
         savePlot(figname)
+
+
+def averageNumberOfEditsPerGroup(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "averageNumberOfEditsPerGroup"
+    plt.figure()
+
+    groups, conditions, colors = groupInfo(all=True)
+
+    queryTalk = "select avg(talkpage_number_of_edits) from user where %s"
+    talkData = []
+    queryOther = "select avg(number_of_edits) from user where %s"
+    otherData = []
+
+    if not dryrun:
+        for j, condition in enumerate(conditions):
+            cursor.execute(queryTalk % condition,)
+            groupTalkData = cursor.fetchall()
+            groupTalkData = [y[0] for y in groupTalkData]
+            talkData.append(groupTalkData)
+
+            cursor.execute(queryOther % condition,)
+            groupOtherData = cursor.fetchall()
+            groupOtherData = [y[0] for y in groupOtherData]
+            otherData.append(groupOtherData)
+
+        writeCSV(dataDir + str(i) + "-talk.csv", talkData)
+        writeCSV(dataDir + str(i) + "-other.csv", otherData)
+    else:
+        with open(dataDir + str(i) + "-talk.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            talkData = [line for line in reader]
+            talkData = [float(x[0]) for x in talkData]
+        with open(dataDir + str(i) + "-other.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            otherData = [line for line in reader]
+            otherData = [float(x[0]) for x in otherData]
+
+    _, axs = plt.subplots(1, 2)
+    axs[0].bar(groups, talkData, color=colors)
+    axs[0].set_title("Average number of talkspace edits per user group")
+    axs[1].bar(groups, otherData, color=colors)
+    axs[1].set_title("Average number of edits in other namespaces per user group")
+    plt.gcf().set_size_inches(14, 7)
+    for ax in axs:
+        ax.set_yscale("log")
+        singlePlot(ax, "y")
+
+    savePlot(figname)
 
 
 def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
@@ -1078,7 +1126,7 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
         ax.set_title("Number of Users per User Group")  # Add a title to the axes.
         ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
         plt.gcf().set_size_inches(7, 7)
-        singlePlot(plt, ax, "x")
+        singlePlot(ax, "x")
         savePlot(figname + "-%s" % scale)
 
 
@@ -1633,7 +1681,7 @@ def talkpageEditsOverTime(cursor, i, plotDir, dataDir, dryrun):
     ax.plot_date(dates, values, "C0-")
 
     plt.gcf().set_size_inches(12, 7.5)
-    singlePlot(plt, ax, "y")
+    singlePlot(ax, "y")
 
     savePlot(figname)
 
@@ -2041,7 +2089,7 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
     )
 
     plt.gcf().set_size_inches(12, 7.5)
-    singlePlot(plt, ax, "y")
+    singlePlot(ax, "y")
 
     savePlot(figname)
 
@@ -2949,35 +2997,38 @@ def mapNamespace(data):
     return data
 
 
-def singlePlot(pltObj, ax, axis):
+def singlePlot(ax, axis):
     removeSpines(ax)
 
     if axis == "y":
-        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        showGrid(pltObj, ax, "y")
+        # ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        showGrid(ax, "y")
     elif axis == "x":
         ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        showGrid(pltObj, ax, "x")
+        showGrid(ax, "x")
 
 
 def threeFigureFormatter(x, pos):
     if pos:
         pass  # appeasing the linter
     s = "%d" % x
-    groups = []
-    while s and s[-1].isdigit():
-        groups.append(s[-3:])
-        s = s[:-3]
-    return s + ",".join(reversed(groups))
-
+    if abs(x) >= 1:
+        groups = []
+        while s and s[-1].isdigit():
+            groups.append(s[-3:])
+            s = s[:-3]
+        return s + ",".join(reversed(groups))
+    else:
+        print(s)
+        return s
 
 def removeSpines(ax):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
 
-def showGrid(pltObj, ax, axis):
-    pltObj.grid(color="#ccc", which="major", axis=axis, linestyle="solid")
+def showGrid(ax, axis):
+    ax.grid(color="#ccc", which="major", axis=axis, linestyle="solid")
     ax.set_axisbelow(True)
 
 
@@ -3064,6 +3115,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # numMainTalkEditsForBiggestEditors(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 6
+    # averageNumberOfEditsPerGroup(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 7
 
