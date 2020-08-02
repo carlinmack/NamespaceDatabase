@@ -474,8 +474,8 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         ax.set_xlabel("Hours")
 
     for j, group in enumerate(groups):
-        axs[0].scatter(data[j][:2], plotRange, color=colors[j], label=group)
-        axs[1].scatter(data[j][2:], plotRange, color=colors[j], label=group)
+        axs[0].scatter(data[j][:2], plotRange, color=colors[j], label=group, s=75)
+        axs[1].scatter(data[j][2:], plotRange, color=colors[j], label=group, s=75)
 
     axs[0].hlines(
         y=plotRange,
@@ -1191,6 +1191,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun):
                 label=labels[k],
                 alpha=0.75,
                 edgecolors="none",
+                s=100,
             )
         ax.set_yticklabels(columns[start[j] : end[j]])
         ax.set_yticks(plotRange)
@@ -1938,7 +1939,7 @@ def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
     for j, group in enumerate(data):
         if j == 0:
             continue
-        ax.scatter(group, plotRange, color=colors[j], label=groups[j])
+        ax.scatter(group, plotRange, color=colors[j], label=groups[j], s=75)
         ax.set_yticklabels(columns)
         ax.set_yticks(plotRange)
         ax.legend(
@@ -2186,12 +2187,14 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
                 color=optionColors[k],
                 marker="D",
                 label="Last five edits of blocked %s" % optionNames[k],
+                s=75,
             )
             ax.scatter(
                 data[start[j] : end[j]],
                 plotRange,
                 color=optionColors[k],
                 label="Blocked %s" % optionNames[k],
+                s=75,
             )
             ax.set_yticklabels(columns[start[j] : end[j]])
             ax.set_yticks(plotRange)
