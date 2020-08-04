@@ -56,9 +56,7 @@ def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
     (SELECT count(*) FROM user WHERE number_of_edits > 100);"""
     columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
     if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        data = list(*data)
+        data = runQuery(cursor, query)
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
@@ -91,9 +89,7 @@ def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
     (SELECT count(*) FROM user WHERE talkpage_number_of_edits > 100);"""
     columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
     if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        data = list(*data)
+        data = runQuery(cursor, query)
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
@@ -175,9 +171,7 @@ def editsMainTalkNeither(cursor, i, plotDir, dataDir, dryrun):
         "edits neither",
     ]
     if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        data = list(*data)
+        data = runQuery(cursor, query)
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
@@ -322,9 +316,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         (SELECT count(*) FROM user WHERE %s and number_of_edits > 10 and number_of_edits <= 100),
         (SELECT count(*) FROM user WHERE %s and number_of_edits > 100);"""
         if not dryrun:
-            cursor.execute(mainspaceGroup % conditionTuple,)
-            mainspaceGroupData = cursor.fetchall()
-            mainspaceGroupData = list(*mainspaceGroupData)
+            mainspaceGroupData = runQuery(cursor, mainspaceGroup % conditionTuple)
             writeCSV(
                 dataDir + str(i) + "-mainspace-%s.csv" % groups[j], [mainspaceGroupData]
             )
@@ -343,9 +335,7 @@ def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
         (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits > 100);"""
         if not dryrun:
-            cursor.execute(talkspaceUser % conditionTuple,)
-            talkspaceGroupData = cursor.fetchall()
-            talkspaceGroupData = list(*talkspaceGroupData)
+            talkspaceGroupData = runQuery(cursor, talkspaceUser % conditionTuple)
             writeCSV(
                 dataDir + str(i) + "-talkspace-%s.csv" % groups[j], [talkspaceGroupData]
             )
@@ -399,9 +389,9 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         (select count(*) as target from user
         WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and %s);"""
         if not dryrun:
-            cursor.execute(groupQuery % (condition, condition, condition, condition),)
-            groupData = cursor.fetchall()
-            groupData = list(*groupData)
+            groupData = runQuery(
+                cursor, groupQuery % (condition, condition, condition, condition)
+            )
             writeCSV(dataDir + str(i) + "-%s.csv" % groups[j], [groupData])
         else:
             with open(dataDir + str(i) + "-%s.csv" % groups[j]) as file:
@@ -568,9 +558,7 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     (SELECT count(*) FROM page WHERE namespace = 0
     and number_of_edits > 100);"""
     if not dryrun:
-        cursor.execute(mainspace,)
-        mainspaceData = cursor.fetchall()
-        mainspaceData = list(*mainspaceData)
+        mainspaceData = runQuery(cursor, mainspace)
         with open(dataDir + str(i) + "-mainspace.txt", "w") as file:
             file.write(str(mainspaceData))
     else:
@@ -586,9 +574,7 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     (SELECT count(*) FROM page WHERE namespace = 1
     and number_of_edits > 100);"""
     if not dryrun:
-        cursor.execute(mainspaceTalk,)
-        mainspaceTalkData = cursor.fetchall()
-        mainspaceTalkData = list(*mainspaceTalkData)
+        mainspaceTalkData = runQuery(cursor, mainspaceTalk)
         with open(dataDir + str(i) + "-mainspace-talk.txt", "w") as file:
             file.write(str(mainspaceTalkData))
     else:
@@ -604,9 +590,7 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     (SELECT count(*) FROM page WHERE namespace = 2
     and number_of_edits > 100);"""
     if not dryrun:
-        cursor.execute(user,)
-        userData = cursor.fetchall()
-        userData = list(*userData)
+        userData = runQuery(cursor, user)
         with open(dataDir + str(i) + "-user.txt", "w") as file:
             file.write(str(userData))
     else:
@@ -622,9 +606,7 @@ def distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun=False):
     (SELECT count(*) FROM page WHERE namespace = 3
     and number_of_edits > 100);"""
     if not dryrun:
-        cursor.execute(userTalk,)
-        userTalkData = cursor.fetchall()
-        userTalkData = list(*userTalkData)
+        userTalkData = runQuery(cursor, userTalk)
         with open(dataDir + str(i) + "-user-talk.txt", "w") as file:
             file.write(str(userTalkData))
     else:
@@ -684,9 +666,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
         on edit.user_table_id = user.id
         where %s;"""
         if not dryrun:
-            cursor.execute(groupQuery % condition,)
-            groupData = cursor.fetchall()
-            groupData = list(*groupData)
+            groupData = runQuery(cursor, groupQuery % condition)
             writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [groupData])
         else:
             with open(dataDir + str(i) + "-" + groups[j] + ".csv", "r") as file:
@@ -1150,9 +1130,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, columns):
         on user.id = edit.user_table_id
         where %s;"""
         if not dryrun:
-            cursor.execute(query % condition,)
-            groupData = cursor.fetchall()
-            groupData = list(*groupData)
+            groupData = runQuery(cursor, query % condition)
 
             writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [groupData])
         else:
@@ -1249,9 +1227,7 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     (SELECT count(*) FROM user
     WHERE bot is not true and ip_address is true and blocked is true);"""
     if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        data = list(*data)
+        data = runQuery(cursor, query)
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
@@ -1348,9 +1324,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
         "C0",
     ]
     if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        data = list(*data)
+        data = runQuery(cursor, query)
         with open(dataDir + str(i) + ".txt", "w") as file:
             file.write(str(data))
     else:
@@ -1377,9 +1351,7 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     (SELECT count(*) FROM edit inner join user on user.id = edit.user_table_id WHERE
     bot is not true and ip_address is not true and blocked is true and user_special is true);"""
     if not dryrun:
-        cursor.execute(edits,)
-        editsData = cursor.fetchall()
-        editsData = list(*editsData)
+        editsData = runQuery(cursor, edits)
         with open(dataDir + str(i) + "-edits.txt", "w") as file:
             file.write(str(editsData))
     else:
@@ -1436,9 +1408,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun, columns):
     MIN(ins_vulgarity),MIN(ins_whitespace),MIN(reverted),MIN(added_sentiment),
     MIN(deleted_sentiment) FROM edit;"""
     if not dryrun:
-        cursor.execute(mins,)
-        minsData = cursor.fetchall()
-        minsData = list(*minsData)
+        minsData = runQuery(cursor, mins)
 
         writeCSV(dataDir + str(i) + "-mins.csv", [minsData])
     else:
@@ -1454,9 +1424,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun, columns):
     MAX(ins_vulgarity),MAX(ins_whitespace),MAX(reverted),MAX(added_sentiment),
     MAX(deleted_sentiment)  FROM edit;"""
     if not dryrun:
-        cursor.execute(maxs,)
-        maxsData = cursor.fetchall()
-        maxsData = list(*maxsData)
+        maxsData = runQuery(cursor, maxs)
 
         writeCSV(dataDir + str(i) + "-maxs.csv", [maxsData])
     else:
@@ -1472,9 +1440,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun, columns):
     AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
     AVG(deleted_sentiment) from edit;"""
     if not dryrun:
-        cursor.execute(means,)
-        meansData = cursor.fetchall()
-        meansData = list(*meansData)
+        meansData = runQuery(cursor, means)
         meansData = list(map(float, meansData))
 
         writeCSV(dataDir + str(i) + "-means.csv", [meansData])
@@ -1491,9 +1457,7 @@ def aggregations(cursor, i, plotDir, dataDir, dryrun, columns):
     STD(ins_vulgarity),STD(ins_whitespace),STD(reverted),STD(added_sentiment),
     STD(deleted_sentiment) from edit;"""
     if not dryrun:
-        cursor.execute(stds,)
-        stdsData = cursor.fetchall()
-        stdsData = list(*stdsData)
+        stdsData = runQuery(cursor, stds)
 
         writeCSV(dataDir + str(i) + "-stds.csv", [stdsData])
     else:
@@ -1577,9 +1541,7 @@ def editBooleans(cursor, i, plotDir, dataDir, dryrun):
     sum(ins_vulgarity = 1), sum(reverted = 1), sum(blanking = 1) from edit;"""
 
     if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        data = list(*data)
+        data = runQuery(cursor, query)
 
         population = data.pop(0)
         with open(dataDir + str(i) + ".txt", "w") as file:
@@ -1622,9 +1584,7 @@ def userBooleans(cursor, i, plotDir, dataDir, dryrun):
     sum(bot = 1), sum(blocked = 1) from user;"""
 
     if not dryrun:
-        cursor.execute(query,)
-        data = cursor.fetchall()
-        data = list(*data)
+        data = runQuery(cursor, query)
 
         population = data.pop(0)
         with open(dataDir + str(i) + ".txt", "w") as file:
@@ -1708,9 +1668,7 @@ def averageAllEpoch(cursor, i, plotDir, dataDir, dryrun, columns):
         AVG(deleted_sentiment)  FROM edit
         where %s;"""
         if not dryrun:
-            cursor.execute(query % condition,)
-            condData = cursor.fetchall()
-            condData = list(*condData)
+            condData = runQuery(cursor, query % condition)
 
             writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [condData])
         else:
@@ -1859,6 +1817,120 @@ def averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun, columns):
         plt.gcf().set_size_inches(20, 15)
 
         savePlot(figname)
+
+
+def differenceLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
+    figname = plotDir + str(i) + "-" + "differenceLastFiveEdits"
+    plt.figure()
+
+    features = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+    AVG(ins_external_link),AVG(ins_avg_word_length), AVG(del_avg_word_length),AVG(blanking),
+    AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
+    AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+    AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+    AVG(deleted_sentiment) FROM """
+
+    groupQuery = """%s edit inner join user
+    on user.id = edit.user_table_id where %s and talkpage_number_of_edits > 10"""
+
+    groupLastFiveQuery = """%s last_five_edits inner join user
+    on user.id = last_five_edits.user_table_id where %s"""
+
+    groups, conditions, colors = groupInfo(all=True)
+    data = []
+
+    if not dryrun:
+        for j, condition in enumerate(conditions):
+            groupData = runQuery(cursor, groupQuery % (features, condition))
+            groupLastFiveData = runQuery(
+                cursor, groupLastFiveQuery % (features, condition)
+            )
+            groupDifference = [
+                a_i - b_i for a_i, b_i in zip(groupLastFiveData, groupData)
+            ]
+            data.append(groupDifference)
+
+        writeCSV(dataDir + str(i) + ".csv", data)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [list(map(float, line)) for line in reader]
+    fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [4, 6, 13]})
+
+    fig.suptitle("Difference between feature average and the average of the last five edits")
+
+    start = [0, 4, 10]
+    end = [4, 10, 23]
+
+    labels = [
+        "All",
+        "users with privileges",
+        "all users",
+        "blocked users",
+        "IP users",
+        "blocked IP users",
+        "bots",
+    ]
+
+    for j, ax in enumerate(axs):
+        plotRange = range(start[j], end[j])
+
+        ax.hlines(
+            y=plotRange,
+            xmin=[
+                min(a, b, c, d, e, f)
+                for a, b, c, d, e, f in list(zip(*data[1:]))[start[j] : end[j]]
+            ],
+            xmax=[
+                max(a, b, c, d, e, f)
+                for a, b, c, d, e, f in list(zip(*data[1:]))[start[j] : end[j]]
+            ],
+            color="grey",
+            alpha=0.4,
+        )
+        ax.vlines(
+            x=data[0][start[j] : end[j]],
+            ymin=list(map(lambda x: x - 0.5, plotRange)),
+            ymax=list(map(lambda x: x + 0.5, plotRange)),
+            color="grey",
+            alpha=0.4,
+        )
+
+        for k, group in enumerate(data):
+            if k == 0:
+                continue
+            ax.scatter(
+                group[start[j] : end[j]],
+                plotRange,
+                color=colors[k],
+                label=labels[k],
+                alpha=0.75,
+                edgecolors="none",
+                s=100,
+            )
+        ax.set_yticklabels(columns[start[j] : end[j]])
+        ax.set_yticks(plotRange)
+        removeSpines(ax)
+        ax.invert_yaxis()
+
+        (left, right) = ax.get_xlim()
+        if abs(left) > right:
+            ax.set_xlim([left,-left])
+        else:
+            ax.set_xlim([-right,right])
+
+    axs[0].legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.6),
+        ncol=3,
+        fancybox=True,
+        shadow=True,
+    )
+
+    plt.gcf().set_size_inches(9.5, 9.5)
+
+    savePlot(figname)
 
 
 def namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -2095,20 +2167,28 @@ def talkpageEditsOverTimeNoBots(cursor, i, plotDir, dataDir, dryrun):
 
 
 def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
-    allEdits = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    features = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
     AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
     AVG(ins_external_link),AVG(ins_avg_word_length), AVG(del_avg_word_length),AVG(blanking),
     AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
     AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
     AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-    AVG(deleted_sentiment) FROM edit
+    AVG(deleted_sentiment) FROM """
+
+    allEdits = """ %s edit
     inner join user
     on user.id = edit.user_table_id
     where ip_address is not true;"""
+
+    blocked = """%s edit
+    inner join user
+    on user.id = edit.user_table_id
+    where user.blocked is True and ip_address is %s true;"""
+
+    blockedLastFive = "%s %s"
+
     if not dryrun:
-        cursor.execute(allEdits,)
-        allData = cursor.fetchall()
-        allData = list(*allData)
+        allData = runQuery(cursor, allEdits % features)
         writeCSV(dataDir + str(i) + "-all.csv", [allData])
     else:
         with open(dataDir + str(i) + "-all.csv", "r") as file:
@@ -2120,39 +2200,18 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
     optionColors = ["orangered", "#F08EC1"]
 
     for k in range(len(options)):
-        blocked = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-        AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-        AVG(ins_external_link),AVG(ins_avg_word_length), AVG(del_avg_word_length),AVG(blanking),
-        AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
-        AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
-        AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-        AVG(deleted_sentiment) FROM edit
-        inner join user
-        on user.id = edit.user_table_id
-        where user.blocked is True and ip_address is %s true;"""
         if not dryrun:
-            cursor.execute(blocked % options[k][0],)
-            blockedData = cursor.fetchall()
-            blockedData = list(*blockedData)
+            blockedData = runQuery(cursor, blocked % (features, options[k][0]))
             writeCSV(dataDir + str(i) + "-" + optionNames[k] + ".csv", [blockedData])
         else:
             with open(dataDir + str(i) + "-" + optionNames[k] + ".csv", "r") as file:
                 reader = csv.reader(file, delimiter=",")
                 blockedData = [list(map(float, line)) for line in reader][0]
 
-        data = blockedData
-
-        blockedLastFive = """select AVG(added_length),AVG(deleted_length),AVG(del_words),
-        AVG(comment_length),AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),
-        AVG(ins_internal_link),AVG(ins_external_link),AVG(ins_avg_word_length),
-        AVG(del_avg_word_length),AVG(blanking),AVG(comment_copyedit),AVG(comment_personal_life),
-        AVG(comment_special_chars),AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),
-        AVG(ins_special_chars),AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-        AVG(deleted_sentiment) FROM %s;"""
         if not dryrun:
-            cursor.execute(blockedLastFive % options[k][1],)
-            blockedLastFiveData = cursor.fetchall()
-            blockedLastFiveData = list(*blockedLastFiveData)
+            blockedLastFiveData = runQuery(
+                cursor, blockedLastFive % (features, options[k][1])
+            )
             writeCSV(
                 dataDir + str(i) + "-" + optionNames[k] + "-lastFive.csv",
                 [blockedLastFiveData],
@@ -2163,8 +2222,6 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
             ) as file:
                 reader = csv.reader(file, delimiter=",")
                 blockedLastFiveData = [list(map(float, line)) for line in reader][0]
-
-        lastFiveData = blockedLastFiveData
 
         plt.figure()
         figname = plotDir + str(i) + "-" + optionNames[k] + "-averageBlockedLastEdits"
@@ -2182,13 +2239,15 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
                 xmin=[
                     min(a, b)
                     for a, b in zip(
-                        data[start[j] : end[j]], lastFiveData[start[j] : end[j]]
+                        blockedData[start[j] : end[j]],
+                        blockedLastFiveData[start[j] : end[j]],
                     )
                 ],
                 xmax=[
                     max(a, b)
                     for a, b in zip(
-                        data[start[j] : end[j]], lastFiveData[start[j] : end[j]]
+                        blockedData[start[j] : end[j]],
+                        blockedLastFiveData[start[j] : end[j]],
                     )
                 ],
                 color="grey",
@@ -2202,7 +2261,7 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
                 alpha=0.4,
             )
             ax.scatter(
-                lastFiveData[start[j] : end[j]],
+                blockedLastFiveData[start[j] : end[j]],
                 plotRange,
                 color=optionColors[k],
                 marker="D",
@@ -2210,7 +2269,7 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
                 s=75,
             )
             ax.scatter(
-                data[start[j] : end[j]],
+                blockedData[start[j] : end[j]],
                 plotRange,
                 color=optionColors[k],
                 label="Blocked %s" % optionNames[k],
@@ -2234,7 +2293,6 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
         plt.gcf().set_size_inches(9.5, 9.5)
 
         savePlot(figname)
-    writeCSV(dataDir + "excel.csv", excel)
 
 
 def proportionLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
@@ -2242,41 +2300,40 @@ def proportionLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
     figname = plotDir + str(i) + "-proportionLastFiveEdits"
 
     groups, conditions, colors = groupInfo(all=True)
+
+    groupQuery = """select 
+    IFNULL(AVG(la.added_length), 0) / IFNULL(AVG(su.added_length), 1),
+    IFNULL(AVG(la.deleted_length), 0) / IFNULL(AVG(su.deleted_length), 1),
+    IFNULL(AVG(la.del_words), 0) / IFNULL(AVG(su.del_words), 1),
+    IFNULL(AVG(la.comment_length), 0) / IFNULL(AVG(su.comment_length), 1),
+    IFNULL(AVG(la.ins_longest_inserted_word), 0) / IFNULL(AVG(su.ins_longest_inserted_word), 1),
+    IFNULL(AVG(la.ins_longest_character_sequence), 0) / IFNULL(AVG(su.ins_longest_character_sequence), 1),
+    IFNULL(AVG(la.ins_internal_link), 0) / IFNULL(AVG(su.ins_internal_link), 1),
+    IFNULL(AVG(la.ins_external_link), 0) / IFNULL(AVG(su.ins_external_link), 1),
+    IFNULL(AVG(la.ins_avg_word_length), 0) / IFNULL(AVG(su.ins_avg_word_length), 1),
+    IFNULL(AVG(la.del_avg_word_length), 0) / IFNULL(AVG(su.del_avg_word_length), 1),
+    IFNULL(AVG(la.blanking), 0) / IFNULL(AVG(su.blanking), 1),
+    IFNULL(AVG(la.comment_copyedit), 0) / IFNULL(AVG(su.comment_copyedit), 1),
+    IFNULL(AVG(la.comment_personal_life), 0) / IFNULL(AVG(su.comment_personal_life), 1),
+    IFNULL(AVG(la.comment_special_chars), 0) / IFNULL(AVG(su.comment_special_chars), 1),
+    IFNULL(AVG(la.ins_capitalization), 0) / IFNULL(AVG(su.ins_capitalization), 1),
+    IFNULL(AVG(la.ins_digits), 0) / IFNULL(AVG(su.ins_digits), 1),
+    IFNULL(AVG(la.ins_pronouns), 0) / IFNULL(AVG(su.ins_pronouns), 1),
+    IFNULL(AVG(la.ins_special_chars), 0) / IFNULL(AVG(su.ins_special_chars), 1),
+    IFNULL(AVG(la.ins_vulgarity), 0) / IFNULL(AVG(su.ins_vulgarity), 1),
+    IFNULL(AVG(la.ins_whitespace), 0) / IFNULL(AVG(su.ins_whitespace), 1),
+    IFNULL(AVG(la.reverted), 0) / IFNULL(AVG(su.reverted), 1),
+    IFNULL(AVG(la.added_sentiment), 0) / IFNULL(AVG(su.added_sentiment), 1),
+    IFNULL(AVG(la.deleted_sentiment), 0) / IFNULL(AVG(su.deleted_sentiment),1)
+    FROM last_five_edits_sums la
+    join edit_sums su on la.id = su.id
+    inner join user on la.id = user.id 
+    where %s;"""
     data = []
 
     for j, condition in enumerate(conditions):
-        groupQuery = """select 
-        IFNULL(AVG(la.added_length), 0) / IFNULL(AVG(su.added_length), 1),
-        IFNULL(AVG(la.deleted_length), 0) / IFNULL(AVG(su.deleted_length), 1),
-        IFNULL(AVG(la.del_words), 0) / IFNULL(AVG(su.del_words), 1),
-        IFNULL(AVG(la.comment_length), 0) / IFNULL(AVG(su.comment_length), 1),
-        IFNULL(AVG(la.ins_longest_inserted_word), 0) / IFNULL(AVG(su.ins_longest_inserted_word), 1),
-        IFNULL(AVG(la.ins_longest_character_sequence), 0) / IFNULL(AVG(su.ins_longest_character_sequence), 1),
-        IFNULL(AVG(la.ins_internal_link), 0) / IFNULL(AVG(su.ins_internal_link), 1),
-        IFNULL(AVG(la.ins_external_link), 0) / IFNULL(AVG(su.ins_external_link), 1),
-        IFNULL(AVG(la.ins_avg_word_length), 0) / IFNULL(AVG(su.ins_avg_word_length), 1),
-        IFNULL(AVG(la.del_avg_word_length), 0) / IFNULL(AVG(su.del_avg_word_length), 1),
-        IFNULL(AVG(la.blanking), 0) / IFNULL(AVG(su.blanking), 1),
-        IFNULL(AVG(la.comment_copyedit), 0) / IFNULL(AVG(su.comment_copyedit), 1),
-        IFNULL(AVG(la.comment_personal_life), 0) / IFNULL(AVG(su.comment_personal_life), 1),
-        IFNULL(AVG(la.comment_special_chars), 0) / IFNULL(AVG(su.comment_special_chars), 1),
-        IFNULL(AVG(la.ins_capitalization), 0) / IFNULL(AVG(su.ins_capitalization), 1),
-        IFNULL(AVG(la.ins_digits), 0) / IFNULL(AVG(su.ins_digits), 1),
-        IFNULL(AVG(la.ins_pronouns), 0) / IFNULL(AVG(su.ins_pronouns), 1),
-        IFNULL(AVG(la.ins_special_chars), 0) / IFNULL(AVG(su.ins_special_chars), 1),
-        IFNULL(AVG(la.ins_vulgarity), 0) / IFNULL(AVG(su.ins_vulgarity), 1),
-        IFNULL(AVG(la.ins_whitespace), 0) / IFNULL(AVG(su.ins_whitespace), 1),
-        IFNULL(AVG(la.reverted), 0) / IFNULL(AVG(su.reverted), 1),
-        IFNULL(AVG(la.added_sentiment), 0) / IFNULL(AVG(su.added_sentiment), 1),
-        IFNULL(AVG(la.deleted_sentiment), 0) / IFNULL(AVG(su.deleted_sentiment),1)
-        FROM last_five_edits_sums la
-        join edit_sums su on la.id = su.id
-        inner join user on la.id = user.id 
-        where %s;"""
         if not dryrun:
-            cursor.execute(groupQuery % condition,)
-            groupData = cursor.fetchall()
-            groupData = list(*groupData)
+            groupData = runQuery(cursor, groupQuery % condition)
             writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [groupData])
         else:
             with open(dataDir + str(i) + "-" + groups[j] + ".csv", "r") as file:
@@ -2914,6 +2971,13 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
 # Helpers ------------------------------------------------------------------------------
 
 
+def runQuery(cursor, allEdits):
+    cursor.execute(allEdits,)
+    data = cursor.fetchall()
+    data = list(*data)
+    return data
+
+
 def savePlot(figname):
     plt.savefig(figname, bbox_inches="tight", pad_inches=0.25, dpi=200)
     plt.cla()
@@ -2950,7 +3014,7 @@ def groupInfo(all=False):
     if all == True:
         groups.insert(0, "All")
         conditions.insert(0, "1")
-        colors.insert(0, "black")
+        colors.insert(0, "#777")
 
     return groups, conditions, colors
 
@@ -3001,7 +3065,7 @@ def singlePlot(ax, axis):
     removeSpines(ax)
 
     if axis == "y":
-        # ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
+        ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
         showGrid(ax, "y")
     elif axis == "x":
         ax.xaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
@@ -3019,8 +3083,8 @@ def threeFigureFormatter(x, pos):
             s = s[:-3]
         return s + ",".join(reversed(groups))
     else:
-        print(s)
         return s
+
 
 def removeSpines(ax):
     ax.spines["top"].set_visible(False)
@@ -3179,7 +3243,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 27 - 8 minutes
     # averageFeaturesOverTime(cursor, i, plotDir, dataDir, dryrun, columns)
 
-    i = i + 1  # 28
+    i = i + 1  # 28 - 16 minutes
+    # differenceLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns)
 
     i = i + 1  # 29 - 12 minutes
     # namespacesEditedByUserGroups(cursor, i, plotDir, dataDir, dryrun)

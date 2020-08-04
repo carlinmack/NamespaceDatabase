@@ -29,10 +29,13 @@
 ![plot](5-IP-numMainTalkEditsForBiggestEditors.png)
 
 ### 5.5 Num Main Talk Edits For Biggest Blocked IP Editors
-![plot](5-IP%20Blocked-numMainTalkEditsForBiggestEditors.png)
+![plot](5-Blocked%20IP-numMainTalkEditsForBiggestEditors.png)
 
 ### 5.6 Num Main Talk Edits For Biggest Blocked Bot Editors
 ![plot](5-Bot-numMainTalkEditsForBiggestEditors.png)
+
+### 6 Average Number Of Edits Per Group
+![plot](6-averageNumberOfEditsPerGroup.png)
 
 ### 8 Distribution Of Main Edits User Bots
 ![plot](8-distributionOfMainEditsUserBots.png)
@@ -103,11 +106,14 @@
 ### 26 Average All Epoch
 ![plot](26-averageAllEpoch.png)
 
-### 27 Average Features Over Month
+### 27.1 Average Features Over Month
 ![plot](27-averageFeaturesOverMonth.png)
 
-### 28 Average Features Over Year
+### 27.2 Average Features Over Year
 ![plot](27-averageFeaturesOverYear.png)
+
+### 28 Difference Last Five Edits
+![plot](28-differenceLastFiveEdits.png)
 
 ### 29 Namespaces Edited By User Groups
 ![plot](29-namespacesEditedByUserGroups.png)
@@ -126,6 +132,9 @@
 
 ### 32.2 Average Blocked Last Edits IPs
 ![plot](32-IPs-averageBlockedLastEdits.png)
+
+### 33 Proportion Last Five Edits
+![plot](33-proportionLastFiveEdits.png)
 
 ### 34 Talkpage Edits Time Groups
 ![plot](34-talkpageEditsTimeGroups.png)
@@ -167,19 +176,19 @@
 ![plot](38-All-timespanOfContributorEngagement.png)
 
 ### 38.2 Timespan Of Users Contributor Engagement
-![plot](38-Users-timespanOfContributorEngagement.png)
+![plot](38-User-timespanOfContributorEngagement.png)
 
 ### 38.3 Timespan Of Special Users Contributor Engagement
-![plot](38-Special-timespanOfContributorEngagement.png)
+![plot](38-Special%20User-timespanOfContributorEngagement.png)
 
 ### 38.4 Timespan Of Blocked Users Contributor Engagement
-![plot](38-Blocked-timespanOfContributorEngagement.png)
+![plot](38-Blocked%20User-timespanOfContributorEngagement.png)
 
 ### 38.5 Timespan Of IP Users Contributor Engagement
 ![plot](38-IP-timespanOfContributorEngagement.png)
 
 ### 38.6 Timespan Of IP Blocked Contributor Engagement
-![plot](38-IP Blocked-timespanOfContributorEngagement.png)
+![plot](38-Blocked%20IP-timespanOfContributorEngagement.png)
 
 ### 38.7 Timespan Of Bot Contributor Engagement
 ![plot](38-Bot-timespanOfContributorEngagement.png)
