@@ -2,7 +2,7 @@
 ![plot](0-partitionStatus.png)
 
 ### 1 Distribution Of Main Edits
-![plot](1-distributionOfMainEdits.png)
+![plot](1-distributionOfTalkOtherEdits.png)
 
 ### 2 Distribution Of Talk Edits
 ![plot](2-distributionOfTalkEdits.png)
@@ -17,7 +17,7 @@
 ![plot](4-editsMainTalkNeither.png)
 
 ### 5.1 Num Main Talk Edits For Biggest Special Users
-![plot](5-Special User-numMainTalkEditsForBiggestEditors.png)
+![plot](5-Special%20User-numMainTalkEditsForBiggestEditors.png)
 
 ### 5.2 Num Main Talk Edits For Biggest Users
 ![plot](5-User-numMainTalkEditsForBiggestEditors.png)

@@ -44,69 +44,51 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     savePlot(figname)
 
 
-def distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "distributionOfMainEdits"
+def distributionOfTalkOtherEdits(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "distributionOfTalkOtherEdits"
     plt.figure()
 
-    query = """SELECT
-    (SELECT count(*) FROM user WHERE number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE number_of_edits > 1 and number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE number_of_edits > 10 and number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE number_of_edits > 100);"""
-    columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
-    if not dryrun:
-        data = runQuery(cursor, query)
-        with open(dataDir + str(i) + ".txt", "w") as file:
-            file.write(str(data))
-    else:
-        data = [1062957, 23477790, 22217924, 3267408, 364341]
-
-    total = sum(data)
-    data = list(map(lambda x: x * 100 / total, data))
-
-    _, ax = plt.subplots()
-    ax.set_title("Distribution of edits in main space")
-    ax.set_xlabel("Number of edits by user")
-    ax.set_ylabel("Percentage")
-    ax.bar(columns, data)
-
-    singlePlot(ax, "y")
-    ax.set_ylim(top=50)
-
-    savePlot(figname)
-
-
-def distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "distributionOfTalkEdits"
-    plt.figure()
+    tables = ["talkpage_number_of_edits", "number_of_edits"]
+    names = ["talk space", "other namespaces"]
+    data = []
 
     query = """SELECT
-    (SELECT count(*) FROM user WHERE talkpage_number_of_edits = 0),
-    (SELECT count(*) FROM user WHERE talkpage_number_of_edits = 1),
-    (SELECT count(*) FROM user WHERE talkpage_number_of_edits > 1 and talkpage_number_of_edits <= 10),
-    (SELECT count(*) FROM user WHERE talkpage_number_of_edits > 10 and talkpage_number_of_edits <= 100),
-    (SELECT count(*) FROM user WHERE talkpage_number_of_edits > 100);"""
+    (SELECT count(*) FROM user WHERE %s = 0),
+    (SELECT count(*) FROM user WHERE %s = 1),
+    (SELECT count(*) FROM user WHERE %s > 1 and %s <= 10),
+    (SELECT count(*) FROM user WHERE %s > 10 and %s <= 100),
+    (SELECT count(*) FROM user WHERE %s > 100);"""
     columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
+
     if not dryrun:
-        data = runQuery(cursor, query)
-        with open(dataDir + str(i) + ".txt", "w") as file:
-            file.write(str(data))
+        for table in tables:
+            conditionTuple = (table,) * 7
+            tableData = runQuery(cursor, query % conditionTuple)
+            data.append(tableData)
+
+        total = list(map(sum, data))[0]
+        data = [[x * 100 / total for x in y] for y in data]
+        writeCSV(dataDir + str(i) + ".csv", data)
     else:
-        data = [47507862, 1585249, 1092331, 169984, 34658]
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [list(map(float, line)) for line in reader]
 
-    total = sum(data)
-    data = list(map(lambda x: x * 100 / total, data))
+    _, axs = plt.subplots(2, 1)
+    for j, ax in enumerate(axs):
+        ax.set_title("Distribution of edits in %s" % names[j])
+        ax.set_xlabel("Number of edits by user")
+        ax.set_ylabel("Percentage")
+        ax.bar(columns, data[j])
 
-    _, ax = plt.subplots()
-    ax.set_title("Distribution of edits in talk space")
-    ax.set_xlabel("Talk Page Edits")
-    ax.set_ylabel("Percentage")
-    ax.bar(columns, data)
+        singlePlot(ax, "y")
 
-    singlePlot(ax, "y")
-    ax.set_ylim(top=100)
+        if j == 0:
+            ax.set_ylim(top=100)
+        else:
+            ax.set_ylim(top=50)
 
+    plt.gcf().set_size_inches(5, 10)
     savePlot(figname)
 
 
@@ -263,7 +245,7 @@ def averageNumberOfEditsPerGroup(cursor, i, plotDir, dataDir, dryrun):
     otherData = []
 
     if not dryrun:
-        for j, condition in enumerate(conditions):
+        for condition in conditions:
             cursor.execute(queryTalk % condition,)
             groupTalkData = cursor.fetchall()
             groupTalkData = [y[0] for y in groupTalkData]
@@ -706,7 +688,7 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
 
     ax.set_ylim(bottom=0)
     removeSpines(ax)
-    showGrid(plt, ax, "y")
+    showGrid(ax, "y")
     plt.gcf().set_size_inches(12, 7)
 
     plt.legend(loc="best")
@@ -1110,7 +1092,7 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
         savePlot(figname + "-%s" % scale)
 
 
-def averageAllSpecial(cursor, i, plotDir, dataDir, columns):
+def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun, columns):
     figname = plotDir + str(i) + "-" + "averageAllSpecial"
     plt.figure()
 
@@ -1837,7 +1819,7 @@ def differenceLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
     groupLastFiveQuery = """%s last_five_edits inner join user
     on user.id = last_five_edits.user_table_id where %s"""
 
-    groups, conditions, colors = groupInfo(all=True)
+    _, conditions, colors = groupInfo(all=True)
     data = []
 
     if not dryrun:
@@ -1858,7 +1840,9 @@ def differenceLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
             data = [list(map(float, line)) for line in reader]
     fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [4, 6, 13]})
 
-    fig.suptitle("Difference between feature average and the average of the last five edits")
+    fig.suptitle(
+        "Difference between feature average and the average of the last five edits"
+    )
 
     start = [0, 4, 10]
     end = [4, 10, 23]
@@ -1916,9 +1900,9 @@ def differenceLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
 
         (left, right) = ax.get_xlim()
         if abs(left) > right:
-            ax.set_xlim([left,-left])
+            ax.set_xlim([left, -left])
         else:
-            ax.set_xlim([-right,right])
+            ax.set_xlim([-right, right])
 
     axs[0].legend(
         loc="upper center",
@@ -2199,9 +2183,9 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
     options = [["not", "blocked_last_five_edits"], ["", "blocked_ip_last_five_edits"]]
     optionColors = ["orangered", "#F08EC1"]
 
-    for k in range(len(options)):
+    for k, option in enumerate(options):
         if not dryrun:
-            blockedData = runQuery(cursor, blocked % (features, options[k][0]))
+            blockedData = runQuery(cursor, blocked % (features, option[0]))
             writeCSV(dataDir + str(i) + "-" + optionNames[k] + ".csv", [blockedData])
         else:
             with open(dataDir + str(i) + "-" + optionNames[k] + ".csv", "r") as file:
@@ -2210,7 +2194,7 @@ def averageBlockedLastEdits(cursor, i, plotDir, dataDir, dryrun, columns):
 
         if not dryrun:
             blockedLastFiveData = runQuery(
-                cursor, blockedLastFive % (features, options[k][1])
+                cursor, blockedLastFive % (features, option[1])
             )
             writeCSV(
                 dataDir + str(i) + "-" + optionNames[k] + "-lastFive.csv",
@@ -2489,7 +2473,7 @@ def talkpageEditsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
-        showGrid(plt, ax, "y")
+        showGrid(ax, "y")
 
     plt.gcf().set_size_inches(16, 12)
     plt.legend(loc="upper right")
@@ -3163,11 +3147,10 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = 0  # 0 - 5 seconds
     # partitionStatus(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 1 - 1 minute
-    # distributionOfMainEdits(cursor, i, plotDir, dataDir, dryrun)
+    i = i + 1  # 1 - 2 minutes
+    # distributionOfTalkOtherEdits(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 2 - 1 minute
-    # distributionOfTalkEdits(cursor, i, plotDir, dataDir, dryrun)
+    i = i + 1  # 2
 
     i = i + 1  # 3 - 30 seconds
     # numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
