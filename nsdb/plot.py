@@ -44,6 +44,72 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
     savePlot(figname)
 
 
+def populationOfGroups(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-populationOfGroups"
+    plt.figure()
+
+    columns, conditions, colors = groupInfo(other=True)
+
+    queryPopulation = """SELECT
+    (SELECT count(*) FROM user WHERE %s),
+    (SELECT count(*) FROM user WHERE %s),
+    (SELECT count(*) FROM user WHERE %s),
+    (SELECT count(*) FROM user WHERE %s),
+    (SELECT count(*) FROM user WHERE %s),
+    (SELECT count(*) FROM user WHERE %s),
+    (SELECT count(*) FROM user WHERE %s),
+    (SELECT count(*) FROM user WHERE %s);"""
+    dataPopulation = []
+
+    queryPopulationEdits = """SELECT
+    (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits >= 10),
+    (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits >= 10),
+    (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits >= 10),
+    (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits >= 10),
+    (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits >= 10),
+    (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits >= 10),
+    (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits >= 10),
+    (SELECT count(*) FROM user WHERE %s and talkpage_number_of_edits >= 10);"""
+    dataPopulationEdits = []
+
+    if not dryrun:
+        cursor.execute(queryPopulation % tuple(conditions),)
+        dataPopulation = cursor.fetchall()
+        dataPopulation = dataPopulation[0]
+
+        cursor.execute(queryPopulationEdits % tuple(conditions),)
+        dataPopulationEdits = cursor.fetchall()
+        dataPopulationEdits = dataPopulationEdits[0]
+
+        writeCSV(dataDir + str(i) + "-population.csv", [dataPopulation])
+        writeCSV(dataDir + str(i) + "-populationEdits.csv", [dataPopulationEdits])
+    else:
+        with open(dataDir + str(i) + "-population.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            dataPopulation = [line for line in reader]
+            dataPopulation = [[int(y) for y in x] for x in dataPopulation]
+            dataPopulation = dataPopulation[0]
+
+        with open(dataDir + str(i) + "-populationEdits.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            dataPopulationEdits = [line for line in reader]
+            dataPopulationEdits = [[int(y) for y in x] for x in dataPopulationEdits]
+            dataPopulationEdits = dataPopulationEdits[0]
+
+    _, axs = plt.subplots(1, 2, sharey=True)
+    axs[0].bar(columns, dataPopulation, color=colors)
+    axs[0].set_title("Population per user group")
+    axs[1].bar(columns, dataPopulationEdits, color=colors)
+    axs[1].set_title("Population of users with >= 10 talkpage edits per user group")
+    plt.gcf().set_size_inches(20, 7)
+    for ax in axs:
+        ax.set_yscale("log")
+        ax.set_ylim(bottom=1)
+        singlePlot(ax, "y")
+
+    savePlot(figname)
+
+
 def distributionOfTalkOtherEdits(cursor, i, plotDir, dataDir, dryrun):
     figname = plotDir + str(i) + "-" + "distributionOfTalkOtherEdits"
     plt.figure()
@@ -279,6 +345,107 @@ def averageNumberOfEditsPerGroup(cursor, i, plotDir, dataDir, dryrun):
         singlePlot(ax, "y")
 
     savePlot(figname)
+
+
+def populationPyramid(cursor, i, plotDir, dataDir, dryrun):
+    columns, groupConditions, colors = groupInfo(all=True)
+    groupPopulations = []
+    groupEdits = []
+    for j, gCondition in enumerate(groupConditions):
+        figname = plotDir + str(i) + "-" + columns[j] + "-populationPyramid"
+        plt.figure()
+
+        print(figname)
+
+        years = ["%s" % x for x in range(2001, 2020)]
+
+        conditions = [
+            ["%s-01-01" % x, "%s-01-01" % str(int(x) + 1)] for x in range(2001, 2020)
+        ]
+        popInner = """(select count(*) from user join user_time_stats
+        on user.id = user_time_stats.id 
+        where %s and cast(first_edit as date) > "%s" and cast(first_edit as date) <= "%s"),
+"""
+        popInners = [
+            popInner % (gCondition, condition[0], condition[1])
+            for condition in conditions
+        ]
+        popQuery = "Select " + " ".join(popInners).rstrip(",\n") + ";"
+
+        editInner = """(select sum(number_of_edits) + sum(talkpage_number_of_edits)
+        from user join user_time_stats on user.id = user_time_stats.id
+        where %s and cast(first_edit as date) > "%s" and cast(first_edit as date) <= "%s"),
+"""
+        editInners = [
+            editInner % (gCondition, condition[0], condition[1])
+            for condition in conditions
+        ]
+        editQuery = "Select " + " ".join(editInners).rstrip(",\n") + ";"
+
+        if not dryrun:
+            populationData = runQuery(cursor, popQuery)
+
+            groupEditsData = runQuery(cursor, editQuery)
+            groupEditsData = list(map(lambda x: 0 if x is None else x, groupEditsData))
+            editsData = [int(x) for x in groupEditsData]
+
+            writeCSV(
+                dataDir + str(i) + "-" + columns[j] + "-population.csv",
+                [populationData],
+            )
+            writeCSV(dataDir + str(i) + "-" + columns[j] + "-edits.csv", [editsData])
+        else:
+            with open(
+                dataDir + str(i) + "-" + columns[j] + "-population.csv", "r"
+            ) as file:
+                reader = csv.reader(file, delimiter=",")
+                populationData = list(reader)
+                populationData = [int(x) for x in populationData[0]]
+            with open(dataDir + str(i) + "-" + columns[j] + "-edits.csv", "r") as file:
+                reader = csv.reader(file, delimiter=",")
+                editsData = list(reader)
+                editsData = [int(x) for x in editsData[0]]
+
+        groupPopulations.append(populationData)
+        groupEdits.append(editsData)
+
+        fig, axs = plt.subplots(1, 2, sharey=True, gridspec_kw={"wspace": 0})
+        fig.suptitle(columns[j])
+        axs[0].set_title("Number of users that made their first edit")
+        axs[0].barh(years, populationData, color=colors[j])
+        axs[0].set_ylabel("Year")
+        axs[0].set_xlabel("Users")
+        axs[1].set_title("Number of edits they made")
+        axs[1].barh(years, editsData, color=colors[j])
+        axs[1].set_xlabel("Edits")
+
+        axs[0].invert_yaxis()
+        axs[0].invert_xaxis()
+        axs[1].tick_params(axis="y", which="both", left=False)
+        singlePlot(axs[0], "x")
+        singlePlot(axs[1], "x")
+        plt.gcf().set_size_inches(14, 7)
+
+        savePlot(figname)
+
+    # _, ax = plt.subplots(1, 2, sharey=True, gridspec_kw={"wspace": 0})
+    # yPosOne = yPosTwo = 0
+    # for key, value in enumerate(data):
+    #     absBottom = [yPosOne, yPosTwo]
+    #     ax.bar(labels, value, bottom=absBottom, label=columns[key], color=colors[key])
+    #     yPosOne += value[0]
+    #     yPosTwo += value[1]
+    # handles, labels = ax.get_legend_handles_labels()
+    # ax.legend(reversed(handles), reversed(labels), loc="center left")
+
+    # axs[0].invert_yaxis()
+    # axs[0].invert_xaxis()
+    # axs[1].tick_params(axis="y", which="both", left=False)
+    # singlePlot(axs[0], "x")
+    # singlePlot(axs[1], "x")
+    # plt.gcf().set_size_inches(14, 7)
+
+    # savePlot(figname)
 
 
 def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
@@ -2285,7 +2452,7 @@ def proportionLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
 
     groups, conditions, colors = groupInfo(all=True)
 
-    groupQuery = """select 
+    groupQuery = """select
     IFNULL(AVG(la.added_length), 0) / IFNULL(AVG(su.added_length), 1),
     IFNULL(AVG(la.deleted_length), 0) / IFNULL(AVG(su.deleted_length), 1),
     IFNULL(AVG(la.del_words), 0) / IFNULL(AVG(su.del_words), 1),
@@ -2311,7 +2478,7 @@ def proportionLastFiveEdits(cursor, i, plotDir, dataDir, dryrun, columns):
     IFNULL(AVG(la.deleted_sentiment), 0) / IFNULL(AVG(su.deleted_sentiment),1)
     FROM last_five_edits_sums la
     join edit_sums su on la.id = su.id
-    inner join user on la.id = user.id 
+    inner join user on la.id = user.id
     where %s;"""
     data = []
 
@@ -2523,7 +2690,7 @@ def averageFeaturesOverTimeGroups(cursor, i, plotDir, dataDir, dryrun):
             AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),
             AVG(comment_special_chars),AVG(blanking),AVG(ins_capitalization),
             AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),AVG(ins_vulgarity),
-            AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)  
+            AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),AVG(deleted_sentiment)
             FROM edit join user
             on edit.user_table_id = user.id
             where %s
@@ -2613,16 +2780,16 @@ def talkpageEditorsTimeGroups(cursor, i, plotDir, dataDir, dryrun):
     columns, conditions, colors = groupInfo()
 
     queryYear = """SELECT count(years) FROM (
-            SELECT Year(edit_date) as years FROM edit JOIN user 
-                ON edit.user_table_id = user.id 
-            WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020 
-            GROUP BY YEAR(edit_date), edit.user_table_id 
+            SELECT Year(edit_date) as years FROM edit JOIN user
+                ON edit.user_table_id = user.id
+            WHERE %s AND Year(edit_date) > 2001 AND Year(edit_date) < 2020
+            GROUP BY YEAR(edit_date), edit.user_table_id
             ORDER BY YEAR(edit_date)
         ) AS innerQuery GROUP BY years;"""
 
     queryMonth = """SELECT Concat(year, "-", month), count(user_table_id) FROM (
-            SELECT Year(edit_date) as year, Month(edit_date) as month, user_table_id FROM edit JOIN user 
-                ON edit.user_table_id = user.id 
+            SELECT Year(edit_date) as year, Month(edit_date) as month, user_table_id FROM edit JOIN user
+                ON edit.user_table_id = user.id
             WHERE %s
             GROUP BY YEAR(edit_date), Month(edit_date), edit.user_table_id
             order by YEAR(edit_date), Month(edit_date)
@@ -2974,7 +3141,7 @@ def writeCSV(fileName, data):
         writer.writerows(data)
 
 
-def groupInfo(all=False):
+def groupInfo(all=False, other=False):
     groups = ["Special User", "User", "Blocked User", "IP", "Blocked IP", "Bot"]
 
     conditions = [
@@ -2999,6 +3166,14 @@ def groupInfo(all=False):
         groups.insert(0, "All")
         conditions.insert(0, "1")
         colors.insert(0, "#777")
+
+    if other == True:
+        groups.append("Blocked\nSpecial User")
+        conditions.append("user_special is True and blocked is true")
+        colors.append("#c4af3b")
+        groups.append("Blocked Bot")
+        conditions.append("bot is True and blocked is true")
+        colors.append("#7db6a2")
 
     return groups, conditions, colors
 
@@ -3150,7 +3325,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 1 - 2 minutes
     # distributionOfTalkOtherEdits(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 2
+    i = i + 1  # 2 - 5 minutes
+    # populationOfGroups(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 3 - 30 seconds
     # numberOfPagesPerNamespace(cursor, i, plotDir, dataDir, dryrun)
@@ -3164,7 +3340,8 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 6
     # averageNumberOfEditsPerGroup(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 7
+    i = i + 1  # 7 - 3 minutes
+    populationPyramid(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 8 - 20 minutes
     # distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun)

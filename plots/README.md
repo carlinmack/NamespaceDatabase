@@ -4,8 +4,8 @@
 ### 1 Distribution Of Main Edits
 ![plot](1-distributionOfTalkOtherEdits.png)
 
-### 2 Distribution Of Talk Edits
-![plot](2-distributionOfTalkEdits.png)
+### 2 Population Of Groups
+![plot](2-populationOfGroups.png)
 
 ### 3.1 Number Of Pages Per Namespace - linear
 ![plot](3-numberOfPagesPerNamespace-linear.png)
@@ -36,6 +36,27 @@
 
 ### 6 Average Number Of Edits Per Group
 ![plot](6-averageNumberOfEditsPerGroup.png)
+
+### 7 All Population Pyramid
+![plot](7-All-populationPyramid.png)
+
+### 7 Special User Population Pyramid
+![plot](7-Special User-populationPyramid.png)
+
+### 7 User Population Pyramid
+![plot](7-User-populationPyramid.png)
+
+### 7 Blocked User Population Pyramid
+![plot](7-Blocked User-populationPyramid.png)
+
+### 7 IP Population Pyramid
+![plot](7-IP-populationPyramid.png)
+
+### 7 Blocked IP Population Pyramid
+![plot](7-Blocked IP-populationPyramid.png)
+
+### 7 Bot Population Pyramid
+![plot](7-Bot-populationPyramid.png)
 
 ### 8 Distribution Of Main Edits User Bots
 ![plot](8-distributionOfMainEditsUserBots.png)
