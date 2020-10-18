@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime as dt
 from math import floor
+from operator import add
 
 import matplotlib
 import matplotlib.dates as mdates
@@ -41,6 +42,54 @@ def partitionStatus(cursor, i, plotDir, dataDir, dryrun):
 
     singlePlot(ax, "y")
 
+    savePlot(figname)
+
+
+def distributionOfTalkOtherEdits(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-" + "distributionOfTalkOtherEdits"
+    plt.figure()
+
+    tables = ["talkpage_number_of_edits", "number_of_edits"]
+    names = ["talk space", "other namespaces"]
+    data = []
+
+    query = """SELECT
+    (SELECT count(*) FROM user WHERE %s = 0),
+    (SELECT count(*) FROM user WHERE %s = 1),
+    (SELECT count(*) FROM user WHERE %s > 1 and %s <= 10),
+    (SELECT count(*) FROM user WHERE %s > 10 and %s <= 100),
+    (SELECT count(*) FROM user WHERE %s > 100);"""
+    columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
+
+    if not dryrun:
+        for table in tables:
+            conditionTuple = (table,) * 7
+            tableData = runQuery(cursor, query % conditionTuple)
+            data.append(tableData)
+
+        total = list(map(sum, data))[0]
+        data = [[x * 100 / total for x in y] for y in data]
+        writeCSV(dataDir + str(i) + ".csv", data)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [list(map(float, line)) for line in reader]
+
+    _, axs = plt.subplots(2, 1)
+    for j, ax in enumerate(axs):
+        ax.set_title("Distribution of edits in %s" % names[j])
+        ax.set_xlabel("Number of edits by user")
+        ax.set_ylabel("Percentage")
+        ax.bar(columns, data[j])
+
+        singlePlot(ax, "y")
+
+        if j == 0:
+            ax.set_ylim(top=100)
+        else:
+            ax.set_ylim(top=50)
+
+    plt.gcf().set_size_inches(5, 10)
     savePlot(figname)
 
 
@@ -101,60 +150,14 @@ def populationOfGroups(cursor, i, plotDir, dataDir, dryrun):
     axs[0].set_title("Population per user group")
     axs[1].bar(columns, dataPopulationEdits, color=colors)
     axs[1].set_title("Population of users with >= 10 talkpage edits per user group")
-    plt.gcf().set_size_inches(20, 7)
+
+    axs[0].set_ylabel("Population (log)")
+    plt.gcf().set_size_inches(16, 5)
     for ax in axs:
         ax.set_yscale("log")
         ax.set_ylim(bottom=1)
         singlePlot(ax, "y")
 
-    savePlot(figname)
-
-
-def distributionOfTalkOtherEdits(cursor, i, plotDir, dataDir, dryrun):
-    figname = plotDir + str(i) + "-" + "distributionOfTalkOtherEdits"
-    plt.figure()
-
-    tables = ["talkpage_number_of_edits", "number_of_edits"]
-    names = ["talk space", "other namespaces"]
-    data = []
-
-    query = """SELECT
-    (SELECT count(*) FROM user WHERE %s = 0),
-    (SELECT count(*) FROM user WHERE %s = 1),
-    (SELECT count(*) FROM user WHERE %s > 1 and %s <= 10),
-    (SELECT count(*) FROM user WHERE %s > 10 and %s <= 100),
-    (SELECT count(*) FROM user WHERE %s > 100);"""
-    columns = ["no edits", "1 edit", "2-10 edits", "11-100 edits", ">100 edits"]
-
-    if not dryrun:
-        for table in tables:
-            conditionTuple = (table,) * 7
-            tableData = runQuery(cursor, query % conditionTuple)
-            data.append(tableData)
-
-        total = list(map(sum, data))[0]
-        data = [[x * 100 / total for x in y] for y in data]
-        writeCSV(dataDir + str(i) + ".csv", data)
-    else:
-        with open(dataDir + str(i) + ".csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            data = [list(map(float, line)) for line in reader]
-
-    _, axs = plt.subplots(2, 1)
-    for j, ax in enumerate(axs):
-        ax.set_title("Distribution of edits in %s" % names[j])
-        ax.set_xlabel("Number of edits by user")
-        ax.set_ylabel("Percentage")
-        ax.bar(columns, data[j])
-
-        singlePlot(ax, "y")
-
-        if j == 0:
-            ax.set_ylim(top=100)
-        else:
-            ax.set_ylim(top=50)
-
-    plt.gcf().set_size_inches(5, 10)
     savePlot(figname)
 
 
@@ -348,34 +351,39 @@ def averageNumberOfEditsPerGroup(cursor, i, plotDir, dataDir, dryrun):
 
 
 def populationPyramid(cursor, i, plotDir, dataDir, dryrun):
-    columns, groupConditions, colors = groupInfo(all=True)
+    columns, groupConditions, colors = groupInfo()
+
     groupPopulations = []
     groupEdits = []
+
+    years = ["%s" % x for x in range(2001, 2019)]
+
+    conditions = [
+        ["%s-01-01" % x, "%s-01-01" % str(int(x) + 1)] for x in range(2001, 2019)
+    ]
+
+    popInner = """(select count(*) from user join user_time_stats
+        on user.id = user_time_stats.id
+        where %s and cast(first_edit as date) > "%s" and cast(first_edit as date) <= "%s"),
+"""
+    editInner = """(select sum(number_of_edits) + sum(talkpage_number_of_edits)
+        from user join user_time_stats on user.id = user_time_stats.id
+        where %s and cast(first_edit as date) > "%s" and cast(first_edit as date) <= "%s"),
+"""
+
+    axsZeroTitle = "Number of users that made their first edit"
+    axsOneTitle = "Number of edits they've made until now"
+
     for j, gCondition in enumerate(groupConditions):
         figname = plotDir + str(i) + "-" + columns[j] + "-populationPyramid"
         plt.figure()
 
-        print(figname)
-
-        years = ["%s" % x for x in range(2001, 2020)]
-
-        conditions = [
-            ["%s-01-01" % x, "%s-01-01" % str(int(x) + 1)] for x in range(2001, 2020)
-        ]
-        popInner = """(select count(*) from user join user_time_stats
-        on user.id = user_time_stats.id 
-        where %s and cast(first_edit as date) > "%s" and cast(first_edit as date) <= "%s"),
-"""
         popInners = [
             popInner % (gCondition, condition[0], condition[1])
             for condition in conditions
         ]
         popQuery = "Select " + " ".join(popInners).rstrip(",\n") + ";"
 
-        editInner = """(select sum(number_of_edits) + sum(talkpage_number_of_edits)
-        from user join user_time_stats on user.id = user_time_stats.id
-        where %s and cast(first_edit as date) > "%s" and cast(first_edit as date) <= "%s"),
-"""
         editInners = [
             editInner % (gCondition, condition[0], condition[1])
             for condition in conditions
@@ -411,11 +419,11 @@ def populationPyramid(cursor, i, plotDir, dataDir, dryrun):
 
         fig, axs = plt.subplots(1, 2, sharey=True, gridspec_kw={"wspace": 0})
         fig.suptitle(columns[j])
-        axs[0].set_title("Number of users that made their first edit")
+        axs[0].set_title(axsZeroTitle)
         axs[0].barh(years, populationData, color=colors[j])
         axs[0].set_ylabel("Year")
         axs[0].set_xlabel("Users")
-        axs[1].set_title("Number of edits they made")
+        axs[1].set_title(axsOneTitle)
         axs[1].barh(years, editsData, color=colors[j])
         axs[1].set_xlabel("Edits")
 
@@ -424,28 +432,40 @@ def populationPyramid(cursor, i, plotDir, dataDir, dryrun):
         axs[1].tick_params(axis="y", which="both", left=False)
         singlePlot(axs[0], "x")
         singlePlot(axs[1], "x")
-        plt.gcf().set_size_inches(14, 7)
+        plt.gcf().set_size_inches(14, 9)
 
         savePlot(figname)
 
-    # _, ax = plt.subplots(1, 2, sharey=True, gridspec_kw={"wspace": 0})
-    # yPosOne = yPosTwo = 0
-    # for key, value in enumerate(data):
-    #     absBottom = [yPosOne, yPosTwo]
-    #     ax.bar(labels, value, bottom=absBottom, label=columns[key], color=colors[key])
-    #     yPosOne += value[0]
-    #     yPosTwo += value[1]
-    # handles, labels = ax.get_legend_handles_labels()
-    # ax.legend(reversed(handles), reversed(labels), loc="center left")
+    figname = plotDir + str(i) + "-All-populationPyramid"
+    _, axs = plt.subplots(1, 2, sharey=True, gridspec_kw={"wspace": 0})
+    absBottom = [0] * len(groupEdits[0])
+    for key, value in enumerate(groupPopulations):
+        axs[0].barh(years, value, left=absBottom, label=columns[key], color=colors[key])
+        absBottom = list(map(add, value, absBottom))
 
-    # axs[0].invert_yaxis()
-    # axs[0].invert_xaxis()
-    # axs[1].tick_params(axis="y", which="both", left=False)
-    # singlePlot(axs[0], "x")
-    # singlePlot(axs[1], "x")
-    # plt.gcf().set_size_inches(14, 7)
+    absBottom = [0] * len(groupEdits[0])
+    for key, value in enumerate(groupEdits):
+        axs[1].barh(years, value, left=absBottom, label=columns[key], color=colors[key])
+        absBottom = list(map(add, value, absBottom))
 
-    # savePlot(figname)
+    axs[0].set_title(axsZeroTitle)
+    axs[1].set_title(axsOneTitle)
+
+    axs[0].set_xlabel("Users")
+    axs[1].set_xlabel("Edits")
+
+    axs[0].invert_yaxis()
+    axs[0].invert_xaxis()
+
+    axs[0].set_ylabel("Year")
+    axs[1].tick_params(axis="y", which="both", left=False)
+
+    axs[1].legend()
+    singlePlot(axs[0], "x")
+    singlePlot(axs[1], "x")
+    plt.gcf().set_size_inches(14, 9)
+
+    savePlot(figname)
 
 
 def distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun=False):
@@ -1400,14 +1420,13 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     _, axs = plt.subplots(2, 1)
     axs[0].set_title("Comparison of blocked and unblocked\nusers and IPs")
     axs[0].set_ylabel("Number of Users")
-    yPosOne = yPosTwo = 0
+
+    absBottom = [0] * len(data[0])
     for key, value in enumerate(data):
-        absBottom = [yPosOne, yPosTwo]
         axs[0].bar(
             xticks, value, bottom=absBottom, label=labels[key], color=colors[key]
         )
-        yPosOne += value[0]
-        yPosTwo += value[1]
+        absBottom = list(map(add, value, absBottom))
 
     axs[0].yaxis.set_major_formatter(tkr.FuncFormatter(threeFigureFormatter))
     removeSpines(axs[0])
@@ -1416,14 +1435,13 @@ def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
     data = [data[j : j + 2] for j in range(0, len(data), 2)]
     axs[1].set_title("Proportional")
     axs[1].set_ylabel("Percent")
-    yPosOne = yPosTwo = 0
+
+    absBottom = [0] * len(data[0])
     for key, value in enumerate(data):
-        absBottom = [yPosOne, yPosTwo]
         axs[1].bar(
             xticks, value, bottom=absBottom, label=labels[key], color=colors[key]
         )
-        yPosOne += value[0]
-        yPosTwo += value[1]
+        absBottom = list(map(add, value, absBottom))
 
     removeSpines(axs[1])
     plt.gcf().set_size_inches(5, 10)
@@ -1510,15 +1528,16 @@ def compositionOfUser(cursor, i, plotDir, dataDir, dryrun):
     editsData = list(map(lambda x: x / total, editsData))
 
     data = list(zip(data, editsData))
+
     labels = ["distribution\nof users", "distribution\nof edits"]
     _, ax = plt.subplots()
     ax.set_title("Distribution of users\nand how many edits on talkpages they make")
-    yPosOne = yPosTwo = 0
+
+    absBottom = [0] * len(data[0])
     for key, value in enumerate(data):
-        absBottom = [yPosOne, yPosTwo]
         ax.bar(labels, value, bottom=absBottom, label=columns[key], color=colors[key])
-        yPosOne += value[0]
-        yPosTwo += value[1]
+        absBottom = list(map(add, value, absBottom))
+
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(reversed(handles), reversed(labels), loc="center left")
 
@@ -3171,7 +3190,7 @@ def groupInfo(all=False, other=False):
         groups.append("Blocked\nSpecial User")
         conditions.append("user_special is True and blocked is true")
         colors.append("#c4af3b")
-        groups.append("Blocked Bot")
+        groups.append("Blocked\nBot")
         conditions.append("bot is True and blocked is true")
         colors.append("#7db6a2")
 
@@ -3341,7 +3360,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     # averageNumberOfEditsPerGroup(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 7 - 3 minutes
-    populationPyramid(cursor, i, plotDir, dataDir, dryrun)
+    # populationPyramid(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 8 - 20 minutes
     # distributionOfMainEditsUserBots(cursor, i, plotDir, dataDir, dryrun)
