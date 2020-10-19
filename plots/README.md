@@ -216,3 +216,12 @@
 
 ### 39 First Last Edits Groups
 ![plot](39-firstLastEditsGroups.png)
+
+### 40.1 Biggest Hundred Editors
+![plot](40-biggestHundredEditors.png)
+
+### 40.2 Biggest Thousand Editors
+![plot](40-biggestThousandEditors.png)
+
+### 40.3 Biggest Ten Thousand Editors
+![plot](40-biggestTenThousandEditors.png)
