@@ -1,3 +1,5 @@
+👉 View plots grouped and with commentary - [Plotting Wikipedia Data](https://carlinmack.com/blog/article/wikipediaplots/)
+
 ### 0 Partition Status
 ![plot](0-partitionStatus.png)
 

@@ -3208,7 +3208,7 @@ def biggestHundredEditors(cursor, i, plotDir, dataDir, dryrun):
         text_kwargs={"fontsize": 6},
     )
 
-    ax.set_title("Top 100 editors")
+    ax.set_title("Top 100 Wikipedia editors")
     plt.axis("off")
     plt.gcf().set_size_inches(8.5, 6)
 
@@ -3241,14 +3241,12 @@ def biggestHundredEditors(cursor, i, plotDir, dataDir, dryrun):
             args = {"edgecolor": "white"}
         else:
             args = {}
-        
+
         ax = squarify.plot(
-            sizes=sizes,
-            color=colors,
-            bar_kwargs={"edgecolor": "white"},
+            sizes=sizes, color=colors, bar_kwargs={"edgecolor": "white"},
         )
 
-        ax.set_title("Top " + magnitude[j] + " editors")
+        ax.set_title("Top " + magnitude[j] + " Wikipedia editors")
         plt.axis("off")
         plt.gcf().set_size_inches(10, 10)
 
