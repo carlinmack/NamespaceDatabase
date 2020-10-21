@@ -227,3 +227,6 @@
 
 ### 40.3 Biggest Ten Thousand Editors
 ![plot](40-biggestTenThousandEditors.png)
+
+### 41 Dendrogram Groups
+![plot](41-dendrogramGroups.png)

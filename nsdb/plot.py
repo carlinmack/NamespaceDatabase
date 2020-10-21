@@ -9,13 +9,14 @@ from operator import add
 import matplotlib
 import matplotlib.dates as mdates
 import matplotlib.font_manager as font_manager
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
-import matplotlib.patches as mpatches
 import pandas as pd
+import squarify
 from cycler import cycler
 from matplotlib import cm
-import squarify
+from scipy.cluster.hierarchy import dendrogram, linkage
 
 import Database
 
@@ -3143,12 +3144,12 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
 def biggestHundredEditors(cursor, i, plotDir, dataDir, dryrun):
     groups, conditions, colors = groupInfo()
 
-    query = """SELECT COALESCE(username, ip_address), number_of_edits, 
-    (CASE 
+    query = """SELECT COALESCE(username, ip_address), number_of_edits,
+    (CASE
         WHEN user_special is True THEN "gold"
-        WHEN bot is not True and blocked is not true and ip_address is not true 
+        WHEN bot is not True and blocked is not true and ip_address is not true
             and user_special is not True THEN "mediumpurple"
-        WHEN blocked is True and ip_address is not true and bot is not true and 
+        WHEN blocked is True and ip_address is not true and bot is not true and
             user_special is not true THEN "orangered"
         WHEN ip_address is True and blocked is not true THEN "skyblue"
         WHEN ip_address is True and blocked is true THEN "#F08EC1"
@@ -3265,6 +3266,46 @@ def biggestHundredEditors(cursor, i, plotDir, dataDir, dryrun):
         )
 
         savePlot(figname)
+
+
+def dendrogramGroups(cursor, i, plotDir, dataDir, dryrun):
+    figname = plotDir + str(i) + "-dendrogramGroups"
+    plt.figure()
+
+    groups, conditions, colors = groupInfo()
+    groupsData = []
+
+    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+        AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+        AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),AVG(blanking),
+        AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
+        AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+        AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+        AVG(deleted_sentiment)  FROM edit
+        inner join user
+        on user.id = edit.user_table_id
+        where %s"""
+    if not dryrun:
+        for condition in conditions:
+            groupData = runQuery(cursor, query % condition)
+            groupsData.append(groupData)
+
+        writeCSV(dataDir + str(i) + ".csv", groupsData)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            groupsData = [[float(x) for x in line] for line in reader]
+
+    _, ax = plt.subplots()
+    Z = linkage(groupsData, "centroid", optimal_ordering=True)
+    dn = dendrogram(Z, labels=groups)
+
+    ax.set_title("Clustering the average talkpage edit features\nof each group of Wikipedia editors")
+    
+    removeSpines(ax)
+    plt.gcf().set_size_inches(8.5, 6)
+
+    savePlot(figname)
 
 
 # Helpers ------------------------------------------------------------------------------
@@ -3589,6 +3630,9 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     i = i + 1  # 40 - 2 minutes
     # biggestHundredEditors(cursor, i, plotDir, dataDir, dryrun)
+
+    i = i + 1  # 41 - 37 minutes
+    # dendrogramGroups(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()
