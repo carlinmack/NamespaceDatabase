@@ -3300,10 +3300,134 @@ def dendrogramGroups(cursor, i, plotDir, dataDir, dryrun):
     Z = linkage(groupsData, "centroid", optimal_ordering=True)
     dn = dendrogram(Z, labels=groups)
 
-    ax.set_title("Clustering the average talkpage edit features\nof each group of Wikipedia editors")
-    
+    ax.set_title(
+        "Clustering the average talkpage edit features\nof each group of Wikipedia editors"
+    )
+
     removeSpines(ax)
     plt.gcf().set_size_inches(8.5, 6)
+
+    savePlot(figname)
+
+
+def editHeatmap(cursor, i, plotDir, dataDir, dryrun):
+    groups, conditions, colors = groupInfo()
+    groupsData = []
+
+    query = """select count(*) from edit join user on user.id = edit.user_table_id
+    where %s group by dayofyear(edit_date) order by dayofyear(edit_date) limit 365"""
+    if not dryrun:
+        for condition in conditions:
+            cursor.execute(query % condition,)
+            groupData = cursor.fetchall()
+            groupData = [x[0] for x in groupData]
+            groupsData.append(groupData)
+
+        writeCSV(dataDir + str(i) + "-year.csv", groupsData)
+    else:
+        with open(dataDir + str(i) + "-year.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            groupsData = [[int(x) for x in line] for line in reader]
+
+    monthPositions = [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+    months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ]
+
+    figname = plotDir + str(i) + "-editHeatmap"
+    plt.figure()
+    _, ax = plt.subplots()
+
+    plt.yticks(ticks=range(len(groups)), labels=groups)
+    plt.xticks(ticks=monthPositions, labels=months, rotation=90)
+
+    hm = plt.imshow(groupsData, cmap="plasma", interpolation="none", aspect="auto")
+    plt.colorbar(hm)
+
+    ax.set_title("Heatmap of number of talkpage edits per day per group")
+
+    removeSpines(ax)
+    plt.gcf().set_size_inches(10, 5)
+
+    savePlot(figname)
+
+    figname = plotDir + str(i) + "-editHeatmapDifferentColormaps"
+    plt.figure()
+    fig, axs = plt.subplots(6, 1, sharex=True)
+
+    for j, ax in enumerate(axs):
+        ax.set_ylabel(groups[j], rotation=0, ha="right", va="center")
+        ax.tick_params(axis="y", which="both", left=False, labelleft=False)
+        plt.xticks(ticks=monthPositions, labels=months, rotation=90)
+
+        hm = ax.imshow(
+            [groupsData[j]], cmap="plasma", interpolation="none", aspect="auto"
+        )
+        plt.colorbar(hm, ax=ax, format=threeFigureFormatter, aspect=10)
+
+        removeSpines(ax)
+
+    fig.suptitle("Heatmap of number of talkpage edits per day per group")
+    plt.gcf().set_size_inches(10, 5)
+
+    savePlot(figname)
+
+    groupsWeekData = []
+
+    query = """select count(*) from edit join user on user.id = edit.user_table_id
+    where %s group by weekday(edit_date) order by weekday(edit_date) limit 365"""
+    if not dryrun:
+        for condition in conditions:
+            cursor.execute(query % condition,)
+            groupData = cursor.fetchall()
+            groupData = [x[0] for x in groupData]
+            groupsWeekData.append(groupData)
+
+        writeCSV(dataDir + str(i) + "-week.csv", groupsWeekData)
+    else:
+        with open(dataDir + str(i) + "-week.csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            groupsWeekData = [[int(x) for x in line] for line in reader]
+
+    days = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+
+    figname = plotDir + str(i) + "-editWeekHeatmapDifferentColormaps"
+    plt.figure()
+    fig, axs = plt.subplots(6, 1, sharex=True)
+
+    for j, ax in enumerate(axs):
+        ax.set_ylabel(groups[j], rotation=0, ha="right", va="center")
+        ax.tick_params(axis="y", which="both", left=False, labelleft=False)
+        plt.xticks(ticks=list(range(7)), labels=days, rotation=90)
+
+        hm = ax.imshow(
+            [groupsWeekData[j]], cmap="plasma", interpolation="none", aspect="auto"
+        )
+        plt.colorbar(hm, ax=ax, format=threeFigureFormatter, aspect=10)
+
+        removeSpines(ax)
+
+    fig.suptitle("Heatmap of number of talkpage edits per day per group")
+    plt.gcf().set_size_inches(10, 5)
 
     savePlot(figname)
 
@@ -3311,8 +3435,8 @@ def dendrogramGroups(cursor, i, plotDir, dataDir, dryrun):
 # Helpers ------------------------------------------------------------------------------
 
 
-def runQuery(cursor, allEdits):
-    cursor.execute(allEdits,)
+def runQuery(cursor, query):
+    cursor.execute(query,)
     data = cursor.fetchall()
     data = list(*data)
     return data
@@ -3633,6 +3757,9 @@ def plot(plotDir: str = "../plots/", dryrun=False):
 
     i = i + 1  # 41 - 37 minutes
     # dendrogramGroups(cursor, i, plotDir, dataDir, dryrun)
+
+    i = i + 1  # 42 - 28 minutes
+    # editHeatmap(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:
         cursor.close()

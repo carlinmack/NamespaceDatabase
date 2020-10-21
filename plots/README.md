@@ -230,3 +230,12 @@
 
 ### 41 Dendrogram Groups
 ![plot](41-dendrogramGroups.png)
+
+### 42 Edit Heatmap
+![plot](42-editHeatmap.png)
+
+### 42 Edit Heatmap Different Colormaps by Year
+![plot](42-editHeatmapDifferentColormaps.png)
+
+### 42 Edit Heatmap Different Colormaps by Week
+![plot](42-editWeekHeatmapDifferentColormaps.png)
