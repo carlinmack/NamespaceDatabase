@@ -550,28 +550,28 @@ def editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     groups, conditions, colors = groupInfo()
 
     data = []
-    for j, condition in enumerate(conditions):
-        groupQuery = """SELECT
-        (select count(*) as target from user
-        WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and %s),
-        (select count(*) as target from user
-        WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and %s),
-        (select count(*) as target from user
-        WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and %s),
-        (select count(*) as target from user
-        WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and %s);"""
-        if not dryrun:
-            groupData = runQuery(
-                cursor, groupQuery % (condition, condition, condition, condition)
-            )
-            writeCSV(dataDir + str(i) + "-%s.csv" % groups[j], [groupData])
-        else:
-            with open(dataDir + str(i) + "-%s.csv" % groups[j]) as file:
-                reader = csv.reader(file, delimiter=",")
-                groupData = [line for line in reader][0]
-                groupData = [int(x) for x in groupData]
 
-        data.append(groupData)
+    groupQuery = """SELECT
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits > 0 and number_of_edits > 0 and %s),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits = 0 and number_of_edits > 0 and %s),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits > 0 and number_of_edits = 0 and %s),
+    (select count(*) as target from user
+    WHERE talkpage_number_of_edits = 0 and number_of_edits = 0 and %s);"""
+
+    if not dryrun:
+        for condition in conditions:
+            conditionTuple = (condition,) * 4
+            groupData = runQuery(cursor, groupQuery % conditionTuple)
+            data.append(groupData)
+
+        writeCSV(dataDir + str(i) + ".csv", data)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [[int(x) for x in line] for line in reader]
 
     _, axs = plt.subplots(2, 3)
     axs = axs.ravel()
@@ -590,31 +590,22 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
     groups, conditions, colors = groupInfo()
 
     data = []
-    dataStd = []
 
-    for j, group in enumerate(groups):
-        if not dryrun:
-            times = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
-            avg(duration)/3600, std(min_time)/3600, std(avg_time)/3600, std(max_time)/3600,
-            std(duration)/3600
-            from user_time_stats join user
-            on user_time_stats.id = user.id
-            where %s;"""
-            cursor.execute(times % conditions[j],)
-            timeData = cursor.fetchall()
-            timeStd = list(*timeData)[4:]
-            timeData = list(*timeData)[:4]
+    times = """select avg(min_time)/3600, avg(avg_time)/3600, avg(max_time)/3600,
+    avg(duration)/3600
+    from user_time_stats join user on user_time_stats.id = user.id
+    where %s;"""
 
-            data.append(timeData)
-            dataStd.append(timeStd)
-            writeCSV(dataDir + str(i) + "-" + group + ".csv", [timeData, timeStd])
-        else:
-            with open(dataDir + str(i) + "-" + group + ".csv", "r") as file:
-                reader = csv.reader(file, delimiter=",")
-                temp = [list(map(float, line)) for line in reader]
+    if not dryrun:
+        for condition in conditions:
+            groupData = runQuery(cursor, times % condition)
+            data.append(groupData)
 
-            data.append(temp[0])
-            dataStd.append(temp[1])
+        writeCSV(dataDir + str(i) + ".csv", data)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [[float(x) for x in line] for line in reader]
 
     columns = [
         "Minimum time\nbetween edits",
@@ -640,7 +631,6 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
             data[j][:2],
             width,
             label=group,
-            # yerr=dataStd[i][:2],
             color=colors[j],
         )
         axs[0].set_xticklabels(columns[:2])
@@ -650,7 +640,6 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
             data[j][2:],
             width,
             label=group,
-            # yerr=dataStd[i][2:],
             color=colors[j],
         )
         axs[1].set_xticklabels(columns[2:])
@@ -682,6 +671,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         ax.set_yticks(plotRange)
         ax.set_ylim(bottom=-0.5, top=1.5)
         ax.set_xlabel("Hours")
+        ax.invert_yaxis()
 
     for j, group in enumerate(groups):
         axs[0].scatter(data[j][:2], plotRange, color=colors[j], label=group, s=75)
@@ -695,7 +685,7 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         alpha=0.4,
     )
     axs[0].set_yticklabels(columns[:2])
-    axs[0].invert_yaxis()
+
     axs[1].hlines(
         y=plotRange,
         xmin=[min(x) for x in list(zip(*data))][2:],
@@ -704,7 +694,6 @@ def editTimesUserBots(cursor, i, plotDir, dataDir, dryrun=False):
         alpha=0.4,
     )
     axs[1].set_yticklabels(columns[2:])
-    axs[1].invert_yaxis()
 
     axs[0].legend(
         loc="lower center", bbox_to_anchor=(0.5, 1), ncol=3, fancybox=True, shadow=True,
@@ -832,33 +821,27 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
 
     data = []
 
-    for j, condition in enumerate(conditions):
-        groupQuery = """select avg(edit.added_sentiment),avg(edit.deleted_sentiment)
-        from edit join user
-        on edit.user_table_id = user.id
-        where %s;"""
-        if not dryrun:
-            groupData = runQuery(cursor, groupQuery % condition)
-            writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [groupData])
-        else:
-            with open(dataDir + str(i) + "-" + groups[j] + ".csv", "r") as file:
-                reader = csv.reader(file, delimiter=",")
-                groupData = []
-                for line in reader:
-                    groupData.append([float(k) for k in line])
-                groupData = groupData[0]
+    groupQuery = """select avg(edit.added_sentiment), avg(edit.deleted_sentiment)
+    from edit join user on edit.user_table_id = user.id
+    where %s;"""
 
-        data.append(groupData)
+    if not dryrun:
+        for condition in conditions:
+            groupData = runQuery(cursor, groupQuery % condition)
+            data.append(groupData)
+
+        writeCSV(dataDir + str(i) + ".csv", data)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [[float(x) for x in line] for line in reader]
 
     _, ax = plt.subplots()
 
-    # Position of bars on x-axis
     ind = list(range(len(columns)))
 
-    # Width of a bar
     width = 0.15
 
-    # Plotting
     for j, groupData in enumerate(data):
         ax.bar(
             list(map(lambda x: x + width * j, ind)),
@@ -871,9 +854,6 @@ def sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun=False):
     ax.set_ylabel("unit ?")
     ax.set_title("Average sentiment of different subsets of users")
 
-    # xticks()
-    # First argument - A list of positions at which ticks should be placed
-    # Second argument -  A list of labels to place at the given locations
     plt.xticks(list(map(lambda x: x + (width * 5) / 2, ind)), columns)
 
     ax.set_ylim(bottom=0)
@@ -1290,8 +1270,7 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun, columns):
 
     data = []
 
-    for j, condition in enumerate(conditions):
-        query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
         AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
         AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),AVG(blanking),
         AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
@@ -1301,16 +1280,17 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun, columns):
         inner join user
         on user.id = edit.user_table_id
         where %s;"""
-        if not dryrun:
+
+    if not dryrun:
+        for condition in conditions:
             groupData = runQuery(cursor, query % condition)
+            data.append(groupData)
 
-            writeCSV(dataDir + str(i) + "-" + groups[j] + ".csv", [groupData])
-        else:
-            with open(dataDir + str(i) + "-" + groups[j] + ".csv", "r") as file:
-                reader = csv.reader(file, delimiter=",")
-                groupData = [list(map(float, line)) for line in reader][0]
-
-        data.append(groupData)
+        writeCSV(dataDir + str(i) + ".csv", data)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [[float(x) for x in line] for line in reader]
 
     fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [4, 6, 13]})
 
@@ -3662,13 +3642,13 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 9 - 7 minutes
     # editsMainTalkNeitherUserBots(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 10 - 2 minutes
+    i = i + 1  # 10 - 3 minutes
     # editTimesUserBots(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 11 - 4 minutes
     # distributionOfEditsPerNamespace(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 12 - 20 minutes
+    i = i + 1  # 12 - 18 minutes
     # sentimentUserBotsBlockedIP(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 13 - 52 minutes
@@ -3689,7 +3669,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 18 - 4 seconds
     # specialUsersPlot(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 19 - 37 minutes
+    i = i + 1  # 19 - 25 minutes
     # averageAllSpecial(cursor, i, plotDir, dataDir, dryrun, columns)
 
     i = i + 1  # 20 - 2 minutes
@@ -3755,7 +3735,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 40 - 2 minutes
     # biggestHundredEditors(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 41 - 37 minutes
+    i = i + 1  # 41 - 25 minutes
     # dendrogramGroups(cursor, i, plotDir, dataDir, dryrun)
 
     i = i + 1  # 42 - 28 minutes
