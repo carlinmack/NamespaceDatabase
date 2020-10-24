@@ -1263,68 +1263,17 @@ def specialUsersPlot(cursor, i, plotDir, dataDir, dryrun):
 
 
 def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun, columns):
-    figname = plotDir + str(i) + "-" + "averageAllSpecial"
-    plt.figure()
-
-    groups, conditions, colors = groupInfo(all=True)
-
-    data = []
-
-    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
-        AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
-        AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),AVG(blanking),
-        AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
-        AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
-        AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
-        AVG(deleted_sentiment)  FROM edit
-        inner join user
-        on user.id = edit.user_table_id
-        where %s;"""
-
-    if not dryrun:
-        for condition in conditions:
-            groupData = runQuery(cursor, query % condition)
-            data.append(groupData)
-
-        writeCSV(dataDir + str(i) + ".csv", data)
-    else:
-        with open(dataDir + str(i) + ".csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            data = [[float(x) for x in line] for line in reader]
-
-    fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [4, 6, 13]})
-
-    fig.suptitle("Average of all integer edit fields")
-
-    start = [0, 4, 10]
-    end = [4, 10, 23]
-
-    labels = [
-        "none",
-        "users with privileges",
-        "all users",
-        "blocked users",
-        "IP users",
-        "blocked IP users",
-        "bots",
-    ]
-
-    for j, ax in enumerate(axs):
+    def plot19(start, j, end, ax, data, colors, labels, columns, hlines):
         plotRange = range(start[j], end[j])
 
         ax.hlines(
             y=plotRange,
-            xmin=[
-                min(a, b, c, d, e, f)
-                for a, b, c, d, e, f in list(zip(*data[1:]))[start[j] : end[j]]
-            ],
-            xmax=[
-                max(a, b, c, d, e, f)
-                for a, b, c, d, e, f in list(zip(*data[1:]))[start[j] : end[j]]
-            ],
+            xmin=[min(x) for x in list(zip(*data[1:]))[start[j] : end[j]]],
+            xmax=[max(x) for x in list(zip(*data[1:]))[start[j] : end[j]]],
             color="grey",
             alpha=0.4,
         )
+
         ax.vlines(
             x=data[0][start[j] : end[j]],
             ymin=list(map(lambda x: x - 0.5, plotRange)),
@@ -1352,17 +1301,90 @@ def averageAllSpecial(cursor, i, plotDir, dataDir, dryrun, columns):
         if j > 1:
             ax.set_xlim(left=0)
 
-    axs[0].legend(
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.6),
-        ncol=3,
-        fancybox=True,
-        shadow=True,
-    )
+    _, conditions, colors = groupInfo(all=True)
 
-    plt.gcf().set_size_inches(9.5, 9.5)
+    data = []
 
-    savePlot(figname)
+    query = """select AVG(added_length),AVG(deleted_length),AVG(del_words),AVG(comment_length),
+        AVG(ins_longest_inserted_word),AVG(ins_longest_character_sequence),AVG(ins_internal_link),
+        AVG(ins_external_link),AVG(ins_avg_word_length),AVG(del_avg_word_length),AVG(blanking),
+        AVG(comment_copyedit),AVG(comment_personal_life),AVG(comment_special_chars),
+        AVG(ins_capitalization),AVG(ins_digits),AVG(ins_pronouns),AVG(ins_special_chars),
+        AVG(ins_vulgarity),AVG(ins_whitespace),AVG(reverted),AVG(added_sentiment),
+        AVG(deleted_sentiment)  FROM edit
+        inner join user
+        on user.id = edit.user_table_id
+        where %s;"""
+
+    if not dryrun:
+        for condition in conditions:
+            groupData = runQuery(cursor, query % condition)
+            data.append(groupData)
+
+        writeCSV(dataDir + str(i) + ".csv", data)
+    else:
+        with open(dataDir + str(i) + ".csv", "r") as file:
+            reader = csv.reader(file, delimiter=",")
+            data = [[float(x) for x in line] for line in reader]
+
+    normalisedData = [
+        [(float(x) - min(y)) / (max(y) - min(y)) for x in y] for y in list(zip(*data))
+    ]
+    normalisedData = list(zip(*normalisedData))
+
+    dataSets = [data, normalisedData]
+
+    for j, dataSet in enumerate(dataSets):
+        figname = plotDir + str(i) + "-" + "averageAllSpecial"
+        plt.figure()
+
+        labels = [
+            "none",
+            "users with privileges",
+            "all users",
+            "blocked users",
+            "IP users",
+            "blocked IP users",
+            "bots",
+        ]
+
+        if j == 0:
+            fig, axs = plt.subplots(3, 1, gridspec_kw={"height_ratios": [4, 6, 13]})
+            fig.suptitle("Average of all integer edit fields")
+
+            start = [0, 4, 10]
+            end = [4, 10, 23]
+
+            for k, ax in enumerate(axs):
+                plot19(start, k, end, ax, dataSet, colors, labels, columns, True)
+
+            axs[0].legend(
+                loc="upper center",
+                bbox_to_anchor=(0.5, 1.6),
+                ncol=3,
+                fancybox=True,
+                shadow=True,
+            )
+        else:
+            fig, ax = plt.subplots()
+            fig.suptitle("Average of all integer edit fields (normalised)")
+            figname += "Normalised"
+
+            start = [0]
+            end = [23]
+            plot19(start, 0, end, ax, dataSet, colors, labels, columns, False)
+
+            ax.legend(
+                loc="upper center",
+                bbox_to_anchor=(0.5, 1.1),
+                ncol=3,
+                fancybox=True,
+                shadow=True,
+            )
+
+        plt.gcf().set_size_inches(9.5, 9.5)
+
+        savePlot(figname)
 
 
 def compositionOfUserIP(cursor, i, plotDir, dataDir, dryrun):
@@ -3122,130 +3144,308 @@ def firstLastEditsGroups(cursor, i, plotDir, dataDir, dryrun):
 
 
 def biggestHundredEditors(cursor, i, plotDir, dataDir, dryrun):
-    groups, conditions, colors = groupInfo()
+    # groups, conditions, colors = groupInfo()
 
-    query = """SELECT COALESCE(username, ip_address), number_of_edits,
-    (CASE
-        WHEN user_special is True THEN "gold"
-        WHEN bot is not True and blocked is not true and ip_address is not true
-            and user_special is not True THEN "mediumpurple"
-        WHEN blocked is True and ip_address is not true and bot is not true and
-            user_special is not true THEN "orangered"
-        WHEN ip_address is True and blocked is not true THEN "skyblue"
-        WHEN ip_address is True and blocked is true THEN "#F08EC1"
-        WHEN bot is True THEN "mediumaquamarine"
-        ELSE 1
-    END)
-    FROM user order by number_of_edits desc limit %s;"""
+    # query = """SELECT COALESCE(username, ip_address), number_of_edits,
+    # (CASE
+    #     WHEN user_special is True THEN "gold"
+    #     WHEN bot is not True and blocked is not true and ip_address is not true
+    #         and user_special is not True THEN "mediumpurple"
+    #     WHEN blocked is True and ip_address is not true and bot is not true and
+    #         user_special is not true THEN "orangered"
+    #     WHEN ip_address is True and blocked is not true THEN "skyblue"
+    #     WHEN ip_address is True and blocked is true THEN "#F08EC1"
+    #     WHEN bot is True THEN "mediumaquamarine"
+    #     ELSE 1
+    # END)
+    # FROM user order by number_of_edits desc limit %s;"""
+    # if not dryrun:
+    #     cursor.execute(query % 100)
+    #     oneHundredData = cursor.fetchall()
+
+    #     writeCSV(dataDir + str(i) + "-hundred.csv", oneHundredData)
+
+    #     cursor.execute(query % 1000)
+    #     oneThousandData = cursor.fetchall()
+
+    #     writeCSV(dataDir + str(i) + "-thousand.csv", oneThousandData)
+
+    #     cursor.execute(query % 10000)
+    #     tenThousandData = cursor.fetchall()
+
+    #     writeCSV(dataDir + str(i) + "-ten-thousand.csv", tenThousandData)
+    # else:
+    #     with open(dataDir + str(i) + "-hundred.csv", "r") as file:
+    #         reader = csv.reader(file, delimiter=",")
+    #         oneHundredData = [
+    #             [str(line[0]), int(line[1]), str(line[2])] for line in reader
+    #         ]
+    #     with open(dataDir + str(i) + "-thousand.csv", "r") as file:
+    #         reader = csv.reader(file, delimiter=",")
+    #         oneThousandData = [
+    #             [str(line[0]), int(line[1]), str(line[2])] for line in reader
+    #         ]
+    #     with open(dataDir + str(i) + "-ten-thousand.csv", "r") as file:
+    #         reader = csv.reader(file, delimiter=",")
+    #         tenThousandData = [
+    #             [str(line[0]), int(line[1]), str(line[2])] for line in reader
+    #         ]
+
+    # label = (
+    #     [x[0] for x in oneHundredData[:12]]
+    #     + [x[0] if len(x[0]) < 10 else x[0][:10] + "..." for x in oneHundredData[12:50]]
+    #     + [x[0] if len(x[0]) < 6 else x[0][:6] + "..." for x in oneHundredData[50:]]
+    # )
+    # sizes = [x[1] for x in oneHundredData]
+    # colors = [x[2] for x in oneHundredData]
+
+    # figname = plotDir + str(i) + "-biggestHundredEditors"
+    # plt.figure()
+
+    # ax = squarify.plot(
+    #     sizes=sizes,
+    #     label=label,
+    #     color=colors,
+    #     alpha=0.6,
+    #     bar_kwargs={"edgecolor": "white"},
+    #     text_kwargs={"fontsize": 6},
+    # )
+
+    # ax.set_title("Top 100 Wikipedia editors")
+    # plt.axis("off")
+    # plt.gcf().set_size_inches(8.5, 6)
+
+    # bot_patch = mpatches.Patch(color="mediumaquamarine", label="Bot")
+    # special_patch = mpatches.Patch(color="gold", label="Special User")
+    # user_patch = mpatches.Patch(color="mediumpurple", label="User")
+    # ax.legend(
+    #     handles=[bot_patch, special_patch, user_patch],
+    #     loc="lower center",
+    #     bbox_to_anchor=(0.5, -0.1),
+    #     ncol=3,
+    #     fancybox=True,
+    # )
+
+    # savePlot(figname)
+
+    # data = [oneThousandData, tenThousandData]
+    # magnitude = ["1000", "10,000"]
+    # name = ["Thousand", "TenThousand"]
+
+    # for j, set in enumerate(data):
+    #     sizes = [x[1] for x in set]
+    #     colors = [x[2] for x in set]
+
+    #     figname = plotDir + str(i) + "-biggest" + name[j] + "Editors"
+    #     plt.figure()
+
+    #     if j == 0:
+    #         args = {"edgecolor": "white"}
+    #     else:
+    #         args = {}
+
+    #     ax = squarify.plot(
+    #         sizes=sizes, color=colors, bar_kwargs={"edgecolor": "white"},
+    #     )
+
+    #     ax.set_title("Top " + magnitude[j] + " Wikipedia editors")
+    #     plt.axis("off")
+    #     plt.gcf().set_size_inches(10, 10)
+
+    #     bot_patch = mpatches.Patch(color="mediumaquamarine", label="Bot")
+    #     special_patch = mpatches.Patch(color="gold", label="Special User")
+    #     user_patch = mpatches.Patch(color="mediumpurple", label="User")
+    #     blocked_patch = mpatches.Patch(color="orangered", label="Blocked User")
+    #     ip_patch = mpatches.Patch(color="skyblue", label="IP")
+    #     ax.legend(
+    #         handles=[bot_patch, special_patch, user_patch, blocked_patch, ip_patch],
+    #         loc="lower center",
+    #         bbox_to_anchor=(0.5, -0.1),
+    #         ncol=5,
+    #         fancybox=True,
+    #     )
+
+    #     savePlot(figname)
+
+    # query = """SELECT username, number_of_edits FROM user
+    # where bot is True and number_of_edits > 0 order by number_of_edits desc;"""
+
+    # if not dryrun:
+    #     cursor.execute(query)
+    #     groupData = cursor.fetchall()
+
+    #     writeCSV(dataDir + str(i) + "-Bot.csv", groupData)
+    # else:
+    #     with open(dataDir + str(i) + "-Bot.csv", "r") as file:
+    #         reader = csv.reader(file, delimiter=",")
+    #         groupData = [[str(line[0]), int(line[1])] for line in reader]
+
+    # label = (
+    #     [x[0] for x in groupData[:12]]
+    #     + [x[0] if len(x[0]) < 10 else x[0][:10] + "..." for x in groupData[12:50]]
+    #     + [x[0] if len(x[0]) < 6 else x[0][:6] + "..." for x in groupData[50:100]]
+    # )
+    # sizes = [x[1] for x in groupData]
+
+    # figname = plotDir + str(i) + "-Bot"
+    # plt.figure()
+
+    # ax = squarify.plot(
+    #     sizes=sizes,
+    #     label=label,
+    #     color="mediumaquamarine",
+    #     alpha=0.6,
+    #     bar_kwargs={"edgecolor": "white"},
+    #     text_kwargs={"fontsize": 6},
+    # )
+
+    # ax.set_title("Wikipedia Bots by number of edits")
+    # plt.axis("off")
+    # plt.gcf().set_size_inches(8.5, 6)
+
+    # savePlot(figname)
+
+    # query = """select username, number_of_edits, t.number from user join
+    # (select ug_user, count(*) as number from user_groups group by ug_user) t 
+    # on user.user_id = t.ug_user where number_of_edits > 0 and bot is not true order by number_of_edits desc"""
+
+    # if not dryrun:
+    #     cursor.execute(query)
+    #     groupData = cursor.fetchall()
+
+    #     writeCSV(dataDir + str(i) + "-Special User.csv", groupData)
+    # else:
+    #     with open(dataDir + str(i) + "-Special User.csv", "r") as file:
+    #         reader = csv.reader(file, delimiter=",")
+    #         groupData = [[str(line[0]), int(line[1]), int(line[2])] for line in reader]
+
+    # label = (
+    #     [x[0] for x in groupData[:12]]
+    #     + [x[0] if len(x[0]) < 10 else x[0][:10] + "..." for x in groupData[12:50]]
+    #     + [x[0] if len(x[0]) < 6 else x[0][:6] + "..." for x in groupData[50:100]]
+    #     + [x[0] if len(x[0]) < 5 else x[0][:4] + "..." for x in groupData[100:250]]
+    #     + [x[0] if len(x[0]) < 4 else x[0][:3] + "..." for x in groupData[250:500]]
+    # )
+    # sizes = [x[1] for x in groupData]
+    # colors = [x[2] for x in groupData]
+    # colors = [cm.plasma_r(float(x) / 10) for x in colors]
+
+    # figname = plotDir + str(i) + "-Special User-All"
+    # plt.figure()
+
+    # ax = squarify.plot(sizes=sizes, color=colors, alpha=0.7,)
+
+    # handles = [
+    #     mpatches.Patch(color=x, label=y)
+    #     for x, y in zip(
+    #         [cm.plasma_r(float(x) / 10) for x in range(1, 10)], list(range(1, 10)),
+    #     )
+    # ]
+
+    # ax.legend(
+    #     title="Number of permissions",
+    #     handles=handles,
+    #     loc="lower center",
+    #     bbox_to_anchor=(0.5, -0.1),
+    #     ncol=9,
+    #     fancybox=True,
+    # )
+
+    # ax.set_title("Wikipedia Special Users by number of edits")
+    # plt.axis("off")
+    # plt.gcf().set_size_inches(12, 12)
+
+    # savePlot(figname)
+
+    # figname = plotDir + str(i) + "-Special User"
+    # plt.figure()
+
+    # ax = squarify.plot(
+    #     sizes=sizes[:1000],
+    #     label=label[:1000],
+    #     color=colors[:1000],
+    #     alpha=0.6,
+    #     bar_kwargs={"edgecolor": "white"},
+    #     text_kwargs={"fontsize": 5},
+    # )
+
+    # handles = [
+    #     mpatches.Patch(color=x, label=y)
+    #     for x, y in zip(
+    #         [cm.plasma_r(float(x) / 10) for x in range(1, 10)], list(range(1, 10)),
+    #     )
+    # ]
+    # ax.legend(
+    #     title="Number of permissions",
+    #     handles=handles,
+    #     loc="lower center",
+    #     bbox_to_anchor=(0.5, -0.1),
+    #     ncol=9,
+    #     fancybox=True,
+    # )
+
+    # ax.set_title("Wikipedia Special Users by number of edits\n(top 1000, first 500 are labelled)")
+    # plt.axis("off")
+    # plt.gcf().set_size_inches(11, 8)
+
+    # savePlot(figname)
+
+    query = """select username, number_of_edits, t.number from user join
+    (select ug_user, count(*) as number from user_groups group by ug_user) t 
+    on user.user_id = t.ug_user where number_of_edits > 0 and bot is not true 
+    order by t.number desc, number_of_edits desc limit 250"""
+    
     if not dryrun:
-        cursor.execute(query % 100)
-        oneHundredData = cursor.fetchall()
+        cursor.execute(query)
+        groupData = cursor.fetchall()
 
-        writeCSV(dataDir + str(i) + "-hundred.csv", oneHundredData)
-
-        cursor.execute(query % 1000)
-        oneThousandData = cursor.fetchall()
-
-        writeCSV(dataDir + str(i) + "-thousand.csv", oneThousandData)
-
-        cursor.execute(query % 10000)
-        tenThousandData = cursor.fetchall()
-
-        writeCSV(dataDir + str(i) + "-ten-thousand.csv", tenThousandData)
+        writeCSV(dataDir + str(i) + "-Special User-permissions.csv", groupData)
     else:
-        with open(dataDir + str(i) + "-hundred.csv", "r") as file:
+        with open(dataDir + str(i) + "-Special User-permissions.csv", "r") as file:
             reader = csv.reader(file, delimiter=",")
-            oneHundredData = [
-                [str(line[0]), int(line[1]), str(line[2])] for line in reader
-            ]
-        with open(dataDir + str(i) + "-thousand.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            oneThousandData = [
-                [str(line[0]), int(line[1]), str(line[2])] for line in reader
-            ]
-        with open(dataDir + str(i) + "-ten-thousand.csv", "r") as file:
-            reader = csv.reader(file, delimiter=",")
-            tenThousandData = [
-                [str(line[0]), int(line[1]), str(line[2])] for line in reader
-            ]
+            groupData = [[str(line[0]), int(line[1]), int(line[2])] for line in reader]
 
     label = (
-        [x[0] for x in oneHundredData[:12]]
-        + [x[0] if len(x[0]) < 10 else x[0][:10] + "..." for x in oneHundredData[12:50]]
-        + [x[0] if len(x[0]) < 6 else x[0][:6] + "..." for x in oneHundredData[50:]]
+        [x[0] for x in groupData[:12]]
+        + [x[0] if len(x[0]) < 10 else x[0][:10] + "..." for x in groupData[12:50]]
+        + [x[0] if len(x[0]) < 8 else x[0][:8] + "..." for x in groupData[50:100]]
+        + [x[0] if len(x[0]) < 6 else x[0][:6] + "..." for x in groupData[100:250]]
     )
-    sizes = [x[1] for x in oneHundredData]
-    colors = [x[2] for x in oneHundredData]
-
-    figname = plotDir + str(i) + "-biggestHundredEditors"
+    sizes = [x[1] for x in groupData]
+    colors = [x[2] for x in groupData]
+    colors = [cm.plasma_r(float(x) / 10) for x in colors]
+    figname = plotDir + str(i) + "-Special User-by-permissions"
     plt.figure()
 
     ax = squarify.plot(
-        sizes=sizes,
-        label=label,
-        color=colors,
+        sizes=sizes[:1000],
+        label=label[:1000],
+        color=colors[:1000],
         alpha=0.6,
         bar_kwargs={"edgecolor": "white"},
-        text_kwargs={"fontsize": 6},
+        text_kwargs={"fontsize": 5},
     )
 
-    ax.set_title("Top 100 Wikipedia editors")
-    plt.axis("off")
-    plt.gcf().set_size_inches(8.5, 6)
-
-    bot_patch = mpatches.Patch(color="mediumaquamarine", label="Bot")
-    special_patch = mpatches.Patch(color="gold", label="Special User")
-    user_patch = mpatches.Patch(color="mediumpurple", label="User")
+    handles = [
+        mpatches.Patch(color=(x[0],x[1],x[2],0.6), label=y)
+        for x, y in zip(
+            [cm.plasma_r(float(x) / 10) for x in range(5, 11)], list(range(5, 11)),
+        )
+    ]
     ax.legend(
-        handles=[bot_patch, special_patch, user_patch],
+        title="Number of permissions",
+        handles=handles,
         loc="lower center",
         bbox_to_anchor=(0.5, -0.1),
-        ncol=3,
+        ncol=6,
         fancybox=True,
-        shadow=True,
     )
 
+    ax.set_title("Wikipedia Special Users by number of permissions (top 250)")
+    plt.axis("off")
+    plt.gcf().set_size_inches(11, 8)
+
     savePlot(figname)
-
-    data = [oneThousandData, tenThousandData]
-    magnitude = ["1000", "10,000"]
-    name = ["Thousand", "TenThousand"]
-
-    for j, set in enumerate(data):
-        sizes = [x[1] for x in set]
-        colors = [x[2] for x in set]
-
-        figname = plotDir + str(i) + "-biggest" + name[j] + "Editors"
-        plt.figure()
-
-        if j == 0:
-            args = {"edgecolor": "white"}
-        else:
-            args = {}
-
-        ax = squarify.plot(
-            sizes=sizes, color=colors, bar_kwargs={"edgecolor": "white"},
-        )
-
-        ax.set_title("Top " + magnitude[j] + " Wikipedia editors")
-        plt.axis("off")
-        plt.gcf().set_size_inches(10, 10)
-
-        bot_patch = mpatches.Patch(color="mediumaquamarine", label="Bot")
-        special_patch = mpatches.Patch(color="gold", label="Special User")
-        user_patch = mpatches.Patch(color="mediumpurple", label="User")
-        blocked_patch = mpatches.Patch(color="orangered", label="Blocked User")
-        ip_patch = mpatches.Patch(color="skyblue", label="IP")
-        ax.legend(
-            handles=[bot_patch, special_patch, user_patch, blocked_patch, ip_patch],
-            loc="lower center",
-            bbox_to_anchor=(0.5, -0.1),
-            ncol=5,
-            fancybox=True,
-            shadow=True,
-        )
-
-        savePlot(figname)
 
 
 def dendrogramGroups(cursor, i, plotDir, dataDir, dryrun):
@@ -3276,8 +3476,14 @@ def dendrogramGroups(cursor, i, plotDir, dataDir, dryrun):
             reader = csv.reader(file, delimiter=",")
             groupsData = [[float(x) for x in line] for line in reader]
 
+    normalisedData = [
+        [(float(x) - min(y)) / (max(y) - min(y)) for x in y]
+        for y in list(zip(*groupsData))
+    ]
+    normalisedData = list(zip(*normalisedData))
+
     _, ax = plt.subplots()
-    Z = linkage(groupsData, "centroid", optimal_ordering=True)
+    Z = linkage(normalisedData, "centroid", optimal_ordering=True)
     dn = dendrogram(Z, labels=groups)
 
     ax.set_title(
@@ -3294,8 +3500,13 @@ def editHeatmap(cursor, i, plotDir, dataDir, dryrun):
     groups, conditions, colors = groupInfo()
     groupsData = []
 
-    query = """select count(*) from edit join user on user.id = edit.user_table_id
-    where %s group by dayofyear(edit_date) order by dayofyear(edit_date) limit 365"""
+    query = """select count(*) from edit join user on user.id = edit.user_table_id where %s
+    and (edit_date < '2004-02-29 00:00:00' OR edit_date >= '2004-03-01 00:00:00')
+    and (edit_date < '2008-02-29 00:00:00' OR edit_date >= '2008-03-01 00:00:00')
+    and (edit_date < '2012-02-29 00:00:00' OR edit_date >= '2012-03-01 00:00:00')
+    and (edit_date < '2016-02-29 00:00:00' OR edit_date >= '2016-03-01 00:00:00')
+    and (edit_date < '2020-02-29 00:00:00' OR edit_date >= '2020-03-01 00:00:00')
+    group by dayofyear(edit_date) order by dayofyear(edit_date) limit 365"""
     if not dryrun:
         for condition in conditions:
             cursor.execute(query % condition,)
@@ -3738,7 +3949,7 @@ def plot(plotDir: str = "../plots/", dryrun=False):
     i = i + 1  # 41 - 25 minutes
     # dendrogramGroups(cursor, i, plotDir, dataDir, dryrun)
 
-    i = i + 1  # 42 - 28 minutes
+    i = i + 1  # 42 - 35 minutes
     # editHeatmap(cursor, i, plotDir, dataDir, dryrun)
 
     if not dryrun:

@@ -228,6 +228,18 @@
 ### 40.3 Biggest Ten Thousand Editors
 ![plot](40-biggestTenThousandEditors.png)
 
+### 40.4 Bot Treemap
+![plot](40-Bot.png)
+
+### 40.5 Special User Treemap
+![plot](40-Special%20User.png)
+
+### 40.6 All Special User Treemap
+![plot](40-Special%20User-All.png)
+
+### 40.7 Special User By Permissions Treemap
+![plot](40-Special%20User-by-permissions.png)
+
 ### 41 Dendrogram Groups
 ![plot](41-dendrogramGroups.png)
 
